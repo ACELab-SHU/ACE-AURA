@@ -1,0 +1,8 @@
+*.log
+*.ll
+*.s
+5g_lite
+vins_result
+temp
+main.cpp
+basinterp*
