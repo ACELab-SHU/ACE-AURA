@@ -1,0 +1,68 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "type": "shell",
+            "label": "make all",
+            "command": "make",
+            "args": ["all"],
+            "options": {
+                "cwd": "${workspaceFolder}/dsl"
+            },
+            "problemMatcher": []
+        },
+        {
+            "type": "shell",
+            "label": "copy 5glite to dsl",
+            "command": "make",
+            "args": ["emu_init"],
+            "options": {
+                "cwd": "${workspaceFolder}"
+            },
+            "problemMatcher": []
+        },
+        {
+            "type": "shell",
+            "label": "remove VINS_RESULT_DIR",
+            "command": "rm",
+            "args": ["-rf", "Debug/emulator_vins_result"],
+            "options": {
+                "cwd": "${workspaceFolder}"
+            },
+            "problemMatcher": []
+        },
+        {
+            "type": "shell",
+            "label": "C/C++: g++ 生成服务器端活动文件",
+            "command": "/usr/bin/g++",
+            "args": [
+                "-fdiagnostics-color=always",
+                "-g",
+                "${workspaceFolder}/source/*.cpp",
+                "-I",
+                "${workspaceFolder}/include",
+                "-o",
+                "${workspaceFolder}/Debug/Emulator"
+                // "${workspaceFolder}/Debug/${fileBasenameNoExtension}"
+            ],
+            "options": {
+                "cwd": "${fileDirname}"
+            },
+            "problemMatcher": [
+                "$gcc"
+            ],
+            "group": "build",
+            "detail": "编译器: \"usr/bin/g++\""
+        },
+        {
+            "label": "make all and build",
+            "dependsOrder": "sequence",
+            "dependsOn": [
+                "copy 5glite to dsl",
+                "make all",
+                "remove VINS_RESULT_DIR",
+                "C/C++: g++ 生成服务器端活动文件"
+            ]
+        }
+    ]
+}
