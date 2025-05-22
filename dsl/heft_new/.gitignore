@@ -1,8 +1,0 @@
-*
-!.gitignore
-!include
-!main.cpp
-!Makefile
-!*.cpp
-!*.hpp
-json
