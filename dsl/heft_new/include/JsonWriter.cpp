@@ -4,7 +4,7 @@
 
 void JsonWriter::writeBinaryToJson(json &jsonData, const std::string& taskId , int port_num, std::string dest_addr, int concat_value, std::string slice_length, std::string slice_data_type, std::string hex_slice_data_dest_str, std::string varname)
 {
-    std::string taskid_binary = std::bitset<7>(std::stoi(taskId)).to_string();
+    std::string taskid_binary = std::bitset<6>(std::stoi(taskId)).to_string();
     json taskDataJson;
     taskDataJson["type"] = "0b00";
     taskDataJson["parentTasks"] = taskId;
@@ -23,7 +23,7 @@ void JsonWriter::writeBinaryToJson_data_global(json &jsonData, const std::string
     json taskDataJson;
     taskDataJson["name"] = Id;
     taskDataJson["dest_address"] = addr;
-    taskDataJson["parentTasksPort"] = "0b00000000000";
+    taskDataJson["parentTasksPort"] = "0b0000000000";
     std::cout << "writeBinaryToJson_data_global parentTask_dest: " << addr << std::endl;    
     jsonData.push_back(taskDataJson);
 }
@@ -33,7 +33,7 @@ void JsonWriter::writeBinaryToJson_data_para(json &jsonData, const std::string& 
     json taskDataJson;
     taskDataJson["name"] = Id;
     taskDataJson["dest_address"] = addr;
-    taskDataJson["parentTasksPort"] = "0b00000000000";
+    taskDataJson["parentTasksPort"] = "0b0000000000";
     taskDataJson["slice_length"] = slice_length;
     taskDataJson["slice_data_type"] = slice_data_type;
     std::cout << "writeBinaryToJson_data__para parentTask_dest: " << addr << std::endl;    
@@ -45,7 +45,7 @@ void JsonWriter::writeBinaryToJson_data(json &jsonData, const std::string& Id,co
 {
     json taskDataJson;
     taskDataJson["name"] = Id;
-    std::string taskid_binary = std::bitset<7>(std::stoi(taskId)).to_string();
+    std::string taskid_binary = std::bitset<6>(std::stoi(taskId)).to_string();
     taskDataJson["parentTasks"] = taskId;
     taskDataJson["parentTasksPort"] = "0b"+taskid_binary + std::bitset<4>(port_num).to_string();
     jsonData.push_back(taskDataJson);

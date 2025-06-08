@@ -274,12 +274,14 @@ int Task_nrPDSCHDMRS(
   __v4096i8  dmrs_pdsch_real;
   __v4096i8  dmrs_pdsch_imag;
   __v4096i8  dmrs_seq;
+  __v4096i8  dmrs_seq0;
   __v4096i8  dmrs_real_seq;
   __v4096i8  dmrs_imag_seq;
   __v4096i8  init_vec;
   vclaim(init_vec);
   vclaim(dmrs_shuffle_index);
   vclaim(dmrs_seq);
+  vclaim(dmrs_seq0);
   vclaim(dmrs_real_seq);
   vclaim(dmrs_imag_seq);
   vclaim(dmrs_pdsch_real);
@@ -421,6 +423,9 @@ int Task_nrPDSCHDMRS(
                             ((portcdmgroup / 2) << 17) + 2 * nidnscid + nscid) %
                            (1 << 31);
       vbrdcst(init_vec, 0, MASKREAD_OFF, 32);
+      vbrdcst(init_vec, 0, MASKREAD_OFF, 32);
+      vbrdcst(init_vec, 0, MASKREAD_OFF, 32);
+      vbrdcst(init_vec, 0, MASKREAD_OFF, 32);
       vbarrier();
       VSPM_OPEN();
       int init_addr = vaddr(init_vec);
@@ -431,18 +436,19 @@ int Task_nrPDSCHDMRS(
       VSPM_CLOSE();
 
       /*--------------------DMRS GENERATION--------------------*/
-      dmrs_seq = nrPRBS(seq1_vec, init_vec, seq2_init_table_0_vec, seq2_init_table_1_vec, seq2_init_table_2_vec,
-                        seq2_init_table_3_vec, seq2_init_table_4_vec, seq2_init_table_5_vec, seq2_init_table_6_vec,
-                        seq2_init_table_7_vec, seq2_init_table_8_vec, seq2_init_table_9_vec, seq2_init_table_10_vec,
-                        seq2_init_table_11_vec, seq2_init_table_12_vec, seq2_init_table_13_vec, seq2_init_table_14_vec,
-                        seq2_init_table_15_vec, seq2_init_table_16_vec, seq2_init_table_17_vec, seq2_init_table_18_vec,
-                        seq2_init_table_19_vec, seq2_trans_table_0_vec, seq2_trans_table_1_vec, seq2_trans_table_2_vec,
-                        seq2_trans_table_3_vec, seq2_trans_table_4_vec, seq2_trans_table_5_vec, seq2_trans_table_6_vec,
-                        sequenceLength);
+
+      dmrs_seq0 = nrPRBS(seq1_vec, init_vec, seq2_init_table_0_vec, seq2_init_table_1_vec, seq2_init_table_2_vec,
+                         seq2_init_table_3_vec, seq2_init_table_4_vec, seq2_init_table_5_vec, seq2_init_table_6_vec,
+                         seq2_init_table_7_vec, seq2_init_table_8_vec, seq2_init_table_9_vec, seq2_init_table_10_vec,
+                         seq2_init_table_11_vec, seq2_init_table_12_vec, seq2_init_table_13_vec, seq2_init_table_14_vec,
+                         seq2_init_table_15_vec, seq2_init_table_16_vec, seq2_init_table_17_vec, seq2_init_table_18_vec,
+                         seq2_init_table_19_vec, seq2_trans_table_0_vec, seq2_trans_table_1_vec, seq2_trans_table_2_vec,
+                         seq2_trans_table_3_vec, seq2_trans_table_4_vec, seq2_trans_table_5_vec, seq2_trans_table_6_vec,
+                         sequenceLength);
 
       vrange(dmrs_shuffle_index, prbsLength);
-      dmrs_shuffle_index = vadd(dmrs_shuffle_index, sequenceLength - prbsLength, MASKREAD_OFF, prbsLength);
-      vshuffle(dmrs_seq, dmrs_shuffle_index, dmrs_seq, SHUFFLE_GATHER, prbsLength);
+      dmrs_shuffle_index = vsadd(dmrs_shuffle_index, sequenceLength - prbsLength, MASKREAD_OFF, prbsLength);
+      vshuffle(dmrs_seq, dmrs_shuffle_index, dmrs_seq0, SHUFFLE_GATHER, prbsLength);
 
       vrange(dmrs_shuffle_index, prbsLength / 2);
       dmrs_shuffle_index = vmul(dmrs_shuffle_index, 2, MASKREAD_OFF, prbsLength / 2);
@@ -451,7 +457,7 @@ int Task_nrPDSCHDMRS(
       vshuffle(dmrs_imag_seq, dmrs_shuffle_index, dmrs_seq, SHUFFLE_GATHER, prbsLength / 2);
 
       vrange(dmrs_shuffle_index, prbsLength / 2);
-      dmrs_shuffle_index = vadd(dmrs_shuffle_index, prbsLength * dmrsSymbolIdxSize / 2, MASKREAD_OFF, prbsLength / 2);
+      dmrs_shuffle_index = vsadd(dmrs_shuffle_index, prbsLength * dmrsSymbolIdxSize / 2, MASKREAD_OFF, prbsLength / 2);
       vshuffle(dmrs_pdsch_real, dmrs_shuffle_index, dmrs_real_seq, SHUFFLE_GATHER, prbsLength / 2);
       vshuffle(dmrs_pdsch_imag, dmrs_shuffle_index, dmrs_imag_seq, SHUFFLE_SCATTER, prbsLength / 2);
 
@@ -462,6 +468,9 @@ int Task_nrPDSCHDMRS(
                             ((portcdmgroup / 2) << 17) + 2 * nidnscid + nscid) %
                            (1 << 31);
       vbrdcst(init_vec, 0, MASKREAD_OFF, 32);
+      vbrdcst(init_vec, 0, MASKREAD_OFF, 32);
+      vbrdcst(init_vec, 0, MASKREAD_OFF, 32);
+      vbrdcst(init_vec, 0, MASKREAD_OFF, 32);
       vbarrier();
       VSPM_OPEN();
       int init_addr = vaddr(init_vec);
@@ -472,18 +481,18 @@ int Task_nrPDSCHDMRS(
       VSPM_CLOSE();
 
       /*--------------------DMRS GENERATION--------------------*/
-      dmrs_seq = nrPRBS(seq1_vec, init_vec, seq2_init_table_0_vec, seq2_init_table_1_vec, seq2_init_table_2_vec,
-                        seq2_init_table_3_vec, seq2_init_table_4_vec, seq2_init_table_5_vec, seq2_init_table_6_vec,
-                        seq2_init_table_7_vec, seq2_init_table_8_vec, seq2_init_table_9_vec, seq2_init_table_10_vec,
-                        seq2_init_table_11_vec, seq2_init_table_12_vec, seq2_init_table_13_vec, seq2_init_table_14_vec,
-                        seq2_init_table_15_vec, seq2_init_table_16_vec, seq2_init_table_17_vec, seq2_init_table_18_vec,
-                        seq2_init_table_19_vec, seq2_trans_table_0_vec, seq2_trans_table_1_vec, seq2_trans_table_2_vec,
-                        seq2_trans_table_3_vec, seq2_trans_table_4_vec, seq2_trans_table_5_vec, seq2_trans_table_6_vec,
-                        sequenceLength);
+      dmrs_seq0 = nrPRBS(seq1_vec, init_vec, seq2_init_table_0_vec, seq2_init_table_1_vec, seq2_init_table_2_vec,
+                         seq2_init_table_3_vec, seq2_init_table_4_vec, seq2_init_table_5_vec, seq2_init_table_6_vec,
+                         seq2_init_table_7_vec, seq2_init_table_8_vec, seq2_init_table_9_vec, seq2_init_table_10_vec,
+                         seq2_init_table_11_vec, seq2_init_table_12_vec, seq2_init_table_13_vec, seq2_init_table_14_vec,
+                         seq2_init_table_15_vec, seq2_init_table_16_vec, seq2_init_table_17_vec, seq2_init_table_18_vec,
+                         seq2_init_table_19_vec, seq2_trans_table_0_vec, seq2_trans_table_1_vec, seq2_trans_table_2_vec,
+                         seq2_trans_table_3_vec, seq2_trans_table_4_vec, seq2_trans_table_5_vec, seq2_trans_table_6_vec,
+                         sequenceLength);
 
       vrange(dmrs_shuffle_index, prbsLength);
-      dmrs_shuffle_index = vadd(dmrs_shuffle_index, sequenceLength - prbsLength, MASKREAD_OFF, prbsLength);
-      vshuffle(dmrs_seq, dmrs_shuffle_index, dmrs_seq, SHUFFLE_GATHER, prbsLength);
+      dmrs_shuffle_index = vsadd(dmrs_shuffle_index, sequenceLength - prbsLength, MASKREAD_OFF, prbsLength);
+      vshuffle(dmrs_seq, dmrs_shuffle_index, dmrs_seq0, SHUFFLE_GATHER, prbsLength);
 
       vrange(dmrs_shuffle_index, prbsLength / 2);
       dmrs_shuffle_index = vmul(dmrs_shuffle_index, 2, MASKREAD_OFF, prbsLength / 2);
@@ -492,7 +501,7 @@ int Task_nrPDSCHDMRS(
       vshuffle(dmrs_imag_seq, dmrs_shuffle_index, dmrs_seq, SHUFFLE_GATHER, prbsLength / 2);
 
       vrange(dmrs_shuffle_index, prbsLength / 2);
-      dmrs_shuffle_index = vadd(dmrs_shuffle_index, prbsLength * dmrsSymbolIdxSize / 2, MASKREAD_OFF, prbsLength / 2);
+      dmrs_shuffle_index = vsadd(dmrs_shuffle_index, prbsLength * dmrsSymbolIdxSize / 2, MASKREAD_OFF, prbsLength / 2);
       vshuffle(dmrs_pdsch_real, dmrs_shuffle_index, dmrs_real_seq, SHUFFLE_SCATTER, prbsLength / 2);
       vshuffle(dmrs_pdsch_imag, dmrs_shuffle_index, dmrs_imag_seq, SHUFFLE_SCATTER, prbsLength / 2);
       dmrsSymbolIdxSize++;
@@ -502,45 +511,8 @@ int Task_nrPDSCHDMRS(
                             ((portcdmgroup / 2) << 17) + 2 * nidnscid + nscid) %
                            (1 << 31);
       vbrdcst(init_vec, 0, MASKREAD_OFF, 32);
-      vbarrier();
-      VSPM_OPEN();
-      int init_addr = vaddr(init_vec);
-      for (int i = 0; i < 31; ++i) {
-        *(volatile char *)(init_addr + i) = cinit & 0b1;
-        cinit                             = cinit >> 1;
-      }
-      VSPM_CLOSE();
-
-      /*--------------------DMRS GENERATION--------------------*/
-      dmrs_seq = nrPRBS(seq1_vec, init_vec, seq2_init_table_0_vec, seq2_init_table_1_vec, seq2_init_table_2_vec,
-                        seq2_init_table_3_vec, seq2_init_table_4_vec, seq2_init_table_5_vec, seq2_init_table_6_vec,
-                        seq2_init_table_7_vec, seq2_init_table_8_vec, seq2_init_table_9_vec, seq2_init_table_10_vec,
-                        seq2_init_table_11_vec, seq2_init_table_12_vec, seq2_init_table_13_vec, seq2_init_table_14_vec,
-                        seq2_init_table_15_vec, seq2_init_table_16_vec, seq2_init_table_17_vec, seq2_init_table_18_vec,
-                        seq2_init_table_19_vec, seq2_trans_table_0_vec, seq2_trans_table_1_vec, seq2_trans_table_2_vec,
-                        seq2_trans_table_3_vec, seq2_trans_table_4_vec, seq2_trans_table_5_vec, seq2_trans_table_6_vec,
-                        sequenceLength);
-
-      vrange(dmrs_shuffle_index, prbsLength);
-      dmrs_shuffle_index = vadd(dmrs_shuffle_index, sequenceLength - prbsLength, MASKREAD_OFF, prbsLength);
-      vshuffle(dmrs_seq, dmrs_shuffle_index, dmrs_seq, SHUFFLE_GATHER, prbsLength);
-
-      vrange(dmrs_shuffle_index, prbsLength / 2);
-      dmrs_shuffle_index = vmul(dmrs_shuffle_index, 2, MASKREAD_OFF, prbsLength / 2);
-      vshuffle(dmrs_real_seq, dmrs_shuffle_index, dmrs_seq, SHUFFLE_GATHER, prbsLength / 2);
-      dmrs_shuffle_index = vsadd(dmrs_shuffle_index, 1, MASKREAD_OFF, prbsLength / 2);
-      vshuffle(dmrs_imag_seq, dmrs_shuffle_index, dmrs_seq, SHUFFLE_GATHER, prbsLength / 2);
-
-      vrange(dmrs_shuffle_index, prbsLength / 2);
-      dmrs_shuffle_index = vadd(dmrs_shuffle_index, prbsLength * dmrsSymbolIdxSize / 2, MASKREAD_OFF, prbsLength / 2);
-      vshuffle(dmrs_pdsch_real, dmrs_shuffle_index, dmrs_real_seq, SHUFFLE_SCATTER, prbsLength / 2);
-      vshuffle(dmrs_pdsch_imag, dmrs_shuffle_index, dmrs_imag_seq, SHUFFLE_SCATTER, prbsLength / 2);
-      dmrsSymbolIdxSize++;
-    }
-    if (dmrssymbolset[3] != INF) {
-      unsigned int cinit = ((1 << 17) * (carrier.SymbolsPerSlot * nslot + dmrssymbolset[3] + 1) * (2 * nidnscid + 1) +
-                            ((portcdmgroup / 2) << 17) + 2 * nidnscid + nscid) %
-                           (1 << 31);
+      vbrdcst(init_vec, 0, MASKREAD_OFF, 32);
+      vbrdcst(init_vec, 0, MASKREAD_OFF, 32);
       vbrdcst(init_vec, 0, MASKREAD_OFF, 32);
       vbarrier();
       VSPM_OPEN();
@@ -552,18 +524,18 @@ int Task_nrPDSCHDMRS(
       VSPM_CLOSE();
 
       /*--------------------DMRS GENERATION--------------------*/
-      dmrs_seq = nrPRBS(seq1_vec, init_vec, seq2_init_table_0_vec, seq2_init_table_1_vec, seq2_init_table_2_vec,
-                        seq2_init_table_3_vec, seq2_init_table_4_vec, seq2_init_table_5_vec, seq2_init_table_6_vec,
-                        seq2_init_table_7_vec, seq2_init_table_8_vec, seq2_init_table_9_vec, seq2_init_table_10_vec,
-                        seq2_init_table_11_vec, seq2_init_table_12_vec, seq2_init_table_13_vec, seq2_init_table_14_vec,
-                        seq2_init_table_15_vec, seq2_init_table_16_vec, seq2_init_table_17_vec, seq2_init_table_18_vec,
-                        seq2_init_table_19_vec, seq2_trans_table_0_vec, seq2_trans_table_1_vec, seq2_trans_table_2_vec,
-                        seq2_trans_table_3_vec, seq2_trans_table_4_vec, seq2_trans_table_5_vec, seq2_trans_table_6_vec,
-                        sequenceLength);
+      dmrs_seq0 = nrPRBS(seq1_vec, init_vec, seq2_init_table_0_vec, seq2_init_table_1_vec, seq2_init_table_2_vec,
+                         seq2_init_table_3_vec, seq2_init_table_4_vec, seq2_init_table_5_vec, seq2_init_table_6_vec,
+                         seq2_init_table_7_vec, seq2_init_table_8_vec, seq2_init_table_9_vec, seq2_init_table_10_vec,
+                         seq2_init_table_11_vec, seq2_init_table_12_vec, seq2_init_table_13_vec, seq2_init_table_14_vec,
+                         seq2_init_table_15_vec, seq2_init_table_16_vec, seq2_init_table_17_vec, seq2_init_table_18_vec,
+                         seq2_init_table_19_vec, seq2_trans_table_0_vec, seq2_trans_table_1_vec, seq2_trans_table_2_vec,
+                         seq2_trans_table_3_vec, seq2_trans_table_4_vec, seq2_trans_table_5_vec, seq2_trans_table_6_vec,
+                         sequenceLength);
 
       vrange(dmrs_shuffle_index, prbsLength);
-      dmrs_shuffle_index = vadd(dmrs_shuffle_index, sequenceLength - prbsLength, MASKREAD_OFF, prbsLength);
-      vshuffle(dmrs_seq, dmrs_shuffle_index, dmrs_seq, SHUFFLE_GATHER, prbsLength);
+      dmrs_shuffle_index = vsadd(dmrs_shuffle_index, sequenceLength - prbsLength, MASKREAD_OFF, prbsLength);
+      vshuffle(dmrs_seq, dmrs_shuffle_index, dmrs_seq0, SHUFFLE_GATHER, prbsLength);
 
       vrange(dmrs_shuffle_index, prbsLength / 2);
       dmrs_shuffle_index = vmul(dmrs_shuffle_index, 2, MASKREAD_OFF, prbsLength / 2);
@@ -572,7 +544,50 @@ int Task_nrPDSCHDMRS(
       vshuffle(dmrs_imag_seq, dmrs_shuffle_index, dmrs_seq, SHUFFLE_GATHER, prbsLength / 2);
 
       vrange(dmrs_shuffle_index, prbsLength / 2);
-      dmrs_shuffle_index = vadd(dmrs_shuffle_index, prbsLength * dmrsSymbolIdxSize / 2, MASKREAD_OFF, prbsLength / 2);
+      dmrs_shuffle_index = vsadd(dmrs_shuffle_index, prbsLength * dmrsSymbolIdxSize / 2, MASKREAD_OFF, prbsLength / 2);
+      vshuffle(dmrs_pdsch_real, dmrs_shuffle_index, dmrs_real_seq, SHUFFLE_SCATTER, prbsLength / 2);
+      vshuffle(dmrs_pdsch_imag, dmrs_shuffle_index, dmrs_imag_seq, SHUFFLE_SCATTER, prbsLength / 2);
+      dmrsSymbolIdxSize++;
+    }
+    if (dmrssymbolset[3] != INF) {
+      unsigned int cinit = ((1 << 17) * (carrier.SymbolsPerSlot * nslot + dmrssymbolset[3] + 1) * (2 * nidnscid + 1) +
+                            ((portcdmgroup / 2) << 17) + 2 * nidnscid + nscid) %
+                           (1 << 31);
+      vbrdcst(init_vec, 0, MASKREAD_OFF, 32);
+      vbrdcst(init_vec, 0, MASKREAD_OFF, 32);
+      vbrdcst(init_vec, 0, MASKREAD_OFF, 32);
+      vbrdcst(init_vec, 0, MASKREAD_OFF, 32);
+      vbarrier();
+      VSPM_OPEN();
+      int init_addr = vaddr(init_vec);
+      for (int i = 0; i < 31; ++i) {
+        *(volatile char *)(init_addr + i) = cinit & 0b1;
+        cinit                             = cinit >> 1;
+      }
+      VSPM_CLOSE();
+
+      /*--------------------DMRS GENERATION--------------------*/
+      dmrs_seq0 = nrPRBS(seq1_vec, init_vec, seq2_init_table_0_vec, seq2_init_table_1_vec, seq2_init_table_2_vec,
+                         seq2_init_table_3_vec, seq2_init_table_4_vec, seq2_init_table_5_vec, seq2_init_table_6_vec,
+                         seq2_init_table_7_vec, seq2_init_table_8_vec, seq2_init_table_9_vec, seq2_init_table_10_vec,
+                         seq2_init_table_11_vec, seq2_init_table_12_vec, seq2_init_table_13_vec, seq2_init_table_14_vec,
+                         seq2_init_table_15_vec, seq2_init_table_16_vec, seq2_init_table_17_vec, seq2_init_table_18_vec,
+                         seq2_init_table_19_vec, seq2_trans_table_0_vec, seq2_trans_table_1_vec, seq2_trans_table_2_vec,
+                         seq2_trans_table_3_vec, seq2_trans_table_4_vec, seq2_trans_table_5_vec, seq2_trans_table_6_vec,
+                         sequenceLength);
+
+      vrange(dmrs_shuffle_index, prbsLength);
+      dmrs_shuffle_index = vsadd(dmrs_shuffle_index, sequenceLength - prbsLength, MASKREAD_OFF, prbsLength);
+      vshuffle(dmrs_seq, dmrs_shuffle_index, dmrs_seq0, SHUFFLE_GATHER, prbsLength);
+
+      vrange(dmrs_shuffle_index, prbsLength / 2);
+      dmrs_shuffle_index = vmul(dmrs_shuffle_index, 2, MASKREAD_OFF, prbsLength / 2);
+      vshuffle(dmrs_real_seq, dmrs_shuffle_index, dmrs_seq, SHUFFLE_GATHER, prbsLength / 2);
+      dmrs_shuffle_index = vsadd(dmrs_shuffle_index, 1, MASKREAD_OFF, prbsLength / 2);
+      vshuffle(dmrs_imag_seq, dmrs_shuffle_index, dmrs_seq, SHUFFLE_GATHER, prbsLength / 2);
+
+      vrange(dmrs_shuffle_index, prbsLength / 2);
+      dmrs_shuffle_index = vsadd(dmrs_shuffle_index, prbsLength * dmrsSymbolIdxSize / 2, MASKREAD_OFF, prbsLength / 2);
       vshuffle(dmrs_pdsch_real, dmrs_shuffle_index, dmrs_real_seq, SHUFFLE_SCATTER, prbsLength / 2);
       vshuffle(dmrs_pdsch_imag, dmrs_shuffle_index, dmrs_imag_seq, SHUFFLE_SCATTER, prbsLength / 2);
       dmrsSymbolIdxSize++;
@@ -590,6 +605,9 @@ int Task_nrPDSCHDMRS(
                             ((portcdmgroup / 2) << 17) + 2 * nidnscid + nscid) %
                            (1 << 31);
       vbrdcst(init_vec, 0, MASKREAD_OFF, 32);
+      vbrdcst(init_vec, 0, MASKREAD_OFF, 32);
+      vbrdcst(init_vec, 0, MASKREAD_OFF, 32);
+      vbrdcst(init_vec, 0, MASKREAD_OFF, 32);
       vbarrier();
       VSPM_OPEN();
       int init_addr = vaddr(init_vec);
@@ -600,18 +618,18 @@ int Task_nrPDSCHDMRS(
       VSPM_CLOSE();
 
       /*--------------------DMRS GENERATION--------------------*/
-      dmrs_seq = nrPRBS(seq1_vec, init_vec, seq2_init_table_0_vec, seq2_init_table_1_vec, seq2_init_table_2_vec,
-                        seq2_init_table_3_vec, seq2_init_table_4_vec, seq2_init_table_5_vec, seq2_init_table_6_vec,
-                        seq2_init_table_7_vec, seq2_init_table_8_vec, seq2_init_table_9_vec, seq2_init_table_10_vec,
-                        seq2_init_table_11_vec, seq2_init_table_12_vec, seq2_init_table_13_vec, seq2_init_table_14_vec,
-                        seq2_init_table_15_vec, seq2_init_table_16_vec, seq2_init_table_17_vec, seq2_init_table_18_vec,
-                        seq2_init_table_19_vec, seq2_trans_table_0_vec, seq2_trans_table_1_vec, seq2_trans_table_2_vec,
-                        seq2_trans_table_3_vec, seq2_trans_table_4_vec, seq2_trans_table_5_vec, seq2_trans_table_6_vec,
-                        sequenceLength);
+      dmrs_seq0 = nrPRBS(seq1_vec, init_vec, seq2_init_table_0_vec, seq2_init_table_1_vec, seq2_init_table_2_vec,
+                         seq2_init_table_3_vec, seq2_init_table_4_vec, seq2_init_table_5_vec, seq2_init_table_6_vec,
+                         seq2_init_table_7_vec, seq2_init_table_8_vec, seq2_init_table_9_vec, seq2_init_table_10_vec,
+                         seq2_init_table_11_vec, seq2_init_table_12_vec, seq2_init_table_13_vec, seq2_init_table_14_vec,
+                         seq2_init_table_15_vec, seq2_init_table_16_vec, seq2_init_table_17_vec, seq2_init_table_18_vec,
+                         seq2_init_table_19_vec, seq2_trans_table_0_vec, seq2_trans_table_1_vec, seq2_trans_table_2_vec,
+                         seq2_trans_table_3_vec, seq2_trans_table_4_vec, seq2_trans_table_5_vec, seq2_trans_table_6_vec,
+                         sequenceLength);
 
       vrange(dmrs_shuffle_index, prbsLength);
-      dmrs_shuffle_index = vadd(dmrs_shuffle_index, sequenceLength - prbsLength, MASKREAD_OFF, prbsLength);
-      vshuffle(dmrs_seq, dmrs_shuffle_index, dmrs_seq, SHUFFLE_GATHER, prbsLength);
+      dmrs_shuffle_index = vsadd(dmrs_shuffle_index, sequenceLength - prbsLength, MASKREAD_OFF, prbsLength);
+      vshuffle(dmrs_seq, dmrs_shuffle_index, dmrs_seq0, SHUFFLE_GATHER, prbsLength);
 
       vrange(dmrs_shuffle_index, prbsLength / 2);
       dmrs_shuffle_index = vmul(dmrs_shuffle_index, 2, MASKREAD_OFF, prbsLength / 2);
@@ -620,7 +638,7 @@ int Task_nrPDSCHDMRS(
       vshuffle(dmrs_imag_seq, dmrs_shuffle_index, dmrs_seq, SHUFFLE_GATHER, prbsLength / 2);
 
       vrange(dmrs_shuffle_index, prbsLength / 2);
-      dmrs_shuffle_index = vadd(dmrs_shuffle_index, prbsLength * dmrsSymbolIdxSize / 2, MASKREAD_OFF, prbsLength / 2);
+      dmrs_shuffle_index = vsadd(dmrs_shuffle_index, prbsLength * dmrsSymbolIdxSize / 2, MASKREAD_OFF, prbsLength / 2);
       vshuffle(dmrs_pdsch_real, dmrs_shuffle_index, dmrs_real_seq, SHUFFLE_SCATTER, prbsLength / 2);
       vshuffle(dmrs_pdsch_imag, dmrs_shuffle_index, dmrs_imag_seq, SHUFFLE_SCATTER, prbsLength / 2);
 
@@ -631,6 +649,9 @@ int Task_nrPDSCHDMRS(
                             ((portcdmgroup / 2) << 17) + 2 * nidnscid + nscid) %
                            (1 << 31);
       vbrdcst(init_vec, 0, MASKREAD_OFF, 32);
+      vbrdcst(init_vec, 0, MASKREAD_OFF, 32);
+      vbrdcst(init_vec, 0, MASKREAD_OFF, 32);
+      vbrdcst(init_vec, 0, MASKREAD_OFF, 32);
       vbarrier();
       VSPM_OPEN();
       int init_addr = vaddr(init_vec);
@@ -641,18 +662,18 @@ int Task_nrPDSCHDMRS(
       VSPM_CLOSE();
 
       /*--------------------DMRS GENERATION--------------------*/
-      dmrs_seq = nrPRBS(seq1_vec, init_vec, seq2_init_table_0_vec, seq2_init_table_1_vec, seq2_init_table_2_vec,
-                        seq2_init_table_3_vec, seq2_init_table_4_vec, seq2_init_table_5_vec, seq2_init_table_6_vec,
-                        seq2_init_table_7_vec, seq2_init_table_8_vec, seq2_init_table_9_vec, seq2_init_table_10_vec,
-                        seq2_init_table_11_vec, seq2_init_table_12_vec, seq2_init_table_13_vec, seq2_init_table_14_vec,
-                        seq2_init_table_15_vec, seq2_init_table_16_vec, seq2_init_table_17_vec, seq2_init_table_18_vec,
-                        seq2_init_table_19_vec, seq2_trans_table_0_vec, seq2_trans_table_1_vec, seq2_trans_table_2_vec,
-                        seq2_trans_table_3_vec, seq2_trans_table_4_vec, seq2_trans_table_5_vec, seq2_trans_table_6_vec,
-                        sequenceLength);
+      dmrs_seq0 = nrPRBS(seq1_vec, init_vec, seq2_init_table_0_vec, seq2_init_table_1_vec, seq2_init_table_2_vec,
+                         seq2_init_table_3_vec, seq2_init_table_4_vec, seq2_init_table_5_vec, seq2_init_table_6_vec,
+                         seq2_init_table_7_vec, seq2_init_table_8_vec, seq2_init_table_9_vec, seq2_init_table_10_vec,
+                         seq2_init_table_11_vec, seq2_init_table_12_vec, seq2_init_table_13_vec, seq2_init_table_14_vec,
+                         seq2_init_table_15_vec, seq2_init_table_16_vec, seq2_init_table_17_vec, seq2_init_table_18_vec,
+                         seq2_init_table_19_vec, seq2_trans_table_0_vec, seq2_trans_table_1_vec, seq2_trans_table_2_vec,
+                         seq2_trans_table_3_vec, seq2_trans_table_4_vec, seq2_trans_table_5_vec, seq2_trans_table_6_vec,
+                         sequenceLength);
 
       vrange(dmrs_shuffle_index, prbsLength);
-      dmrs_shuffle_index = vadd(dmrs_shuffle_index, sequenceLength - prbsLength, MASKREAD_OFF, prbsLength);
-      vshuffle(dmrs_seq, dmrs_shuffle_index, dmrs_seq, SHUFFLE_GATHER, prbsLength);
+      dmrs_shuffle_index = vsadd(dmrs_shuffle_index, sequenceLength - prbsLength, MASKREAD_OFF, prbsLength);
+      vshuffle(dmrs_seq, dmrs_shuffle_index, dmrs_seq0, SHUFFLE_GATHER, prbsLength);
 
       vrange(dmrs_shuffle_index, prbsLength / 2);
       dmrs_shuffle_index = vmul(dmrs_shuffle_index, 2, MASKREAD_OFF, prbsLength / 2);
@@ -661,7 +682,7 @@ int Task_nrPDSCHDMRS(
       vshuffle(dmrs_imag_seq, dmrs_shuffle_index, dmrs_seq, SHUFFLE_GATHER, prbsLength / 2);
 
       vrange(dmrs_shuffle_index, prbsLength / 2);
-      dmrs_shuffle_index = vadd(dmrs_shuffle_index, prbsLength * dmrsSymbolIdxSize / 2, MASKREAD_OFF, prbsLength / 2);
+      dmrs_shuffle_index = vsadd(dmrs_shuffle_index, prbsLength * dmrsSymbolIdxSize / 2, MASKREAD_OFF, prbsLength / 2);
       vshuffle(dmrs_pdsch_real, dmrs_shuffle_index, dmrs_real_seq, SHUFFLE_SCATTER, prbsLength / 2);
       vshuffle(dmrs_pdsch_imag, dmrs_shuffle_index, dmrs_imag_seq, SHUFFLE_SCATTER, prbsLength / 2);
       dmrsSymbolIdxSize++;
@@ -671,6 +692,9 @@ int Task_nrPDSCHDMRS(
                             ((portcdmgroup / 2) << 17) + 2 * nidnscid + nscid) %
                            (1 << 31);
       vbrdcst(init_vec, 0, MASKREAD_OFF, 32);
+      vbrdcst(init_vec, 0, MASKREAD_OFF, 32);
+      vbrdcst(init_vec, 0, MASKREAD_OFF, 32);
+      vbrdcst(init_vec, 0, MASKREAD_OFF, 32);
       vbarrier();
       VSPM_OPEN();
       int init_addr = vaddr(init_vec);
@@ -681,18 +705,18 @@ int Task_nrPDSCHDMRS(
       VSPM_CLOSE();
 
       /*--------------------DMRS GENERATION--------------------*/
-      dmrs_seq = nrPRBS(seq1_vec, init_vec, seq2_init_table_0_vec, seq2_init_table_1_vec, seq2_init_table_2_vec,
-                        seq2_init_table_3_vec, seq2_init_table_4_vec, seq2_init_table_5_vec, seq2_init_table_6_vec,
-                        seq2_init_table_7_vec, seq2_init_table_8_vec, seq2_init_table_9_vec, seq2_init_table_10_vec,
-                        seq2_init_table_11_vec, seq2_init_table_12_vec, seq2_init_table_13_vec, seq2_init_table_14_vec,
-                        seq2_init_table_15_vec, seq2_init_table_16_vec, seq2_init_table_17_vec, seq2_init_table_18_vec,
-                        seq2_init_table_19_vec, seq2_trans_table_0_vec, seq2_trans_table_1_vec, seq2_trans_table_2_vec,
-                        seq2_trans_table_3_vec, seq2_trans_table_4_vec, seq2_trans_table_5_vec, seq2_trans_table_6_vec,
-                        sequenceLength);
+      dmrs_seq0 = nrPRBS(seq1_vec, init_vec, seq2_init_table_0_vec, seq2_init_table_1_vec, seq2_init_table_2_vec,
+                         seq2_init_table_3_vec, seq2_init_table_4_vec, seq2_init_table_5_vec, seq2_init_table_6_vec,
+                         seq2_init_table_7_vec, seq2_init_table_8_vec, seq2_init_table_9_vec, seq2_init_table_10_vec,
+                         seq2_init_table_11_vec, seq2_init_table_12_vec, seq2_init_table_13_vec, seq2_init_table_14_vec,
+                         seq2_init_table_15_vec, seq2_init_table_16_vec, seq2_init_table_17_vec, seq2_init_table_18_vec,
+                         seq2_init_table_19_vec, seq2_trans_table_0_vec, seq2_trans_table_1_vec, seq2_trans_table_2_vec,
+                         seq2_trans_table_3_vec, seq2_trans_table_4_vec, seq2_trans_table_5_vec, seq2_trans_table_6_vec,
+                         sequenceLength);
 
       vrange(dmrs_shuffle_index, prbsLength);
-      dmrs_shuffle_index = vadd(dmrs_shuffle_index, sequenceLength - prbsLength, MASKREAD_OFF, prbsLength);
-      vshuffle(dmrs_seq, dmrs_shuffle_index, dmrs_seq, SHUFFLE_GATHER, prbsLength);
+      dmrs_shuffle_index = vsadd(dmrs_shuffle_index, sequenceLength - prbsLength, MASKREAD_OFF, prbsLength);
+      vshuffle(dmrs_seq, dmrs_shuffle_index, dmrs_seq0, SHUFFLE_GATHER, prbsLength);
 
       vrange(dmrs_shuffle_index, prbsLength / 2);
       dmrs_shuffle_index = vmul(dmrs_shuffle_index, 2, MASKREAD_OFF, prbsLength / 2);
@@ -701,7 +725,7 @@ int Task_nrPDSCHDMRS(
       vshuffle(dmrs_imag_seq, dmrs_shuffle_index, dmrs_seq, SHUFFLE_GATHER, prbsLength / 2);
 
       vrange(dmrs_shuffle_index, prbsLength / 2);
-      dmrs_shuffle_index = vadd(dmrs_shuffle_index, prbsLength * dmrsSymbolIdxSize / 2, MASKREAD_OFF, prbsLength / 2);
+      dmrs_shuffle_index = vsadd(dmrs_shuffle_index, prbsLength * dmrsSymbolIdxSize / 2, MASKREAD_OFF, prbsLength / 2);
       vshuffle(dmrs_pdsch_real, dmrs_shuffle_index, dmrs_real_seq, SHUFFLE_SCATTER, prbsLength / 2);
       vshuffle(dmrs_pdsch_imag, dmrs_shuffle_index, dmrs_imag_seq, SHUFFLE_SCATTER, prbsLength / 2);
       dmrsSymbolIdxSize++;
@@ -711,45 +735,8 @@ int Task_nrPDSCHDMRS(
                             ((portcdmgroup / 2) << 17) + 2 * nidnscid + nscid) %
                            (1 << 31);
       vbrdcst(init_vec, 0, MASKREAD_OFF, 32);
-      vbarrier();
-      VSPM_OPEN();
-      int init_addr = vaddr(init_vec);
-      for (int i = 0; i < 31; ++i) {
-        *(volatile char *)(init_addr + i) = cinit & 0b1;
-        cinit                             = cinit >> 1;
-      }
-      VSPM_CLOSE();
-
-      /*--------------------DMRS GENERATION--------------------*/
-      dmrs_seq = nrPRBS(seq1_vec, init_vec, seq2_init_table_0_vec, seq2_init_table_1_vec, seq2_init_table_2_vec,
-                        seq2_init_table_3_vec, seq2_init_table_4_vec, seq2_init_table_5_vec, seq2_init_table_6_vec,
-                        seq2_init_table_7_vec, seq2_init_table_8_vec, seq2_init_table_9_vec, seq2_init_table_10_vec,
-                        seq2_init_table_11_vec, seq2_init_table_12_vec, seq2_init_table_13_vec, seq2_init_table_14_vec,
-                        seq2_init_table_15_vec, seq2_init_table_16_vec, seq2_init_table_17_vec, seq2_init_table_18_vec,
-                        seq2_init_table_19_vec, seq2_trans_table_0_vec, seq2_trans_table_1_vec, seq2_trans_table_2_vec,
-                        seq2_trans_table_3_vec, seq2_trans_table_4_vec, seq2_trans_table_5_vec, seq2_trans_table_6_vec,
-                        sequenceLength);
-
-      vrange(dmrs_shuffle_index, prbsLength);
-      dmrs_shuffle_index = vadd(dmrs_shuffle_index, sequenceLength - prbsLength, MASKREAD_OFF, prbsLength);
-      vshuffle(dmrs_seq, dmrs_shuffle_index, dmrs_seq, SHUFFLE_GATHER, prbsLength);
-
-      vrange(dmrs_shuffle_index, prbsLength / 2);
-      dmrs_shuffle_index = vmul(dmrs_shuffle_index, 2, MASKREAD_OFF, prbsLength / 2);
-      vshuffle(dmrs_real_seq, dmrs_shuffle_index, dmrs_seq, SHUFFLE_GATHER, prbsLength / 2);
-      dmrs_shuffle_index = vsadd(dmrs_shuffle_index, 1, MASKREAD_OFF, prbsLength / 2);
-      vshuffle(dmrs_imag_seq, dmrs_shuffle_index, dmrs_seq, SHUFFLE_GATHER, prbsLength / 2);
-
-      vrange(dmrs_shuffle_index, prbsLength / 2);
-      dmrs_shuffle_index = vadd(dmrs_shuffle_index, prbsLength * dmrsSymbolIdxSize / 2, MASKREAD_OFF, prbsLength / 2);
-      vshuffle(dmrs_pdsch_real, dmrs_shuffle_index, dmrs_real_seq, SHUFFLE_SCATTER, prbsLength / 2);
-      vshuffle(dmrs_pdsch_imag, dmrs_shuffle_index, dmrs_imag_seq, SHUFFLE_SCATTER, prbsLength / 2);
-      dmrsSymbolIdxSize++;
-    }
-    if (dmrssymbolset[4] != INF) {
-      unsigned int cinit = ((1 << 17) * (carrier.SymbolsPerSlot * nslot + dmrssymbolset[4] + 1) * (2 * nidnscid + 1) +
-                            ((portcdmgroup / 2) << 17) + 2 * nidnscid + nscid) %
-                           (1 << 31);
+      vbrdcst(init_vec, 0, MASKREAD_OFF, 32);
+      vbrdcst(init_vec, 0, MASKREAD_OFF, 32);
       vbrdcst(init_vec, 0, MASKREAD_OFF, 32);
       vbarrier();
       VSPM_OPEN();
@@ -761,18 +748,18 @@ int Task_nrPDSCHDMRS(
       VSPM_CLOSE();
 
       /*--------------------DMRS GENERATION--------------------*/
-      dmrs_seq = nrPRBS(seq1_vec, init_vec, seq2_init_table_0_vec, seq2_init_table_1_vec, seq2_init_table_2_vec,
-                        seq2_init_table_3_vec, seq2_init_table_4_vec, seq2_init_table_5_vec, seq2_init_table_6_vec,
-                        seq2_init_table_7_vec, seq2_init_table_8_vec, seq2_init_table_9_vec, seq2_init_table_10_vec,
-                        seq2_init_table_11_vec, seq2_init_table_12_vec, seq2_init_table_13_vec, seq2_init_table_14_vec,
-                        seq2_init_table_15_vec, seq2_init_table_16_vec, seq2_init_table_17_vec, seq2_init_table_18_vec,
-                        seq2_init_table_19_vec, seq2_trans_table_0_vec, seq2_trans_table_1_vec, seq2_trans_table_2_vec,
-                        seq2_trans_table_3_vec, seq2_trans_table_4_vec, seq2_trans_table_5_vec, seq2_trans_table_6_vec,
-                        sequenceLength);
+      dmrs_seq0 = nrPRBS(seq1_vec, init_vec, seq2_init_table_0_vec, seq2_init_table_1_vec, seq2_init_table_2_vec,
+                         seq2_init_table_3_vec, seq2_init_table_4_vec, seq2_init_table_5_vec, seq2_init_table_6_vec,
+                         seq2_init_table_7_vec, seq2_init_table_8_vec, seq2_init_table_9_vec, seq2_init_table_10_vec,
+                         seq2_init_table_11_vec, seq2_init_table_12_vec, seq2_init_table_13_vec, seq2_init_table_14_vec,
+                         seq2_init_table_15_vec, seq2_init_table_16_vec, seq2_init_table_17_vec, seq2_init_table_18_vec,
+                         seq2_init_table_19_vec, seq2_trans_table_0_vec, seq2_trans_table_1_vec, seq2_trans_table_2_vec,
+                         seq2_trans_table_3_vec, seq2_trans_table_4_vec, seq2_trans_table_5_vec, seq2_trans_table_6_vec,
+                         sequenceLength);
 
       vrange(dmrs_shuffle_index, prbsLength);
-      dmrs_shuffle_index = vadd(dmrs_shuffle_index, sequenceLength - prbsLength, MASKREAD_OFF, prbsLength);
-      vshuffle(dmrs_seq, dmrs_shuffle_index, dmrs_seq, SHUFFLE_GATHER, prbsLength);
+      dmrs_shuffle_index = vsadd(dmrs_shuffle_index, sequenceLength - prbsLength, MASKREAD_OFF, prbsLength);
+      vshuffle(dmrs_seq, dmrs_shuffle_index, dmrs_seq0, SHUFFLE_GATHER, prbsLength);
 
       vrange(dmrs_shuffle_index, prbsLength / 2);
       dmrs_shuffle_index = vmul(dmrs_shuffle_index, 2, MASKREAD_OFF, prbsLength / 2);
@@ -781,7 +768,50 @@ int Task_nrPDSCHDMRS(
       vshuffle(dmrs_imag_seq, dmrs_shuffle_index, dmrs_seq, SHUFFLE_GATHER, prbsLength / 2);
 
       vrange(dmrs_shuffle_index, prbsLength / 2);
-      dmrs_shuffle_index = vadd(dmrs_shuffle_index, prbsLength * dmrsSymbolIdxSize / 2, MASKREAD_OFF, prbsLength / 2);
+      dmrs_shuffle_index = vsadd(dmrs_shuffle_index, prbsLength * dmrsSymbolIdxSize / 2, MASKREAD_OFF, prbsLength / 2);
+      vshuffle(dmrs_pdsch_real, dmrs_shuffle_index, dmrs_real_seq, SHUFFLE_SCATTER, prbsLength / 2);
+      vshuffle(dmrs_pdsch_imag, dmrs_shuffle_index, dmrs_imag_seq, SHUFFLE_SCATTER, prbsLength / 2);
+      dmrsSymbolIdxSize++;
+    }
+    if (dmrssymbolset[4] != INF) {
+      unsigned int cinit = ((1 << 17) * (carrier.SymbolsPerSlot * nslot + dmrssymbolset[4] + 1) * (2 * nidnscid + 1) +
+                            ((portcdmgroup / 2) << 17) + 2 * nidnscid + nscid) %
+                           (1 << 31);
+      vbrdcst(init_vec, 0, MASKREAD_OFF, 32);
+      vbrdcst(init_vec, 0, MASKREAD_OFF, 32);
+      vbrdcst(init_vec, 0, MASKREAD_OFF, 32);
+      vbrdcst(init_vec, 0, MASKREAD_OFF, 32);
+      vbarrier();
+      VSPM_OPEN();
+      int init_addr = vaddr(init_vec);
+      for (int i = 0; i < 31; ++i) {
+        *(volatile char *)(init_addr + i) = cinit & 0b1;
+        cinit                             = cinit >> 1;
+      }
+      VSPM_CLOSE();
+
+      /*--------------------DMRS GENERATION--------------------*/
+      dmrs_seq0 = nrPRBS(seq1_vec, init_vec, seq2_init_table_0_vec, seq2_init_table_1_vec, seq2_init_table_2_vec,
+                         seq2_init_table_3_vec, seq2_init_table_4_vec, seq2_init_table_5_vec, seq2_init_table_6_vec,
+                         seq2_init_table_7_vec, seq2_init_table_8_vec, seq2_init_table_9_vec, seq2_init_table_10_vec,
+                         seq2_init_table_11_vec, seq2_init_table_12_vec, seq2_init_table_13_vec, seq2_init_table_14_vec,
+                         seq2_init_table_15_vec, seq2_init_table_16_vec, seq2_init_table_17_vec, seq2_init_table_18_vec,
+                         seq2_init_table_19_vec, seq2_trans_table_0_vec, seq2_trans_table_1_vec, seq2_trans_table_2_vec,
+                         seq2_trans_table_3_vec, seq2_trans_table_4_vec, seq2_trans_table_5_vec, seq2_trans_table_6_vec,
+                         sequenceLength);
+
+      vrange(dmrs_shuffle_index, prbsLength);
+      dmrs_shuffle_index = vsadd(dmrs_shuffle_index, sequenceLength - prbsLength, MASKREAD_OFF, prbsLength);
+      vshuffle(dmrs_seq, dmrs_shuffle_index, dmrs_seq0, SHUFFLE_GATHER, prbsLength);
+
+      vrange(dmrs_shuffle_index, prbsLength / 2);
+      dmrs_shuffle_index = vmul(dmrs_shuffle_index, 2, MASKREAD_OFF, prbsLength / 2);
+      vshuffle(dmrs_real_seq, dmrs_shuffle_index, dmrs_seq, SHUFFLE_GATHER, prbsLength / 2);
+      dmrs_shuffle_index = vsadd(dmrs_shuffle_index, 1, MASKREAD_OFF, prbsLength / 2);
+      vshuffle(dmrs_imag_seq, dmrs_shuffle_index, dmrs_seq, SHUFFLE_GATHER, prbsLength / 2);
+
+      vrange(dmrs_shuffle_index, prbsLength / 2);
+      dmrs_shuffle_index = vsadd(dmrs_shuffle_index, prbsLength * dmrsSymbolIdxSize / 2, MASKREAD_OFF, prbsLength / 2);
       vshuffle(dmrs_pdsch_real, dmrs_shuffle_index, dmrs_real_seq, SHUFFLE_SCATTER, prbsLength / 2);
       vshuffle(dmrs_pdsch_imag, dmrs_shuffle_index, dmrs_imag_seq, SHUFFLE_SCATTER, prbsLength / 2);
 
@@ -792,6 +822,9 @@ int Task_nrPDSCHDMRS(
                             ((portcdmgroup / 2) << 17) + 2 * nidnscid + nscid) %
                            (1 << 31);
       vbrdcst(init_vec, 0, MASKREAD_OFF, 32);
+      vbrdcst(init_vec, 0, MASKREAD_OFF, 32);
+      vbrdcst(init_vec, 0, MASKREAD_OFF, 32);
+      vbrdcst(init_vec, 0, MASKREAD_OFF, 32);
       vbarrier();
       VSPM_OPEN();
       int init_addr = vaddr(init_vec);
@@ -802,18 +835,18 @@ int Task_nrPDSCHDMRS(
       VSPM_CLOSE();
 
       /*--------------------DMRS GENERATION--------------------*/
-      dmrs_seq = nrPRBS(seq1_vec, init_vec, seq2_init_table_0_vec, seq2_init_table_1_vec, seq2_init_table_2_vec,
-                        seq2_init_table_3_vec, seq2_init_table_4_vec, seq2_init_table_5_vec, seq2_init_table_6_vec,
-                        seq2_init_table_7_vec, seq2_init_table_8_vec, seq2_init_table_9_vec, seq2_init_table_10_vec,
-                        seq2_init_table_11_vec, seq2_init_table_12_vec, seq2_init_table_13_vec, seq2_init_table_14_vec,
-                        seq2_init_table_15_vec, seq2_init_table_16_vec, seq2_init_table_17_vec, seq2_init_table_18_vec,
-                        seq2_init_table_19_vec, seq2_trans_table_0_vec, seq2_trans_table_1_vec, seq2_trans_table_2_vec,
-                        seq2_trans_table_3_vec, seq2_trans_table_4_vec, seq2_trans_table_5_vec, seq2_trans_table_6_vec,
-                        sequenceLength);
+      dmrs_seq0 = nrPRBS(seq1_vec, init_vec, seq2_init_table_0_vec, seq2_init_table_1_vec, seq2_init_table_2_vec,
+                         seq2_init_table_3_vec, seq2_init_table_4_vec, seq2_init_table_5_vec, seq2_init_table_6_vec,
+                         seq2_init_table_7_vec, seq2_init_table_8_vec, seq2_init_table_9_vec, seq2_init_table_10_vec,
+                         seq2_init_table_11_vec, seq2_init_table_12_vec, seq2_init_table_13_vec, seq2_init_table_14_vec,
+                         seq2_init_table_15_vec, seq2_init_table_16_vec, seq2_init_table_17_vec, seq2_init_table_18_vec,
+                         seq2_init_table_19_vec, seq2_trans_table_0_vec, seq2_trans_table_1_vec, seq2_trans_table_2_vec,
+                         seq2_trans_table_3_vec, seq2_trans_table_4_vec, seq2_trans_table_5_vec, seq2_trans_table_6_vec,
+                         sequenceLength);
 
       vrange(dmrs_shuffle_index, prbsLength);
-      dmrs_shuffle_index = vadd(dmrs_shuffle_index, sequenceLength - prbsLength, MASKREAD_OFF, prbsLength);
-      vshuffle(dmrs_seq, dmrs_shuffle_index, dmrs_seq, SHUFFLE_GATHER, prbsLength);
+      dmrs_shuffle_index = vsadd(dmrs_shuffle_index, sequenceLength - prbsLength, MASKREAD_OFF, prbsLength);
+      vshuffle(dmrs_seq, dmrs_shuffle_index, dmrs_seq0, SHUFFLE_GATHER, prbsLength);
 
       vrange(dmrs_shuffle_index, prbsLength / 2);
       dmrs_shuffle_index = vmul(dmrs_shuffle_index, 2, MASKREAD_OFF, prbsLength / 2);
@@ -822,7 +855,7 @@ int Task_nrPDSCHDMRS(
       vshuffle(dmrs_imag_seq, dmrs_shuffle_index, dmrs_seq, SHUFFLE_GATHER, prbsLength / 2);
 
       vrange(dmrs_shuffle_index, prbsLength / 2);
-      dmrs_shuffle_index = vadd(dmrs_shuffle_index, prbsLength * dmrsSymbolIdxSize / 2, MASKREAD_OFF, prbsLength / 2);
+      dmrs_shuffle_index = vsadd(dmrs_shuffle_index, prbsLength * dmrsSymbolIdxSize / 2, MASKREAD_OFF, prbsLength / 2);
       vshuffle(dmrs_pdsch_real, dmrs_shuffle_index, dmrs_real_seq, SHUFFLE_SCATTER, prbsLength / 2);
       vshuffle(dmrs_pdsch_imag, dmrs_shuffle_index, dmrs_imag_seq, SHUFFLE_SCATTER, prbsLength / 2);
       dmrsSymbolIdxSize++;
@@ -832,45 +865,8 @@ int Task_nrPDSCHDMRS(
                             ((portcdmgroup / 2) << 17) + 2 * nidnscid + nscid) %
                            (1 << 31);
       vbrdcst(init_vec, 0, MASKREAD_OFF, 32);
-      vbarrier();
-      VSPM_OPEN();
-      int init_addr = vaddr(init_vec);
-      for (int i = 0; i < 31; ++i) {
-        *(volatile char *)(init_addr + i) = cinit & 0b1;
-        cinit                             = cinit >> 1;
-      }
-      VSPM_CLOSE();
-
-      /*--------------------DMRS GENERATION--------------------*/
-      dmrs_seq = nrPRBS(seq1_vec, init_vec, seq2_init_table_0_vec, seq2_init_table_1_vec, seq2_init_table_2_vec,
-                        seq2_init_table_3_vec, seq2_init_table_4_vec, seq2_init_table_5_vec, seq2_init_table_6_vec,
-                        seq2_init_table_7_vec, seq2_init_table_8_vec, seq2_init_table_9_vec, seq2_init_table_10_vec,
-                        seq2_init_table_11_vec, seq2_init_table_12_vec, seq2_init_table_13_vec, seq2_init_table_14_vec,
-                        seq2_init_table_15_vec, seq2_init_table_16_vec, seq2_init_table_17_vec, seq2_init_table_18_vec,
-                        seq2_init_table_19_vec, seq2_trans_table_0_vec, seq2_trans_table_1_vec, seq2_trans_table_2_vec,
-                        seq2_trans_table_3_vec, seq2_trans_table_4_vec, seq2_trans_table_5_vec, seq2_trans_table_6_vec,
-                        sequenceLength);
-
-      vrange(dmrs_shuffle_index, prbsLength);
-      dmrs_shuffle_index = vadd(dmrs_shuffle_index, sequenceLength - prbsLength, MASKREAD_OFF, prbsLength);
-      vshuffle(dmrs_seq, dmrs_shuffle_index, dmrs_seq, SHUFFLE_GATHER, prbsLength);
-
-      vrange(dmrs_shuffle_index, prbsLength / 2);
-      dmrs_shuffle_index = vmul(dmrs_shuffle_index, 2, MASKREAD_OFF, prbsLength / 2);
-      vshuffle(dmrs_real_seq, dmrs_shuffle_index, dmrs_seq, SHUFFLE_GATHER, prbsLength / 2);
-      dmrs_shuffle_index = vsadd(dmrs_shuffle_index, 1, MASKREAD_OFF, prbsLength / 2);
-      vshuffle(dmrs_imag_seq, dmrs_shuffle_index, dmrs_seq, SHUFFLE_GATHER, prbsLength / 2);
-
-      vrange(dmrs_shuffle_index, prbsLength / 2);
-      dmrs_shuffle_index = vadd(dmrs_shuffle_index, prbsLength * dmrsSymbolIdxSize / 2, MASKREAD_OFF, prbsLength / 2);
-      vshuffle(dmrs_pdsch_real, dmrs_shuffle_index, dmrs_real_seq, SHUFFLE_SCATTER, prbsLength / 2);
-      vshuffle(dmrs_pdsch_imag, dmrs_shuffle_index, dmrs_imag_seq, SHUFFLE_SCATTER, prbsLength / 2);
-      dmrsSymbolIdxSize++;
-    }
-    if (dmrssymbolset[7] != INF) {
-      unsigned int cinit = ((1 << 17) * (carrier.SymbolsPerSlot * nslot + dmrssymbolset[7] + 1) * (2 * nidnscid + 1) +
-                            ((portcdmgroup / 2) << 17) + 2 * nidnscid + nscid) %
-                           (1 << 31);
+      vbrdcst(init_vec, 0, MASKREAD_OFF, 32);
+      vbrdcst(init_vec, 0, MASKREAD_OFF, 32);
       vbrdcst(init_vec, 0, MASKREAD_OFF, 32);
       vbarrier();
       VSPM_OPEN();
@@ -882,18 +878,18 @@ int Task_nrPDSCHDMRS(
       VSPM_CLOSE();
 
       /*--------------------DMRS GENERATION--------------------*/
-      dmrs_seq = nrPRBS(seq1_vec, init_vec, seq2_init_table_0_vec, seq2_init_table_1_vec, seq2_init_table_2_vec,
-                        seq2_init_table_3_vec, seq2_init_table_4_vec, seq2_init_table_5_vec, seq2_init_table_6_vec,
-                        seq2_init_table_7_vec, seq2_init_table_8_vec, seq2_init_table_9_vec, seq2_init_table_10_vec,
-                        seq2_init_table_11_vec, seq2_init_table_12_vec, seq2_init_table_13_vec, seq2_init_table_14_vec,
-                        seq2_init_table_15_vec, seq2_init_table_16_vec, seq2_init_table_17_vec, seq2_init_table_18_vec,
-                        seq2_init_table_19_vec, seq2_trans_table_0_vec, seq2_trans_table_1_vec, seq2_trans_table_2_vec,
-                        seq2_trans_table_3_vec, seq2_trans_table_4_vec, seq2_trans_table_5_vec, seq2_trans_table_6_vec,
-                        sequenceLength);
+      dmrs_seq0 = nrPRBS(seq1_vec, init_vec, seq2_init_table_0_vec, seq2_init_table_1_vec, seq2_init_table_2_vec,
+                         seq2_init_table_3_vec, seq2_init_table_4_vec, seq2_init_table_5_vec, seq2_init_table_6_vec,
+                         seq2_init_table_7_vec, seq2_init_table_8_vec, seq2_init_table_9_vec, seq2_init_table_10_vec,
+                         seq2_init_table_11_vec, seq2_init_table_12_vec, seq2_init_table_13_vec, seq2_init_table_14_vec,
+                         seq2_init_table_15_vec, seq2_init_table_16_vec, seq2_init_table_17_vec, seq2_init_table_18_vec,
+                         seq2_init_table_19_vec, seq2_trans_table_0_vec, seq2_trans_table_1_vec, seq2_trans_table_2_vec,
+                         seq2_trans_table_3_vec, seq2_trans_table_4_vec, seq2_trans_table_5_vec, seq2_trans_table_6_vec,
+                         sequenceLength);
 
       vrange(dmrs_shuffle_index, prbsLength);
-      dmrs_shuffle_index = vadd(dmrs_shuffle_index, sequenceLength - prbsLength, MASKREAD_OFF, prbsLength);
-      vshuffle(dmrs_seq, dmrs_shuffle_index, dmrs_seq, SHUFFLE_GATHER, prbsLength);
+      dmrs_shuffle_index = vsadd(dmrs_shuffle_index, sequenceLength - prbsLength, MASKREAD_OFF, prbsLength);
+      vshuffle(dmrs_seq, dmrs_shuffle_index, dmrs_seq0, SHUFFLE_GATHER, prbsLength);
 
       vrange(dmrs_shuffle_index, prbsLength / 2);
       dmrs_shuffle_index = vmul(dmrs_shuffle_index, 2, MASKREAD_OFF, prbsLength / 2);
@@ -902,7 +898,50 @@ int Task_nrPDSCHDMRS(
       vshuffle(dmrs_imag_seq, dmrs_shuffle_index, dmrs_seq, SHUFFLE_GATHER, prbsLength / 2);
 
       vrange(dmrs_shuffle_index, prbsLength / 2);
-      dmrs_shuffle_index = vadd(dmrs_shuffle_index, prbsLength * dmrsSymbolIdxSize / 2, MASKREAD_OFF, prbsLength / 2);
+      dmrs_shuffle_index = vsadd(dmrs_shuffle_index, prbsLength * dmrsSymbolIdxSize / 2, MASKREAD_OFF, prbsLength / 2);
+      vshuffle(dmrs_pdsch_real, dmrs_shuffle_index, dmrs_real_seq, SHUFFLE_SCATTER, prbsLength / 2);
+      vshuffle(dmrs_pdsch_imag, dmrs_shuffle_index, dmrs_imag_seq, SHUFFLE_SCATTER, prbsLength / 2);
+      dmrsSymbolIdxSize++;
+    }
+    if (dmrssymbolset[7] != INF) {
+      unsigned int cinit = ((1 << 17) * (carrier.SymbolsPerSlot * nslot + dmrssymbolset[7] + 1) * (2 * nidnscid + 1) +
+                            ((portcdmgroup / 2) << 17) + 2 * nidnscid + nscid) %
+                           (1 << 31);
+      vbrdcst(init_vec, 0, MASKREAD_OFF, 32);
+      vbrdcst(init_vec, 0, MASKREAD_OFF, 32);
+      vbrdcst(init_vec, 0, MASKREAD_OFF, 32);
+      vbrdcst(init_vec, 0, MASKREAD_OFF, 32);
+      vbarrier();
+      VSPM_OPEN();
+      int init_addr = vaddr(init_vec);
+      for (int i = 0; i < 31; ++i) {
+        *(volatile char *)(init_addr + i) = cinit & 0b1;
+        cinit                             = cinit >> 1;
+      }
+      VSPM_CLOSE();
+
+      /*--------------------DMRS GENERATION--------------------*/
+      dmrs_seq0 = nrPRBS(seq1_vec, init_vec, seq2_init_table_0_vec, seq2_init_table_1_vec, seq2_init_table_2_vec,
+                         seq2_init_table_3_vec, seq2_init_table_4_vec, seq2_init_table_5_vec, seq2_init_table_6_vec,
+                         seq2_init_table_7_vec, seq2_init_table_8_vec, seq2_init_table_9_vec, seq2_init_table_10_vec,
+                         seq2_init_table_11_vec, seq2_init_table_12_vec, seq2_init_table_13_vec, seq2_init_table_14_vec,
+                         seq2_init_table_15_vec, seq2_init_table_16_vec, seq2_init_table_17_vec, seq2_init_table_18_vec,
+                         seq2_init_table_19_vec, seq2_trans_table_0_vec, seq2_trans_table_1_vec, seq2_trans_table_2_vec,
+                         seq2_trans_table_3_vec, seq2_trans_table_4_vec, seq2_trans_table_5_vec, seq2_trans_table_6_vec,
+                         sequenceLength);
+
+      vrange(dmrs_shuffle_index, prbsLength);
+      dmrs_shuffle_index = vsadd(dmrs_shuffle_index, sequenceLength - prbsLength, MASKREAD_OFF, prbsLength);
+      vshuffle(dmrs_seq, dmrs_shuffle_index, dmrs_seq0, SHUFFLE_GATHER, prbsLength);
+
+      vrange(dmrs_shuffle_index, prbsLength / 2);
+      dmrs_shuffle_index = vmul(dmrs_shuffle_index, 2, MASKREAD_OFF, prbsLength / 2);
+      vshuffle(dmrs_real_seq, dmrs_shuffle_index, dmrs_seq, SHUFFLE_GATHER, prbsLength / 2);
+      dmrs_shuffle_index = vsadd(dmrs_shuffle_index, 1, MASKREAD_OFF, prbsLength / 2);
+      vshuffle(dmrs_imag_seq, dmrs_shuffle_index, dmrs_seq, SHUFFLE_GATHER, prbsLength / 2);
+
+      vrange(dmrs_shuffle_index, prbsLength / 2);
+      dmrs_shuffle_index = vsadd(dmrs_shuffle_index, prbsLength * dmrsSymbolIdxSize / 2, MASKREAD_OFF, prbsLength / 2);
       vshuffle(dmrs_pdsch_real, dmrs_shuffle_index, dmrs_real_seq, SHUFFLE_SCATTER, prbsLength / 2);
       vshuffle(dmrs_pdsch_imag, dmrs_shuffle_index, dmrs_imag_seq, SHUFFLE_SCATTER, prbsLength / 2);
       dmrsSymbolIdxSize++;
@@ -917,5 +956,6 @@ int Task_nrPDSCHDMRS(
 
   // uint16_t pdschdmrs_length = prbsLength * dmrsSymbolIdxSize / 2;
   // uint16_t dmrs_interval    = 2;
-  vreturn(dmrs_pdsch_real, sizeof(dmrs_pdsch_real), dmrs_pdsch_imag, sizeof(dmrs_pdsch_imag));
+  vreturn(dmrs_pdsch_real, prbsLength * dmrsSymbolIdxSize / 2, dmrs_pdsch_imag, prbsLength * dmrsSymbolIdxSize / 2);
+  // vreturn(dmrs_pdsch_real, sizeof(dmrs_pdsch_real), dmrs_pdsch_imag, sizeof(dmrs_pdsch_imag));
 }

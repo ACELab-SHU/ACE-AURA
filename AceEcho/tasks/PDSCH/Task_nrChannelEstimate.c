@@ -12,17 +12,17 @@
 #include "riscv_printf.h"
 #include "venus.h"
 
-typedef short __v7168i16 __attribute__((ext_vector_type(7168)));
-typedef char  __v14336i8 __attribute__((ext_vector_type(14336)));
+typedef short __v7488i16 __attribute__((ext_vector_type(7488)));
+typedef char  __v7488i8 __attribute__((ext_vector_type(7488)));
 
 #define LEFT_SHIFT  0
 #define RIGHT_SHIFT 1
-VENUS_INLINE __v7168i16 cyclic_shift_7168_16(__v7168i16 tgtvec, int shift_length, int shift_direction,
+VENUS_INLINE __v7488i16 cyclic_shift_7488_16(__v7488i16 tgtvec, int shift_length, int shift_direction,
                                              int vectorLength) {
-  __v7168i16 result;
-  __v7168i16 tmp_index;
+  __v7488i16 result;
+  __v7488i16 tmp_index;
   vclaim(tmp_index);
-  __v7168i16 tmp_1;
+  __v7488i16 tmp_1;
   vclaim(tmp_1);
   vbrdcst(tmp_1, vectorLength, MASKREAD_OFF, vectorLength);
   vrange(tmp_index, vectorLength);
@@ -35,12 +35,11 @@ VENUS_INLINE __v7168i16 cyclic_shift_7168_16(__v7168i16 tgtvec, int shift_length
   return result;
 }
 
-VENUS_INLINE __v14336i8 cyclic_shift_14336_8(__v14336i8 tgtvec, int shift_length, int shift_direction,
-                                             int vectorLength) {
-  __v14336i8 result;
-  __v7168i16 tmp_index;
+VENUS_INLINE __v7488i8 cyclic_shift_7488_8(__v7488i8 tgtvec, int shift_length, int shift_direction, int vectorLength) {
+  __v7488i8  result;
+  __v7488i16 tmp_index;
   vclaim(tmp_index);
-  __v7168i16 tmp_1;
+  __v7488i16 tmp_1;
   vclaim(tmp_1);
   vbrdcst(tmp_1, vectorLength, MASKREAD_OFF, vectorLength);
   vrange(tmp_index, vectorLength);
@@ -243,7 +242,7 @@ VENUS_INLINE __v14336i8 cyclic_shift_14336_8(__v14336i8 tgtvec, int shift_length
 
 // short input_dmrs_index[3 * 2] = {0, 4, 8, 12, 16, 20};
 
-// char input_coef_h[14336] = {
+// char input_coef_h[7488] = {
 //     0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1,
 //     2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3,
 //     0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1,
@@ -355,11 +354,11 @@ VENUS_INLINE __v14336i8 cyclic_shift_14336_8(__v14336i8 tgtvec, int shift_length
 
 // short dmrs_symbol_index[2] = {1, 3};
 
-int Task_nrChannelEstimate(__v14336i8 rxData_real, __v14336i8 rxData_imag, __v14336i8 dmrs_real, __v14336i8 dmrs_imag,
-                           __v7168i16 dmrs_index, __v14336i8 global_coef_h, __v7168i16 dmrs_symbol_index,
-                           __v7168i16 rxData_shuffle_index, short_struct input_subcarrierLength,
-                           short_struct input_data_symbol_length, short_struct input_dmrs_interval,
-                           short_struct input_dmrs_ref_length, short_struct input_dmrs_symbol_length) {
+int Task_nrChannelEstimate(__v7488i8 rxData_real, __v7488i8 rxData_imag, __v7488i8 dmrs_real, __v7488i8 dmrs_imag,
+                           __v7488i16 dmrs_index, __v7488i8 global_coef_h, __v7488i16 dmrs_symbol_index,
+                           short_struct input_subcarrierLength, short_struct input_data_symbol_length,
+                           short_struct input_dmrs_interval, short_struct input_dmrs_ref_length,
+                           short_struct input_dmrs_symbol_length) {
 
   /* 输入接收数据，DMRS索引，DMRS参考信号，DMRS间隔，单个符号的DMRS长度，单个符号子载波长度，DMRS时域符号编号和时域符号长度,时域总符号长度。*/
   // short subcarrierLength   = 12;
@@ -372,8 +371,8 @@ int Task_nrChannelEstimate(__v14336i8 rxData_real, __v14336i8 rxData_imag, __v14
   int fractionLength = 7;
 
   // /*--------------------input rx data--------------------*/
-  // __v14336i8 rxData_real;
-  // __v14336i8 rxData_imag;
+  // __v7488i8 rxData_real;
+  // __v7488i8 rxData_imag;
   // vclaim(rxData_real);
   // vbarrier();
   // VSPM_OPEN();
@@ -392,8 +391,8 @@ int Task_nrChannelEstimate(__v14336i8 rxData_real, __v14336i8 rxData_imag, __v14
   // VSPM_CLOSE();
 
   // /*--------------------input dmrs--------------------*/
-  // __v14336i8 dmrs_real;
-  // __v14336i8 dmrs_imag;
+  // __v7488i8 dmrs_real;
+  // __v7488i8 dmrs_imag;
   // vclaim(dmrs_real);
   // vbarrier();
   // VSPM_OPEN();
@@ -412,7 +411,7 @@ int Task_nrChannelEstimate(__v14336i8 rxData_real, __v14336i8 rxData_imag, __v14
   // VSPM_CLOSE();
 
   // /*--------------------input dmrs index--------------------*/
-  // __v7168i16 dmrs_index;
+  // __v7488i16 dmrs_index;
   // vclaim(dmrs_index);
   // vbarrier();
   // VSPM_OPEN();
@@ -422,35 +421,32 @@ int Task_nrChannelEstimate(__v14336i8 rxData_real, __v14336i8 rxData_imag, __v14
   // }
   // VSPM_CLOSE();
 
-  vshuffle(rxData_real, rxData_shuffle_index, rxData_real, SHUFFLE_GATHER, subcarrierLength * data_symbol_length);
-  vshuffle(rxData_imag, rxData_shuffle_index, rxData_imag, SHUFFLE_GATHER, subcarrierLength * data_symbol_length);
-
-  __v7168i16 const_value;
+  __v7488i16 const_value;
   vclaim(const_value);
   vbrdcst(const_value, subcarrierLength, MASKREAD_OFF, (dmrs_ref_length * dmrs_symbol_length));
   dmrs_index = vrem(const_value, dmrs_index, MASKREAD_OFF, (dmrs_ref_length * dmrs_symbol_length));
 
   // /*--------------------input global coef--------------------*/
-  // __v14336i8 global_coef_h;
+  // __v7488i8 global_coef_h;
   // vclaim(global_coef_h);
   // vbarrier();
   // VSPM_OPEN();
   // int global_coef_h_addr = vaddr(global_coef_h);
-  // for (int i = 0; i < 14336; ++i) {
+  // for (int i = 0; i < 7488; ++i) {
   //   *(volatile unsigned char *)(global_coef_h_addr + i) = input_coef_h[i];
   // }
   // VSPM_CLOSE();
 
-  __v14336i8 const_value_8bit;
+  __v7488i8 const_value_8bit;
   vclaim(const_value_8bit);
-  vbrdcst(const_value_8bit, dmrs_interval, MASKREAD_OFF, 14336);
-  global_coef_h = vrem(const_value_8bit, global_coef_h, MASKREAD_OFF, 14336);
+  vbrdcst(const_value_8bit, dmrs_interval, MASKREAD_OFF, 7488);
+  global_coef_h = vrem(const_value_8bit, global_coef_h, MASKREAD_OFF, 7488);
 
   /************************************ init output & temp parameters **********************************/
-  __v14336i8 h_real;
-  __v14336i8 h_imag;
-  __v7168i16 global_data_shuffle_index;
-  __v7168i16 global_ref_shuffle_index;
+  __v7488i8  h_real;
+  __v7488i8  h_imag;
+  __v7488i16 global_data_shuffle_index;
+  __v7488i16 global_ref_shuffle_index;
   vclaim(h_real);
   vclaim(h_imag);
   vbrdcst(h_real, 1, MASKREAD_OFF, subcarrierLength * data_symbol_length);
@@ -470,92 +466,109 @@ int Task_nrChannelEstimate(__v14336i8 rxData_real, __v14336i8 rxData_imag, __v14
     vrange(global_ref_shuffle_index, dmrs_ref_length);
 
     global_data_shuffle_index =
-        vadd(global_data_shuffle_index, cur_symbol_index * subcarrierLength, MASKREAD_OFF, subcarrierLength);
-    global_ref_shuffle_index = vadd(global_ref_shuffle_index, i * dmrs_ref_length, MASKREAD_OFF, dmrs_ref_length);
+        vsadd(global_data_shuffle_index, cur_symbol_index * subcarrierLength, MASKREAD_OFF, subcarrierLength);
+    global_ref_shuffle_index = vsadd(global_ref_shuffle_index, i * dmrs_ref_length, MASKREAD_OFF, dmrs_ref_length);
 
     /*--------------------split data & dmrs--------------------*/
-    __v14336i8 symbol_rxData_real;
-    __v14336i8 symbol_rxData_imag;
+    __v7488i8 symbol_rxData_real;
+    __v7488i8 symbol_rxData_imag;
     vclaim(symbol_rxData_real);
     vclaim(symbol_rxData_imag);
     vshuffle(symbol_rxData_real, global_data_shuffle_index, rxData_real, SHUFFLE_GATHER, subcarrierLength);
     vshuffle(symbol_rxData_imag, global_data_shuffle_index, rxData_imag, SHUFFLE_GATHER, subcarrierLength);
-    __v14336i8 symbol_dmrs_real;
-    __v14336i8 symbol_dmrs_imag;
+    __v7488i8 symbol_dmrs_real;
+    __v7488i8 symbol_dmrs_imag;
     vclaim(symbol_dmrs_real);
     vclaim(symbol_dmrs_imag);
     vshuffle(symbol_dmrs_real, global_ref_shuffle_index, dmrs_real, SHUFFLE_GATHER, dmrs_ref_length);
     vshuffle(symbol_dmrs_imag, global_ref_shuffle_index, dmrs_imag, SHUFFLE_GATHER, dmrs_ref_length);
-    __v7168i16 symbol_dmrs_index;
+    __v7488i16 symbol_dmrs_index;
     vclaim(symbol_dmrs_index);
     vshuffle(symbol_dmrs_index, global_ref_shuffle_index, dmrs_index, SHUFFLE_GATHER, dmrs_ref_length);
 
     /*--------------------obtain rx dmrs--------------------*/
-    __v14336i8 rxDmrs_real;
-    __v14336i8 rxDmrs_imag;
+    __v7488i8 rxDmrs_real;
+    __v7488i8 rxDmrs_imag;
     vclaim(rxDmrs_real);
     vclaim(rxDmrs_imag);
     vshuffle(rxDmrs_real, symbol_dmrs_index, symbol_rxData_real, SHUFFLE_GATHER, dmrs_ref_length);
     vshuffle(rxDmrs_imag, symbol_dmrs_index, symbol_rxData_imag, SHUFFLE_GATHER, dmrs_ref_length);
 
     /*--------------------LS estimate--------------------*/
-    __v14336i8 temp_h_real;
-    __v14336i8 temp_h_imag;
-    __v14336i8 ac_temp_h_real;
-    __v14336i8 bd_temp_h_real;
-    __v14336i8 ad_temp_h_imag;
-    __v14336i8 bc_temp_h_imag;
-    __v14336i8 c2_temp_h;
-    __v14336i8 d2_temp_h;
-    __v14336i8 c2_add_d2_temp_h;
+    __v7488i8 temp_h_real;
+    __v7488i8 temp_h_imag;
+    __v7488i8 ac_temp_h_real;
+    __v7488i8 bd_temp_h_real;
+    __v7488i8 ad_temp_h_imag;
+    __v7488i8 bc_temp_h_imag;
+    __v7488i8 c2_temp_h;
+    __v7488i8 d2_temp_h;
+    __v7488i8 c2_add_d2_temp_h;
     // rxDmrs./input_dmrs
     vsetshamt(fractionLength);
     ac_temp_h_real = vmul(rxDmrs_real, symbol_dmrs_real, MASKREAD_OFF, dmrs_ref_length);
     bd_temp_h_real = vmul(rxDmrs_imag, symbol_dmrs_imag, MASKREAD_OFF, dmrs_ref_length);
     vsetshamt(0);
-    temp_h_real = vadd(ac_temp_h_real, bd_temp_h_real, MASKREAD_OFF, dmrs_ref_length);
+    temp_h_real = vsadd(ac_temp_h_real, bd_temp_h_real, MASKREAD_OFF, dmrs_ref_length);
+    vbarrier();
+    VSPM_OPEN();
+    int temp_h_real_addr = vaddr(temp_h_real);
+    for(int k = dmrs_ref_length; k < subcarrierLength; k=k+2) {
+      *(volatile short *)(temp_h_real_addr + k) = 0;
+    }
+    VSPM_CLOSE();
 
     vsetshamt(fractionLength);
     ad_temp_h_imag = vmul(rxDmrs_real, symbol_dmrs_imag, MASKREAD_OFF, dmrs_ref_length);
     bc_temp_h_imag = vmul(rxDmrs_imag, symbol_dmrs_real, MASKREAD_OFF, dmrs_ref_length);
     vsetshamt(0);
-    temp_h_imag = vsub(ad_temp_h_imag, bc_temp_h_imag, MASKREAD_OFF, dmrs_ref_length); // bc_temp_h_imag-ad_temp_h_imag
+    temp_h_imag = vssub(ad_temp_h_imag, bc_temp_h_imag, MASKREAD_OFF, dmrs_ref_length); // bc_temp_h_imag-ad_temp_h_imag
+    vbarrier();
+    VSPM_OPEN();
+    int temp_h_imag_addr = vaddr(temp_h_imag);
+    for(int k = dmrs_ref_length; k < subcarrierLength; k=k+2) {
+      *(volatile short *)(temp_h_imag_addr + k) = 0;
+    }
+    VSPM_CLOSE();
 
     /*--------------------linear interpolation--------------------*/
-    __v14336i8 base_h_real;
-    __v14336i8 base_h_imag;
-    __v14336i8 weight_h_real;
-    __v14336i8 weight_h_imag;
-    __v14336i8 coef_h;
+    __v7488i8 base_h_real;
+    __v7488i8 base_h_imag;
+    __v7488i8 weight_h_real;
+    __v7488i8 weight_h_imag;
+    __v7488i8 coef_h;
+
+    __v7488i8 weight_h_real0;
+    __v7488i8 weight_h_imag0;
 
     // prepare weight
-    __v14336i8 temp_h_shift_real;
-    __v14336i8 temp_h_shift_imag;
+    __v7488i8 temp_h_shift_real;
+    __v7488i8 temp_h_shift_imag;
 
-    temp_h_shift_real = cyclic_shift_14336_8(temp_h_real, 1, LEFT_SHIFT, dmrs_ref_length);
-    temp_h_shift_imag = cyclic_shift_14336_8(temp_h_imag, 1, LEFT_SHIFT, dmrs_ref_length);
-    weight_h_real     = vsub(temp_h_real, temp_h_shift_real, MASKREAD_OFF, dmrs_ref_length);
-    weight_h_imag     = vsub(temp_h_imag, temp_h_shift_imag, MASKREAD_OFF, dmrs_ref_length);
-    __v7168i16 dmrs_interval_index_vec;
-    __v14336i8 dmrs_interval_vec;
+    temp_h_shift_real = cyclic_shift_7488_8(temp_h_real, 1, LEFT_SHIFT, dmrs_ref_length);
+    temp_h_shift_imag = cyclic_shift_7488_8(temp_h_imag, 1, LEFT_SHIFT, dmrs_ref_length);
+    weight_h_real     = vssub(temp_h_real, temp_h_shift_real, MASKREAD_OFF, dmrs_ref_length);
+    weight_h_imag     = vssub(temp_h_imag, temp_h_shift_imag, MASKREAD_OFF, dmrs_ref_length);
+    __v7488i16 dmrs_interval_index_vec;
+    __v7488i8  dmrs_interval_vec;
     vclaim(dmrs_interval_vec);
     vclaim(dmrs_interval_index_vec);
     vbrdcst(dmrs_interval_vec, dmrs_interval, MASKREAD_OFF, subcarrierLength);       // trick
     vbrdcst(dmrs_interval_index_vec, dmrs_interval, MASKREAD_OFF, subcarrierLength); // trick
-    weight_h_real = vdiv(dmrs_interval_vec, weight_h_real, MASKREAD_OFF, dmrs_ref_length);
-    weight_h_imag = vdiv(dmrs_interval_vec, weight_h_imag, MASKREAD_OFF, dmrs_ref_length);
+    weight_h_real0 = vdiv(dmrs_interval_vec, weight_h_real, MASKREAD_OFF, dmrs_ref_length);
+    weight_h_imag0 = vdiv(dmrs_interval_vec, weight_h_imag, MASKREAD_OFF, dmrs_ref_length);
 
     // obtian parameter
-    __v7168i16 dmrs_shuffle_index;
-    __v7168i16 base_dmrs_shuffle_index;
-    __v7168i16 weight_dmrs_shuffle_index;
+    __v7488i16 dmrs_shuffle_index;
+    __v7488i16 base_dmrs_shuffle_index;
+    __v7488i16 weight_dmrs_shuffle_index;
     vclaim(dmrs_shuffle_index);
     vrange(dmrs_shuffle_index, subcarrierLength);
     base_dmrs_shuffle_index   = vdiv(dmrs_interval_index_vec, dmrs_shuffle_index, MASKREAD_OFF, subcarrierLength);
     weight_dmrs_shuffle_index = vdiv(dmrs_interval_index_vec, dmrs_shuffle_index, MASKREAD_OFF, subcarrierLength);
     vclaim(coef_h);
     vbrdcst(coef_h, 0, MASKREAD_OFF, subcarrierLength);
-    coef_h = vadd(coef_h, global_coef_h, MASKREAD_OFF, subcarrierLength);
+    coef_h = vsadd(coef_h, global_coef_h, MASKREAD_OFF, subcarrierLength);
     // base_h和coef_h前几个位置特殊处理 weight_h前几个和后几个位置特殊处理
     short left_index = 0, right_index = 0;
     int   dmrs_index_addr = vaddr(symbol_dmrs_index);
@@ -568,10 +581,10 @@ int Task_nrChannelEstimate(__v14336i8 rxData_real, __v14336i8 rxData_imag, __v14
     VSPM_OPEN();
     right_index = *(volatile short *)(dmrs_index_addr + ((dmrs_ref_length - 1) << 1));
     VSPM_CLOSE();
-    base_dmrs_shuffle_index = cyclic_shift_7168_16(base_dmrs_shuffle_index, left_index, RIGHT_SHIFT, subcarrierLength);
+    base_dmrs_shuffle_index = cyclic_shift_7488_16(base_dmrs_shuffle_index, left_index, RIGHT_SHIFT, subcarrierLength);
     weight_dmrs_shuffle_index =
-        cyclic_shift_7168_16(weight_dmrs_shuffle_index, left_index, RIGHT_SHIFT, subcarrierLength);
-    coef_h = cyclic_shift_14336_8(coef_h, left_index, RIGHT_SHIFT, subcarrierLength);
+        cyclic_shift_7488_16(weight_dmrs_shuffle_index, left_index, RIGHT_SHIFT, subcarrierLength);
+    coef_h = cyclic_shift_7488_8(coef_h, left_index, RIGHT_SHIFT, subcarrierLength);
     vbarrier();
     VSPM_OPEN();
     int base_dmrs_shuffle_index_addr = vaddr(base_dmrs_shuffle_index);
@@ -608,11 +621,11 @@ int Task_nrChannelEstimate(__v14336i8 rxData_real, __v14336i8 rxData_imag, __v14
     vclaim(base_h_imag);
     vshuffle(base_h_real, base_dmrs_shuffle_index, temp_h_real, SHUFFLE_GATHER, subcarrierLength);
     vshuffle(base_h_imag, base_dmrs_shuffle_index, temp_h_imag, SHUFFLE_GATHER, subcarrierLength);
-    vshuffle(weight_h_real, weight_dmrs_shuffle_index, weight_h_real, SHUFFLE_GATHER, subcarrierLength);
-    vshuffle(weight_h_imag, weight_dmrs_shuffle_index, weight_h_imag, SHUFFLE_GATHER, subcarrierLength);
+    vshuffle(weight_h_real, weight_dmrs_shuffle_index, weight_h_real0, SHUFFLE_GATHER, subcarrierLength);
+    vshuffle(weight_h_imag, weight_dmrs_shuffle_index, weight_h_imag0, SHUFFLE_GATHER, subcarrierLength);
 
-    __v14336i8 h_real_symbol;
-    __v14336i8 h_imag_symbol;
+    __v7488i8 h_real_symbol;
+    __v7488i8 h_imag_symbol;
     // h_real_symbol = vmuladd(weight_h_real, coef_h, base_h_real, MASKREAD_OFF, subcarrierLength);
     // h_imag_symbol = vmuladd(weight_h_imag, coef_h, base_h_imag, MASKREAD_OFF, subcarrierLength);
     h_real_symbol = vmul(weight_h_real, coef_h, MASKREAD_OFF, subcarrierLength);
@@ -635,27 +648,27 @@ int Task_nrChannelEstimate(__v14336i8 rxData_real, __v14336i8 rxData_imag, __v14
       int one_dmrs_symbol_index = *(volatile short *)(dmrs_symbol_index_addr + (i << 1));
       VSPM_CLOSE();
 
-      __v14336i8 h_real_symbol;
-      __v14336i8 h_imag_symbol;
+      __v7488i8 h_real_symbol;
+      __v7488i8 h_imag_symbol;
       vclaim(h_real_symbol);
       vclaim(h_imag_symbol);
       vrange(global_data_shuffle_index, subcarrierLength);
       global_data_shuffle_index =
-          vadd(global_data_shuffle_index, one_dmrs_symbol_index * subcarrierLength, MASKREAD_OFF, subcarrierLength);
+          vsadd(global_data_shuffle_index, one_dmrs_symbol_index * subcarrierLength, MASKREAD_OFF, subcarrierLength);
       vshuffle(h_real_symbol, global_data_shuffle_index, h_real, SHUFFLE_GATHER, subcarrierLength);
       vshuffle(h_imag_symbol, global_data_shuffle_index, h_imag, SHUFFLE_GATHER, subcarrierLength);
 
       for (int j = 0; j < one_dmrs_symbol_index; ++j) {
         vrange(global_data_shuffle_index, subcarrierLength);
         global_data_shuffle_index =
-            vadd(global_data_shuffle_index, j * subcarrierLength, MASKREAD_OFF, subcarrierLength);
+            vsadd(global_data_shuffle_index, j * subcarrierLength, MASKREAD_OFF, subcarrierLength);
         vshuffle(h_real, global_data_shuffle_index, h_real_symbol, SHUFFLE_SCATTER, subcarrierLength);
         vshuffle(h_imag, global_data_shuffle_index, h_imag_symbol, SHUFFLE_SCATTER, subcarrierLength);
       }
       for (int j = one_dmrs_symbol_index; j < data_symbol_length; ++j) {
         vrange(global_data_shuffle_index, subcarrierLength);
         global_data_shuffle_index =
-            vadd(global_data_shuffle_index, j * subcarrierLength, MASKREAD_OFF, subcarrierLength);
+            vsadd(global_data_shuffle_index, j * subcarrierLength, MASKREAD_OFF, subcarrierLength);
         vshuffle(h_real, global_data_shuffle_index, h_real_symbol, SHUFFLE_SCATTER, subcarrierLength);
         vshuffle(h_imag, global_data_shuffle_index, h_imag_symbol, SHUFFLE_SCATTER, subcarrierLength);
       }
@@ -663,10 +676,10 @@ int Task_nrChannelEstimate(__v14336i8 rxData_real, __v14336i8 rxData_imag, __v14
   } else {
     // 多个dmrs，线性插值
     for (int i = 0; i < dmrs_symbol_length - 1; ++i) {
-      __v14336i8 h_real_front_sym;
-      __v14336i8 h_imag_front_sym;
-      __v14336i8 h_real_tail_sym;
-      __v14336i8 h_imag_tail_sym;
+      __v7488i8 h_real_front_sym;
+      __v7488i8 h_imag_front_sym;
+      __v7488i8 h_real_tail_sym;
+      __v7488i8 h_imag_tail_sym;
       vclaim(h_real_front_sym);
       vclaim(h_imag_front_sym);
       vclaim(h_real_tail_sym);
@@ -679,7 +692,7 @@ int Task_nrChannelEstimate(__v14336i8 rxData_real, __v14336i8 rxData_imag, __v14
       VSPM_CLOSE();
       vrange(global_data_shuffle_index, subcarrierLength);
       global_data_shuffle_index =
-          vadd(global_data_shuffle_index, front_symbol_index * subcarrierLength, MASKREAD_OFF, subcarrierLength);
+          vsadd(global_data_shuffle_index, front_symbol_index * subcarrierLength, MASKREAD_OFF, subcarrierLength);
       vshuffle(h_real_front_sym, global_data_shuffle_index, h_real, SHUFFLE_GATHER, subcarrierLength);
       vshuffle(h_imag_front_sym, global_data_shuffle_index, h_imag, SHUFFLE_GATHER, subcarrierLength);
 
@@ -689,25 +702,25 @@ int Task_nrChannelEstimate(__v14336i8 rxData_real, __v14336i8 rxData_imag, __v14
       int tail_symbol_index = *(volatile short *)(dmrs_symbol_index_addr1 + ((i + 1) << 1));
       VSPM_CLOSE();
       global_data_shuffle_index =
-          vadd(global_data_shuffle_index, (tail_symbol_index - front_symbol_index) * subcarrierLength, MASKREAD_OFF,
-               subcarrierLength);
+          vsadd(global_data_shuffle_index, (tail_symbol_index - front_symbol_index) * subcarrierLength, MASKREAD_OFF,
+                subcarrierLength);
       vshuffle(h_real_tail_sym, global_data_shuffle_index, h_real, SHUFFLE_GATHER, subcarrierLength);
       vshuffle(h_imag_tail_sym, global_data_shuffle_index, h_imag, SHUFFLE_GATHER, subcarrierLength);
 
-      __v14336i8 const_value_vec;
+      __v7488i8 const_value_vec;
       vclaim(const_value_vec);
       vbrdcst(const_value_vec, (tail_symbol_index - front_symbol_index), MASKREAD_OFF, subcarrierLength);
-      __v14336i8 h_real_diff   = vsub(h_real_front_sym, h_real_tail_sym, MASKREAD_OFF, subcarrierLength);
-      __v14336i8 h_imag_diff   = vsub(h_imag_front_sym, h_imag_tail_sym, MASKREAD_OFF, subcarrierLength);
-      __v14336i8 h_real_weight = vdiv(const_value_vec, h_real_diff, MASKREAD_OFF, subcarrierLength);
-      __v14336i8 h_imag_weight = vdiv(const_value_vec, h_imag_diff, MASKREAD_OFF, subcarrierLength);
+      __v7488i8 h_real_diff   = vssub(h_real_front_sym, h_real_tail_sym, MASKREAD_OFF, subcarrierLength);
+      __v7488i8 h_imag_diff   = vssub(h_imag_front_sym, h_imag_tail_sym, MASKREAD_OFF, subcarrierLength);
+      __v7488i8 h_real_weight = vdiv(const_value_vec, h_real_diff, MASKREAD_OFF, subcarrierLength);
+      __v7488i8 h_imag_weight = vdiv(const_value_vec, h_imag_diff, MASKREAD_OFF, subcarrierLength);
 
       // fisrt dmrs symbol
       if (i == 0) {
         for (int j = 0; j < front_symbol_index; ++j) {
           vbrdcst(const_value_vec, j - front_symbol_index, MASKREAD_OFF, subcarrierLength);
-          __v14336i8 h_real_symbol;
-          __v14336i8 h_imag_symbol;
+          __v7488i8 h_real_symbol;
+          __v7488i8 h_imag_symbol;
           // h_real_symbol = vmuladd(h_real_weight, const_value_vec, h_real_front_sym, MASKREAD_OFF, subcarrierLength);
           // h_imag_symbol = vmuladd(h_imag_weight, const_value_vec, h_imag_front_sym, MASKREAD_OFF, subcarrierLength);
           h_real_symbol = vmul(h_real_weight, const_value_vec, MASKREAD_OFF, subcarrierLength);
@@ -716,7 +729,7 @@ int Task_nrChannelEstimate(__v14336i8 rxData_real, __v14336i8 rxData_imag, __v14
           h_imag_symbol = vsadd(h_imag_symbol, h_imag_front_sym, MASKREAD_OFF, subcarrierLength);
           vrange(global_data_shuffle_index, subcarrierLength);
           global_data_shuffle_index =
-              vadd(global_data_shuffle_index, j * subcarrierLength, MASKREAD_OFF, subcarrierLength);
+              vsadd(global_data_shuffle_index, j * subcarrierLength, MASKREAD_OFF, subcarrierLength);
           vshuffle(h_real, global_data_shuffle_index, h_real_symbol, SHUFFLE_SCATTER, subcarrierLength);
           vshuffle(h_imag, global_data_shuffle_index, h_imag_symbol, SHUFFLE_SCATTER, subcarrierLength);
         }
@@ -724,8 +737,8 @@ int Task_nrChannelEstimate(__v14336i8 rxData_real, __v14336i8 rxData_imag, __v14
 
       for (int j = front_symbol_index + 1; j < tail_symbol_index; ++j) {
         vbrdcst(const_value_vec, j - front_symbol_index, MASKREAD_OFF, subcarrierLength);
-        __v14336i8 h_real_symbol;
-        __v14336i8 h_imag_symbol;
+        __v7488i8 h_real_symbol;
+        __v7488i8 h_imag_symbol;
         // h_real_symbol = vmuladd(h_real_weight, const_value_vec, h_real_front_sym, MASKREAD_OFF, subcarrierLength);
         // h_imag_symbol = vmuladd(h_imag_weight, const_value_vec, h_imag_front_sym, MASKREAD_OFF, subcarrierLength);
         h_real_symbol = vmul(h_real_weight, const_value_vec, MASKREAD_OFF, subcarrierLength);
@@ -734,7 +747,7 @@ int Task_nrChannelEstimate(__v14336i8 rxData_real, __v14336i8 rxData_imag, __v14
         h_imag_symbol = vsadd(h_imag_symbol, h_imag_front_sym, MASKREAD_OFF, subcarrierLength);
         vrange(global_data_shuffle_index, subcarrierLength);
         global_data_shuffle_index =
-            vadd(global_data_shuffle_index, j * subcarrierLength, MASKREAD_OFF, subcarrierLength);
+            vsadd(global_data_shuffle_index, j * subcarrierLength, MASKREAD_OFF, subcarrierLength);
         vshuffle(h_real, global_data_shuffle_index, h_real_symbol, SHUFFLE_SCATTER, subcarrierLength);
         vshuffle(h_imag, global_data_shuffle_index, h_imag_symbol, SHUFFLE_SCATTER, subcarrierLength);
       }
@@ -743,8 +756,8 @@ int Task_nrChannelEstimate(__v14336i8 rxData_real, __v14336i8 rxData_imag, __v14
       if (i == dmrs_symbol_length - 2) {
         for (int j = tail_symbol_index + 1; j < data_symbol_length; ++j) {
           vbrdcst(const_value_vec, j - tail_symbol_index, MASKREAD_OFF, subcarrierLength);
-          __v14336i8 h_real_symbol;
-          __v14336i8 h_imag_symbol;
+          __v7488i8 h_real_symbol;
+          __v7488i8 h_imag_symbol;
           // h_real_symbol = vmuladd(h_real_weight, const_value_vec, h_real_tail_sym, MASKREAD_OFF, subcarrierLength);
           // h_imag_symbol = vmuladd(h_imag_weight, const_value_vec, h_imag_tail_sym, MASKREAD_OFF, subcarrierLength);
           h_real_symbol = vmul(h_real_weight, const_value_vec, MASKREAD_OFF, subcarrierLength);
@@ -753,7 +766,7 @@ int Task_nrChannelEstimate(__v14336i8 rxData_real, __v14336i8 rxData_imag, __v14
           h_imag_symbol = vsadd(h_imag_symbol, h_imag_tail_sym, MASKREAD_OFF, subcarrierLength);
           vrange(global_data_shuffle_index, subcarrierLength);
           global_data_shuffle_index =
-              vadd(global_data_shuffle_index, j * subcarrierLength, MASKREAD_OFF, subcarrierLength);
+              vsadd(global_data_shuffle_index, j * subcarrierLength, MASKREAD_OFF, subcarrierLength);
           vshuffle(h_real, global_data_shuffle_index, h_real_symbol, SHUFFLE_SCATTER, subcarrierLength);
           vshuffle(h_imag, global_data_shuffle_index, h_imag_symbol, SHUFFLE_SCATTER, subcarrierLength);
         }
@@ -761,6 +774,8 @@ int Task_nrChannelEstimate(__v14336i8 rxData_real, __v14336i8 rxData_imag, __v14
     }
   }
   // VENUS_PRINTVEC_CHAR(h_real, subcarrierLength * data_symbol_length);
-
-  vreturn(h_real, sizeof(h_real), h_imag, sizeof(h_imag));
+  h_real = vadd(h_real, 0, MASKREAD_OFF, data_symbol_length * subcarrierLength);
+  h_imag = vadd(h_imag, 0, MASKREAD_OFF, data_symbol_length * subcarrierLength);
+  vreturn(h_real, subcarrierLength * data_symbol_length, h_imag, subcarrierLength * data_symbol_length);
+  // vreturn(h_real, sizeof(h_real), h_imag, sizeof(h_imag));
 }

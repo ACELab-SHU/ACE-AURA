@@ -2931,8 +2931,8 @@ void Venus_Emulator::venus_execute() {
               div_res = div_res > INT8_MAX ? INT8_MAX : div_res;
               div_res = div_res < INT8_MIN ? INT8_MIN : div_res;
             } else {
-              // div_res = -1;
-              div_res = 1;
+              div_res = -1;
+              // div_res = 1;
             }
             temp_res = (div_res) &
                        ((1 << ((this->MY_VENUS_INS_PARAM.vew + 1) << 3)) - 1);
@@ -2946,8 +2946,8 @@ void Venus_Emulator::venus_execute() {
               div_res = div_res > INT8_MAX ? INT8_MAX : div_res;
               div_res = div_res < INT8_MIN ? INT8_MIN : div_res;
             } else {
-              // div_res = -1;
-              div_res = 1;
+              div_res = -1;
+              // div_res = 1;
             }
             temp_res = (div_res) &
                        ((1 << ((this->MY_VENUS_INS_PARAM.vew + 1) << 3)) - 1);
@@ -2960,8 +2960,8 @@ void Venus_Emulator::venus_execute() {
               div_res = div_res > INT16_MAX ? INT16_MAX : div_res;
               div_res = div_res < INT16_MIN ? INT16_MIN : div_res;
             } else {
-              // div_res = -1;
-              div_res = 1;
+              div_res = -1;
+              // div_res = 1;
             }
             temp_res = (div_res) &
                        ((1 << ((this->MY_VENUS_INS_PARAM.vew + 1) << 3)) - 1);
@@ -2980,8 +2980,8 @@ void Venus_Emulator::venus_execute() {
               div_res = div_res > INT8_MAX ? INT8_MAX : div_res;
               div_res = div_res < INT8_MIN ? INT8_MIN : div_res;
             } else {
-              // div_res = -1;
-              div_res = 1;
+              div_res = -1;
+              // div_res = 1;
             }
             temp_res = (div_res) &
                        ((1 << ((this->MY_VENUS_INS_PARAM.vew + 1) << 3)) - 1);
@@ -2996,8 +2996,8 @@ void Venus_Emulator::venus_execute() {
               div_res = div_res > INT8_MAX ? INT8_MAX : div_res;
               div_res = div_res < INT8_MIN ? INT8_MIN : div_res;
             } else {
-              // div_res = -1;
-              div_res = 1;
+              div_res = -1;
+              // div_res = 1;
             }
             temp_res = (div_res) &
                        ((1 << ((this->MY_VENUS_INS_PARAM.vew + 1) << 3)) - 1);
@@ -3011,8 +3011,8 @@ void Venus_Emulator::venus_execute() {
               div_res = div_res > INT16_MAX ? INT16_MAX : div_res;
               div_res = div_res < INT16_MIN ? INT16_MIN : div_res;
             } else {
-              // div_res = -1;
-              div_res = 1;
+              div_res = -1;
+              // div_res = 1;
             }
             temp_res = (div_res) &
                        ((1 << ((this->MY_VENUS_INS_PARAM.vew + 1) << 3)) - 1);
@@ -3367,7 +3367,7 @@ void Venus_Emulator::venus_execute() {
     // int8_t min_value = 0x7f;
     int8_t max_value;
     int16_t max_value_1;
-    this->instr_name = (char *)"VREDMAX";
+    this->instr_name = (char *)"VREDMIN";
     vector<int8_t> number_ew8_arr;
     vector<int16_t> number_ew16_arr;
     if (this->MY_VENUS_INS_PARAM.vew == EW8) {

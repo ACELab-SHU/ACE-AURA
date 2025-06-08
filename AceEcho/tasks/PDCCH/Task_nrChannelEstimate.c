@@ -12,17 +12,17 @@
 #include "riscv_printf.h"
 #include "venus.h"
 
-typedef short __v6144i16 __attribute__((ext_vector_type(6144)));
-typedef char  __v12288i8 __attribute__((ext_vector_type(12288)));
+typedef short __v4100i16 __attribute__((ext_vector_type(4100)));
+typedef char  __v4100i8 __attribute__((ext_vector_type(4100)));
 
 #define LEFT_SHIFT  0
 #define RIGHT_SHIFT 1
-VENUS_INLINE __v6144i16 cyclic_shift_6144_16(__v6144i16 tgtvec, int shift_length, int shift_direction,
+VENUS_INLINE __v4100i16 cyclic_shift_4100_16(__v4100i16 tgtvec, int shift_length, int shift_direction,
                                              int vectorLength) {
-  __v6144i16 result;
-  __v6144i16 tmp_index;
+  __v4100i16 result;
+  __v4100i16 tmp_index;
   vclaim(tmp_index);
-  __v6144i16 tmp_1;
+  __v4100i16 tmp_1;
   vclaim(tmp_1);
   vbrdcst(tmp_1, vectorLength, MASKREAD_OFF, vectorLength);
   vrange(tmp_index, vectorLength);
@@ -35,12 +35,11 @@ VENUS_INLINE __v6144i16 cyclic_shift_6144_16(__v6144i16 tgtvec, int shift_length
   return result;
 }
 
-VENUS_INLINE __v12288i8 cyclic_shift_12288_8(__v12288i8 tgtvec, int shift_length, int shift_direction,
-                                             int vectorLength) {
-  __v12288i8 result;
-  __v6144i16 tmp_index;
+VENUS_INLINE __v4100i8 cyclic_shift_4100_8(__v4100i8 tgtvec, int shift_length, int shift_direction, int vectorLength) {
+  __v4100i8  result;
+  __v4100i16 tmp_index;
   vclaim(tmp_index);
-  __v6144i16 tmp_1;
+  __v4100i16 tmp_1;
   vclaim(tmp_1);
   vbrdcst(tmp_1, vectorLength, MASKREAD_OFF, vectorLength);
   vrange(tmp_index, vectorLength);
@@ -515,9 +514,9 @@ VENUS_INLINE __v12288i8 cyclic_shift_12288_8(__v12288i8 tgtvec, int shift_length
 #define maxSegmentNumber 50
 int segmentRange[maxSegmentNumber][2] = {0};
 
-int Task_nrChannelEstimate(__v12288i8 rxData_real, __v12288i8 rxData_imag, __v12288i8 dmrs_real, __v12288i8 dmrs_imag,
-                           __v6144i16 dmrs_index, __v12288i8 global_coef_h, __v6144i16 dmrs_symbol_index,
-                           __v6144i16 rxData_shuffle_index, short_struct input_nrbLength,
+int Task_nrChannelEstimate(__v4100i8 rxData_real0, __v4100i8 rxData_imag0, __v4100i8 dmrs_real, __v4100i8 dmrs_imag,
+                           __v4100i16 dmrs_index, __v4100i8 global_coef_h, __v4100i16 dmrs_symbol_index,
+                           __v4100i16 rxData_shuffle_index, short_struct input_nrbLength,
                            short_struct input_data_symbol_length, short_struct input_dmrs_interval,
                            short_struct input_dmrs_ref_length, short_struct input_dmrs_symbol_length) {
 
@@ -533,8 +532,8 @@ int Task_nrChannelEstimate(__v12288i8 rxData_real, __v12288i8 rxData_imag, __v12
   int fractionLength = 7;
 
   // /*--------------------input rx data--------------------*/
-  // __v12288i8 rxData_real;
-  // __v12288i8 rxData_imag;
+  // __v4100i8 rxData_real;
+  // __v4100i8 rxData_imag;
   // vclaim(rxData_real);
   // vbarrier();
   // VSPM_OPEN();
@@ -553,8 +552,8 @@ int Task_nrChannelEstimate(__v12288i8 rxData_real, __v12288i8 rxData_imag, __v12
   // VSPM_CLOSE();
 
   // /*--------------------input dmrs--------------------*/
-  // __v12288i8 dmrs_real;
-  // __v12288i8 dmrs_imag;
+  // __v4100i8 dmrs_real;
+  // __v4100i8 dmrs_imag;
   // vclaim(dmrs_real);
   // vbarrier();
   // VSPM_OPEN();
@@ -573,7 +572,7 @@ int Task_nrChannelEstimate(__v12288i8 rxData_real, __v12288i8 rxData_imag, __v12
   // VSPM_CLOSE();
 
   // /*--------------------input dmrs index--------------------*/
-  // __v6144i16 dmrs_index;
+  // __v4100i16 dmrs_index;
   // vclaim(dmrs_index);
   // vbarrier();
   // VSPM_OPEN();
@@ -583,16 +582,20 @@ int Task_nrChannelEstimate(__v12288i8 rxData_real, __v12288i8 rxData_imag, __v12
   // }
   // VSPM_CLOSE();
 
-  vshuffle(rxData_real, rxData_shuffle_index, rxData_real, SHUFFLE_GATHER, subcarrierLength * data_symbol_length);
-  vshuffle(rxData_imag, rxData_shuffle_index, rxData_imag, SHUFFLE_GATHER, subcarrierLength * data_symbol_length);
+  __v4100i8 rxData_real;
+  __v4100i8 rxData_imag;
+  vclaim(rxData_real);
+  vclaim(rxData_imag);
+  vshuffle(rxData_real, rxData_shuffle_index, rxData_real0, SHUFFLE_GATHER, subcarrierLength * data_symbol_length);
+  vshuffle(rxData_imag, rxData_shuffle_index, rxData_imag0, SHUFFLE_GATHER, subcarrierLength * data_symbol_length);
 
-  __v6144i16 const_value;
+  __v4100i16 const_value;
   vclaim(const_value);
   vbrdcst(const_value, subcarrierLength, MASKREAD_OFF, (dmrs_ref_length * dmrs_symbol_length));
   dmrs_index = vrem(const_value, dmrs_index, MASKREAD_OFF, (dmrs_ref_length * dmrs_symbol_length));
 
   // /*--------------------input global coef--------------------*/
-  // __v12288i8 global_coef_h;
+  // __v4100i8 global_coef_h;
   // vclaim(global_coef_h);
   // vbarrier();
   // VSPM_OPEN();
@@ -602,17 +605,17 @@ int Task_nrChannelEstimate(__v12288i8 rxData_real, __v12288i8 rxData_imag, __v12
   // }
   // VSPM_CLOSE();
 
-  __v12288i8 const_value_8bit;
+  __v4100i8 const_value_8bit;
   vclaim(const_value_8bit);
   vbrdcst(const_value_8bit, dmrs_interval, MASKREAD_OFF, 4096);
   global_coef_h = vrem(const_value_8bit, global_coef_h, MASKREAD_OFF, 4096);
 
   /************************************ init output & temp parameters
    * ***********************************/
-  __v12288i8 h_real;
-  __v12288i8 h_imag;
-  __v6144i16 global_data_shuffle_index;
-  __v6144i16 global_ref_shuffle_index;
+  __v4100i8  h_real;
+  __v4100i8  h_imag;
+  __v4100i16 global_data_shuffle_index;
+  __v4100i16 global_ref_shuffle_index;
   vclaim(h_real);
   vclaim(h_imag);
   vbrdcst(h_real, 1, MASKREAD_OFF, subcarrierLength * data_symbol_length);
@@ -636,33 +639,33 @@ int Task_nrChannelEstimate(__v12288i8 rxData_real, __v12288i8 rxData_imag, __v12
     global_ref_shuffle_index = vsadd(global_ref_shuffle_index, i * dmrs_ref_length, MASKREAD_OFF, dmrs_ref_length);
 
     /*--------------------split data & dmrs--------------------*/
-    __v12288i8 symbol_rxData_real;
-    __v12288i8 symbol_rxData_imag;
+    __v4100i8 symbol_rxData_real;
+    __v4100i8 symbol_rxData_imag;
     vclaim(symbol_rxData_real);
     vclaim(symbol_rxData_imag);
     vshuffle(symbol_rxData_real, global_data_shuffle_index, rxData_real, SHUFFLE_GATHER, subcarrierLength);
     vshuffle(symbol_rxData_imag, global_data_shuffle_index, rxData_imag, SHUFFLE_GATHER, subcarrierLength);
-    __v12288i8 symbol_dmrs_real;
-    __v12288i8 symbol_dmrs_imag;
+    __v4100i8 symbol_dmrs_real;
+    __v4100i8 symbol_dmrs_imag;
     vclaim(symbol_dmrs_real);
     vclaim(symbol_dmrs_imag);
     vshuffle(symbol_dmrs_real, global_ref_shuffle_index, dmrs_real, SHUFFLE_GATHER, dmrs_ref_length);
     vshuffle(symbol_dmrs_imag, global_ref_shuffle_index, dmrs_imag, SHUFFLE_GATHER, dmrs_ref_length);
-    __v6144i16 symbol_dmrs_index;
+    __v4100i16 symbol_dmrs_index;
     vclaim(symbol_dmrs_index);
     vshuffle(symbol_dmrs_index, global_ref_shuffle_index, dmrs_index, SHUFFLE_GATHER, dmrs_ref_length);
 
     /*--------------------obtain rx dmrs--------------------*/
-    __v12288i8 rxDmrs_real;
-    __v12288i8 rxDmrs_imag;
+    __v4100i8 rxDmrs_real;
+    __v4100i8 rxDmrs_imag;
     vclaim(rxDmrs_real);
     vclaim(rxDmrs_imag);
     vshuffle(rxDmrs_real, symbol_dmrs_index, symbol_rxData_real, SHUFFLE_GATHER, dmrs_ref_length);
     vshuffle(rxDmrs_imag, symbol_dmrs_index, symbol_rxData_imag, SHUFFLE_GATHER, dmrs_ref_length);
 
     /*--------------------calculate segment number--------------------*/
-    __v6144i16 diff_shuffle_index;
-    __v6144i16 diff_data;
+    __v4100i16 diff_shuffle_index;
+    __v4100i16 diff_data;
     vclaim(diff_shuffle_index);
     vclaim(diff_data);
     vrange(diff_shuffle_index, dmrs_ref_length - 1);
@@ -688,15 +691,15 @@ int Task_nrChannelEstimate(__v12288i8 rxData_real, __v12288i8 rxData_imag, __v12
     VSPM_CLOSE();
 
     /*--------------------LS estimate--------------------*/
-    __v12288i8 temp_h_real_symbol;
-    __v12288i8 temp_h_imag_symbol;
-    __v12288i8 ac_temp_h_real;
-    __v12288i8 bd_temp_h_real;
-    __v12288i8 ad_temp_h_imag;
-    __v12288i8 bc_temp_h_imag;
-    __v12288i8 c2_temp_h;
-    __v12288i8 d2_temp_h;
-    __v12288i8 c2_add_d2_temp_h;
+    __v4100i8 temp_h_real_symbol;
+    __v4100i8 temp_h_imag_symbol;
+    __v4100i8 ac_temp_h_real;
+    __v4100i8 bd_temp_h_real;
+    __v4100i8 ad_temp_h_imag;
+    __v4100i8 bc_temp_h_imag;
+    __v4100i8 c2_temp_h;
+    __v4100i8 d2_temp_h;
+    __v4100i8 c2_add_d2_temp_h;
     // rxDmrs./input_dmrs
     vsetshamt(fractionLength);
     ac_temp_h_real = vmul(rxDmrs_real, symbol_dmrs_real, MASKREAD_OFF, dmrs_ref_length);
@@ -717,48 +720,58 @@ int Task_nrChannelEstimate(__v12288i8 rxData_real, __v12288i8 rxData_imag, __v12
     //     vadd(temp_h_imag_symbol, 0, MASKREAD_OFF, dmrs_ref_length);
 
     /*--------linear interpolation(for every segment)--------*/
-    __v12288i8 h_real_symbol;
-    __v12288i8 h_imag_symbol;
+    __v4100i8 h_real_symbol;
+    __v4100i8 h_imag_symbol;
     vclaim(h_real_symbol);
     vclaim(h_imag_symbol);
 
     /*--------------------local variable--------------------*/
-    __v12288i8 temp_h_real;
-    __v12288i8 temp_h_imag;
-    __v12288i8 base_h_real;
-    __v12288i8 base_h_imag;
-    __v12288i8 weight_h_real;
-    __v12288i8 weight_h_imag;
-    __v12288i8 coef_h;
-    __v12288i8 temp_h_shift_real;
-    __v12288i8 temp_h_shift_imag;
-    __v12288i8 dmrs_interval_vec;
-    __v12288i8 h_real_segment;
-    __v12288i8 h_imag_segment;
-    __v12288i8 h_real_segment_mul;
-    __v12288i8 h_imag_segment_mul;
-    __v6144i16 temp_h_shuffle_index;
-    __v6144i16 dmrs_shuffle_index;
-    __v6144i16 base_dmrs_shuffle_index;
-    __v6144i16 weight_dmrs_shuffle_index;
-    __v6144i16 segment_data_shuffle_index;
-    __v6144i16 dmrs_interval_index_vec;
+    __v4100i8  temp_h_real;
+    __v4100i8  temp_h_imag;
+    __v4100i8  base_h_real;
+    __v4100i8  base_h_imag;
+    __v4100i8  weight_h_real0;
+    __v4100i8  weight_h_imag0;
+    __v4100i8  weight_h_real;
+    __v4100i8  weight_h_imag;
+    __v4100i8  coef_h0;
+    __v4100i8  coef_h;
+    __v4100i8  temp_h_shift_real;
+    __v4100i8  temp_h_shift_imag;
+    __v4100i8  dmrs_interval_vec;
+    __v4100i8  h_real_segment;
+    __v4100i8  h_imag_segment;
+    __v4100i8  h_real_segment_mul;
+    __v4100i8  h_imag_segment_mul;
+    __v4100i16 base_dmrs_shuffle_index;
+    __v4100i16 weight_dmrs_shuffle_index;
+    __v4100i16 base_dmrs_shuffle_index0;
+    __v4100i16 weight_dmrs_shuffle_index0;
+    __v4100i16 temp_h_shuffle_index;
+    __v4100i16 dmrs_shuffle_index;
+    __v4100i16 segment_data_shuffle_index;
+    __v4100i16 dmrs_interval_index_vec;
     vclaim(temp_h_real);
     vclaim(temp_h_imag);
     vclaim(base_h_real);
     vclaim(base_h_imag);
+    vclaim(weight_h_real);
+    vclaim(weight_h_imag);
+    vclaim(coef_h0);
     vclaim(coef_h);
     vclaim(temp_h_shift_real);
     vclaim(temp_h_shift_imag);
     vclaim(dmrs_interval_vec);
+    vclaim(base_dmrs_shuffle_index);
+    vclaim(weight_dmrs_shuffle_index);
     vclaim(temp_h_shuffle_index);
     vclaim(dmrs_shuffle_index);
     vclaim(segment_data_shuffle_index);
     vclaim(dmrs_interval_index_vec);
 
-    __v6144i16 tmp_index;
+    __v4100i16 tmp_index;
     vclaim(tmp_index);
-    __v6144i16 tmp_index_1;
+    __v4100i16 tmp_index_1;
     vclaim(tmp_index_1);
     int shift_length;
     int shift_direction;
@@ -786,23 +799,23 @@ int Task_nrChannelEstimate(__v12288i8 rxData_real, __v12288i8 rxData_imag, __v12
       // dmrs_ref_length_segment); temp_h_shift_imag =
       // cyclic_shift_4096_8(temp_h_imag, 1, LEFT_SHIFT,
       // dmrs_ref_length_segment);
-      weight_h_real = vssub(temp_h_real, temp_h_shift_real, MASKREAD_OFF, dmrs_ref_length_segment);
-      weight_h_imag = vssub(temp_h_imag, temp_h_shift_imag, MASKREAD_OFF, dmrs_ref_length_segment);
+      weight_h_real0 = vssub(temp_h_real, temp_h_shift_real, MASKREAD_OFF, dmrs_ref_length_segment);
+      weight_h_imag0 = vssub(temp_h_imag, temp_h_shift_imag, MASKREAD_OFF, dmrs_ref_length_segment);
       vbrdcst(dmrs_interval_vec, dmrs_interval, MASKREAD_OFF,
               subcarrierLength_segment); // trick
       vbrdcst(dmrs_interval_index_vec, dmrs_interval, MASKREAD_OFF,
               subcarrierLength_segment); // trick
-      weight_h_real = vdiv(dmrs_interval_vec, weight_h_real, MASKREAD_OFF, dmrs_ref_length_segment);
-      weight_h_imag = vdiv(dmrs_interval_vec, weight_h_imag, MASKREAD_OFF, dmrs_ref_length_segment);
+      weight_h_real0 = vdiv(dmrs_interval_vec, weight_h_real0, MASKREAD_OFF, dmrs_ref_length_segment);
+      weight_h_imag0 = vdiv(dmrs_interval_vec, weight_h_imag0, MASKREAD_OFF, dmrs_ref_length_segment);
 
       // obtian parameter
       vrange(dmrs_shuffle_index, subcarrierLength_segment);
-      base_dmrs_shuffle_index =
+      base_dmrs_shuffle_index0 =
           vdiv(dmrs_interval_index_vec, dmrs_shuffle_index, MASKREAD_OFF, subcarrierLength_segment);
-      weight_dmrs_shuffle_index =
+      weight_dmrs_shuffle_index0 =
           vdiv(dmrs_interval_index_vec, dmrs_shuffle_index, MASKREAD_OFF, subcarrierLength_segment);
-      vbrdcst(coef_h, 0, MASKREAD_OFF, subcarrierLength_segment);
-      coef_h = vsadd(coef_h, global_coef_h, MASKREAD_OFF, subcarrierLength_segment);
+      vbrdcst(coef_h0, 0, MASKREAD_OFF, subcarrierLength_segment);
+      coef_h0 = vsadd(coef_h0, global_coef_h, MASKREAD_OFF, subcarrierLength_segment);
       // base_h和coef_h前几个位置特殊处理 weight_h前几个和后几个位置特殊处理
       short start_index = 0, left_index = 0, right_index = 0;
       int   dmrs_index_addr = vaddr(symbol_dmrs_index);
@@ -827,14 +840,12 @@ int Task_nrChannelEstimate(__v12288i8 rxData_real, __v12288i8 rxData_imag, __v12
       tmp_index = vsadd(tmp_index, shift_direction == LEFT_SHIFT ? shift_length : (vectorLength - shift_length),
                         MASKREAD_OFF, vectorLength);
       tmp_index = vrem(tmp_index_1, tmp_index, MASKREAD_OFF, vectorLength);
-      vshuffle(base_dmrs_shuffle_index, tmp_index, base_dmrs_shuffle_index, SHUFFLE_GATHER, vectorLength);
-      vshuffle(weight_dmrs_shuffle_index, tmp_index, weight_dmrs_shuffle_index, SHUFFLE_GATHER, vectorLength);
+      vshuffle(base_dmrs_shuffle_index, tmp_index, base_dmrs_shuffle_index0, SHUFFLE_GATHER, vectorLength);
+      vshuffle(weight_dmrs_shuffle_index, tmp_index, weight_dmrs_shuffle_index0, SHUFFLE_GATHER, vectorLength);
       // base_dmrs_shuffle_index =
-      //     cyclic_shift_2048_16(base_dmrs_shuffle_index, left_index,
-      //     RIGHT_SHIFT, subcarrierLength_segment);
+      //     cyclic_shift_2048_16(base_dmrs_shuffle_index, left_index, RIGHT_SHIFT, subcarrierLength_segment);
       // weight_dmrs_shuffle_index =
-      //     cyclic_shift_2048_16(weight_dmrs_shuffle_index, left_index,
-      //     RIGHT_SHIFT, subcarrierLength_segment);
+      //     cyclic_shift_2048_16(weight_dmrs_shuffle_index, left_index, RIGHT_SHIFT, subcarrierLength_segment);
       shift_length    = left_index;
       shift_direction = RIGHT_SHIFT;
       vectorLength    = subcarrierLength_segment;
@@ -843,12 +854,12 @@ int Task_nrChannelEstimate(__v12288i8 rxData_real, __v12288i8 rxData_imag, __v12
       tmp_index = vsadd(tmp_index, shift_direction == LEFT_SHIFT ? shift_length : (vectorLength - shift_length),
                         MASKREAD_OFF, vectorLength);
       tmp_index = vrem(tmp_index_1, tmp_index, MASKREAD_OFF, vectorLength);
-      // vclaim(coef_h);
-      vshuffle(coef_h, tmp_index, coef_h, SHUFFLE_GATHER, vectorLength);
+      vshuffle(coef_h, tmp_index, coef_h0, SHUFFLE_GATHER, vectorLength);
       //  coef_h =
       // vsadd(coef_h, 0, MASKREAD_OFF, vectorLength);
       // coef_h = cyclic_shift_4096_8(coef_h, left_index, RIGHT_SHIFT,
       // subcarrierLength_segment);
+
       vbarrier();
       VSPM_OPEN();
       int base_dmrs_shuffle_index_addr = vaddr(base_dmrs_shuffle_index);
@@ -883,10 +894,8 @@ int Task_nrChannelEstimate(__v12288i8 rxData_real, __v12288i8 rxData_imag, __v12
       // vclaim(coef_h);
       vshuffle(base_h_real, base_dmrs_shuffle_index, temp_h_real, SHUFFLE_GATHER, subcarrierLength_segment);
       vshuffle(base_h_imag, base_dmrs_shuffle_index, temp_h_imag, SHUFFLE_GATHER, subcarrierLength_segment);
-      vshuffle(weight_h_real, weight_dmrs_shuffle_index, weight_h_real, SHUFFLE_GATHER, subcarrierLength_segment);
-      vshuffle(weight_h_imag, weight_dmrs_shuffle_index, weight_h_imag, SHUFFLE_GATHER, subcarrierLength_segment);
-      vclaim(base_h_real);
-      vclaim(base_h_imag);
+      vshuffle(weight_h_real, weight_dmrs_shuffle_index, weight_h_real0, SHUFFLE_GATHER, subcarrierLength_segment);
+      vshuffle(weight_h_imag, weight_dmrs_shuffle_index, weight_h_imag0, SHUFFLE_GATHER, subcarrierLength_segment);
       // weight_h_real =
       //     vsadd(weight_h_real, 0, MASKREAD_OFF, subcarrierLength_segment);
       // coef_h = vsadd(coef_h, 0, MASKREAD_OFF, subcarrierLength_segment);

@@ -73,9 +73,9 @@ def process_task_json_files(map_base_path, task_base_path, venus_path):
     for filename in os.listdir(task_base_path):
         if filename.endswith("_task.json"):
             task_json_path = os.path.join(task_base_path, filename)         
+            variable_name = filename.replace('_task.json', '')
             update_task_json_with_lengths(task_json_path, venus_path)
-
-            map_filename = os.path.join(map_base_path, "variable.map")
+            map_filename = os.path.join('../IJ/', variable_name, "variable.map")
             if os.path.exists(task_json_path):
                 with open(task_json_path, 'r') as task_json_file:
                     existing_data = json.load(task_json_file)

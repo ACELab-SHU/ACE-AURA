@@ -16,6 +16,16 @@ typedef short __v2048i16 __attribute__((ext_vector_type(2048)));
 typedef short __v4096i16 __attribute__((ext_vector_type(4096)));
 typedef char  __v4096i8 __attribute__((ext_vector_type(4096)));
 
+typedef struct hCORSET0andPDCCH0outstruct {
+  short out_nrb;
+  short out_ssSlot;
+  short out_ssFirstSym;
+  short out_csetDuration;
+  short out_csetPattern;
+  short out_pdcchFrame;
+  char  out_crc;
+} __attribute__((aligned(64))) hCORSET0andPDCCH0outstruct;
+
 static uint8_t tab1[5][16]  = {0,  1,  2,  3,   4,  5,  6,  7,   8, 9, 10, 11,  12, 13, 14, 15, 1,  1,  1,  1,
                               1,  1,  1,  1,   1,  1,  1,  1,   1, 1, 1,  INF, 24, 24, 24, 24, 24, 24, 48, 48,
                               48, 48, 48, 48,  96, 96, 96, INF, 2, 2, 2,  3,   3,  3,  1,  1,  2,  2,  3,  3,
@@ -79,11 +89,12 @@ static float tab2_2[5][16] = {
     2,         2,     0xFF,      0xFF,      0, FLAGFSYM1, 0,     FLAGFSYM1, 0,     FLAGFSYM1, FLAGFSYM2, FLAGFSYM2,
     FLAGFSYM2, 0,     FLAGFSYM1, FLAGFSYM2, 0, 0,         0xFF,  0xFF};
 int Task_hCORESET0andPDCCH0(short_struct input_scsSSB, short_struct input_minChannelBW, short_struct input_ssbIdx,
-                            short_struct input_ncellid, initialSystemInfo initialInfo) {
+                            short_struct input_ncellid, short_struct input_crc, initialSystemInfo initialInfo) {
   uint8_t  scsSSB                  = input_scsSSB.data;
   uint8_t  minChannelBW            = input_minChannelBW.data;
   uint8_t  ssbIdx                  = input_ssbIdx.data;
   uint32_t ncellid                 = input_ncellid.data;
+  uint8_t  crc                     = input_crc.data;
   uint8_t  SubcarrierSpacingCommon = initialInfo.SubcarrierSpacingCommon;
 
   uint8_t scsPair[2];
@@ -156,10 +167,11 @@ int Task_hCORESET0andPDCCH0(short_struct input_scsSSB, short_struct input_minCha
       uint8_t M  = t[3];
       ssFirstSym = t[4];
 
-      uint8_t mu            = log2(scsCommon / 15);
-      uint8_t slotsPerFrame = 10 * pow(2, mu);
+      // uint8_t mu            = log2(scsCommon / 15);
+      uint8_t mu            = floor_log2(scsCommon / 15);
+      uint8_t slotsPerFrame = 10 * (1 << mu);
 
-      uint8_t slot = O * pow(2, mu) + floor(ssbIdx * M);
+      uint8_t slot = O * (1 << mu) + floor(ssbIdx * M);
       frameOff     = floor(slot / slotsPerFrame);
       ssSlot       = slot % slotsPerFrame;
 
@@ -184,7 +196,8 @@ int Task_hCORESET0andPDCCH0(short_struct input_scsSSB, short_struct input_minCha
       uint8_t M  = t[3];
       ssFirstSym = t[4];
 
-      uint8_t mu            = log2(scsCommon / 15);
+      // uint8_t mu            = log2(scsCommon / 15);
+      uint8_t mu            = floor_log2(scsCommon / 15);
       uint8_t slotsPerFrame = 10 * 2 ^ mu;
 
       uint8_t slot = O * pow(2, mu) + floor(ssbIdx * M);
@@ -238,7 +251,8 @@ int Task_hCORESET0andPDCCH0(short_struct input_scsSSB, short_struct input_minCha
   pdcch.SearchSpace.Duration               = (csetPattern == 1) ? 2 : 1;
   for (int i = 0; i < 5; ++i)
     pdcch.SearchSpace.NumCandidates[i] = candidates[i];
-  uint8_t maxAL                          = floor(ceil(log2(1.0 * csetNRB * csetDuration / 6))) + 1;
+  // uint8_t maxAL                          = floor(ceil(log2(1.0 * csetNRB * csetDuration / 6))) + 1;
+  uint8_t maxAL                          = floor(ceil_log2(1.0 * csetNRB * csetDuration / 6)) + 1;
   pdcch.SearchSpace.NumCandidates[maxAL] = 0;
   pdcch.NStartBWP                        = 0;
   pdcch.NSizeBWP                         = csetNRB;
@@ -266,18 +280,26 @@ int Task_hCORESET0andPDCCH0(short_struct input_scsSSB, short_struct input_minCha
   // pdcch
   // csetPattern
   // carrier
-  short_struct out_nrb;
-  out_nrb.data = nrb;
+  //   short_struct out_nrb;
+  //   out_nrb.data = nrb;
   short_struct out_ssSlot;
   out_ssSlot.data = ssSlot;
   short_struct out_ssFirstSym;
   out_ssFirstSym.data = ssFirstSym;
-  short_struct out_csetDuration;
-  out_csetDuration.data = csetDuration;
-  short_struct out_csetPattern;
-  out_csetPattern.data = csetPattern;
-  short_struct out_pdcchFrame;
-  out_pdcchFrame.data = pdcchFrame;
+  //   short_struct out_csetDuration;
+  //   out_csetDuration.data = csetDuration;
+  //   short_struct out_csetPattern;
+  //   out_csetPattern.data = csetPattern;
+  //   short_struct out_pdcchFrame;
+  //   out_pdcchFrame.data = pdcchFrame;
+  hCORSET0andPDCCH0outstruct outstruct;
+  outstruct.out_nrb          = nrb;
+  outstruct.out_ssSlot       = ssSlot;
+  outstruct.out_ssFirstSym   = ssFirstSym;
+  outstruct.out_csetDuration = csetDuration;
+  outstruct.out_csetPattern  = csetPattern;
+  outstruct.out_pdcchFrame   = pdcchFrame;
+  outstruct.out_crc          = crc;
 
   __v2048i16 csetSubcarriers;
   vclaim(csetSubcarriers);
@@ -285,8 +307,10 @@ int Task_hCORESET0andPDCCH0(short_struct input_scsSSB, short_struct input_minCha
   csetSubcarriers = vsadd(csetSubcarriers, 12 * (nrb - 20 * scsPair[1] / scsPair[0]) / 2 - csetOffset * 12,
                           MASKREAD_OFF, csetNRB * 12);
 
-  vreturn(csetSubcarriers, sizeof(csetSubcarriers), &out_nrb, sizeof(out_nrb), &out_ssSlot, sizeof(out_ssSlot),
-          &out_ssFirstSym, sizeof(out_ssFirstSym), &out_csetDuration, sizeof(out_csetDuration), &pdcch, sizeof(pdcch),
-          &out_csetPattern, sizeof(out_csetPattern), &c0Carrier, sizeof(c0Carrier), &out_pdcchFrame,
-          sizeof(out_pdcchFrame));
+  //   vreturn(csetSubcarriers, sizeof(csetSubcarriers), &out_nrb, sizeof(out_nrb), &out_ssSlot, sizeof(out_ssSlot),
+  //           &out_ssFirstSym, sizeof(out_ssFirstSym), &out_csetDuration, sizeof(out_csetDuration), &pdcch,
+  //           sizeof(pdcch), &out_csetPattern, sizeof(out_csetPattern), &c0Carrier, sizeof(c0Carrier), &out_pdcchFrame,
+  //           sizeof(out_pdcchFrame));
+  vreturn(csetSubcarriers, sizeof(csetSubcarriers), &pdcch, sizeof(pdcch), &c0Carrier, sizeof(c0Carrier), &outstruct,
+          sizeof(outstruct));
 }

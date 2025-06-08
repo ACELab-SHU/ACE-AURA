@@ -25,7 +25,7 @@ typedef struct {
 
 int64_t sssEst[336] = {0};
 
-int Task_SSS_Search(__v4096i8 d_SSS0_vec, __v4096i8 d_SSS1_vec, __v4096i8 rxData_real, __v4096i8 rxData_imag,
+int Task_SSS_Search(__v4096i8 d_SSS0_vec, __v4096i8 d_SSS1_vec, __v4096i8 rxData_real0, __v4096i8 rxData_imag0,
                     __v2048i16 SSS_Indices, __v2048i16 rxData_shuffle_index, short_struct in_NID2)
     __attribute__((aligned(64))) {
   int fractionLength = 2;
@@ -35,8 +35,12 @@ int Task_SSS_Search(__v4096i8 d_SSS0_vec, __v4096i8 d_SSS1_vec, __v4096i8 rxData
   int maxSSSIndex = 0;
 
   /************ ExtractResource ************ */
-  vshuffle(rxData_real, rxData_shuffle_index, rxData_real, SHUFFLE_GATHER, 720);
-  vshuffle(rxData_imag, rxData_shuffle_index, rxData_imag, SHUFFLE_GATHER, 720);
+  __v4096i8 rxData_real;
+  __v4096i8 rxData_imag;
+  vclaim(rxData_real);
+  vclaim(rxData_imag);
+  vshuffle(rxData_real, rxData_shuffle_index, rxData_real0, SHUFFLE_GATHER, 720);
+  vshuffle(rxData_imag, rxData_shuffle_index, rxData_imag0, SHUFFLE_GATHER, 720);
 
   __v4096i8 sssRx_real_vec;
   __v4096i8 sssRx_imag_vec;

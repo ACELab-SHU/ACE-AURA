@@ -4460,23 +4460,32 @@ typedef char  __v4096i8 __attribute__((ext_vector_type(4096)));
 short fft_fixed_vec[11] = {8, 7, 7, 7, 8, 7, 7, 8, 8, 8, 8};
 short fft_shift_vec[11] = {1, 0, 0, 0, 1, 0, 0, 1, 1, 1, 1};
 
-// 1024点fft的定点化 [6 6 6 5 5 4 4 3 2 2]
-short fft1024_fixed_vec[10] = {8, 7, 7, 8, 7, 8, 7, 8, 8, 7};
-short fft1024_shift_vec[10] = {1, 0, 0, 1, 0, 1, 0, 1, 1, 0};
+// // 1024点fft的定点化 [6 6 6 5 5 4 4 3 2 2]
+// short fft1024_fixed_vec[10] = {8, 7, 7, 8, 7, 8, 7, 8, 8, 7};
+// short fft1024_shift_vec[10] = {1, 0, 0, 1, 0, 1, 0, 1, 1, 0};
+
+// 1024点fft的定点化 [6 5 5 4 4 4 3 2 1 1]+1 = [7 6 6 5 5 5 4 3 2 2]
+short fft1024_fixed_vec[10] = {7, 8, 7, 8, 7, 7, 8, 8, 8, 7};
+short fft1024_shift_vec[10] = {0, 1, 0, 1, 0, 0, 1, 1, 1, 0};
 
 // 输入定点化的点数，实现定点乘法的输出
 VENUS_INLINE __v4096i8 MUL4096_8_FIXED(__v4096i8 a, __v4096i8 b, int fix_point, int length) {
-  __v4096i8 high8;
-  __v4096i8 low8;
   __v4096i8 result;
-  short     high_shift = 8 - fix_point;
-
-  low8   = vmul(a, b, MASKREAD_OFF, length);
-  high8  = vmulh(a, b, MASKREAD_OFF, length);
-  low8   = vsrl(low8, fix_point, MASKREAD_OFF, length);
-  high8  = vsll(high8, high_shift, MASKREAD_OFF, length);
-  result = vor(low8, high8, MASKREAD_OFF, length);
+  vsetshamt(fix_point);
+  result = vmul(a, b, MASKREAD_OFF, length);
+  vsetshamt(0);
   return result;
+  // __v4096i8 high8;
+  // __v4096i8 low8;
+  // __v4096i8 result;
+  // short     high_shift = 8 - fix_point;
+
+  // low8   = vmul(a, b, MASKREAD_OFF, length);
+  // high8  = vmulh(a, b, MASKREAD_OFF, length);
+  // low8   = vsrl(low8, fix_point, MASKREAD_OFF, length);
+  // high8  = vsll(high8, high_shift, MASKREAD_OFF, length);
+  // result = vor(low8, high8, MASKREAD_OFF, length);
+  // return result;
 };
 
 typedef struct {
@@ -4500,8 +4509,8 @@ int Task_nrOFDMDemodulation(__v4096i8 vin_real, __v4096i8 vin_imag, short_struct
                             __v2048i16 shuffle_wn_stage10, __v2048i16 targetIndices) {
 
   // input parameter
-  uint16_t scs        = subCarrierSpace.data;
-  uint8_t  symbol_num = symbolNum.data;
+  int scs        = subCarrierSpace.data;
+  int symbol_num = symbolNum.data;
 
   // input complex data(读入测试数据for test)
   // __v4096i8 vin_real;
@@ -5394,8 +5403,8 @@ int Task_nrOFDMDemodulation(__v4096i8 vin_real, __v4096i8 vin_imag, short_struct
     sin_tempWnResult  = MUL4096_8_FIXED(a_sub_b_real, Wn_sin, fft1024_fixed_vec[0], calculate_length);
     tempWnResult_imag = vsadd(cos_tempWnResult, sin_tempWnResult, MASKREAD_OFF, calculate_length);
 
-    tempWnResult_imag = vsadd(tempWnResult_imag, 1, MASKREAD_OFF,
-                              calculate_length); // Function FOR OFFSET
+    // tempWnResult_imag = vsadd(tempWnResult_imag, 1, MASKREAD_OFF,
+    //                           calculate_length); // Function FOR OFFSET
 
     // 重排序
     vshuffle(Data_without_CP_real, shuffle_add_stage0, tempAddResult_real, SHUFFLE_SCATTER, 1024);
@@ -5427,8 +5436,8 @@ int Task_nrOFDMDemodulation(__v4096i8 vin_real, __v4096i8 vin_imag, short_struct
     sin_tempWnResult  = MUL4096_8_FIXED(a_sub_b_real, Wn_sin, fft1024_fixed_vec[1], calculate_length);
     tempWnResult_imag = vsadd(cos_tempWnResult, sin_tempWnResult, MASKREAD_OFF, calculate_length);
 
-    tempWnResult_imag = vsadd(tempWnResult_imag, 1, MASKREAD_OFF,
-                              calculate_length); // Function FOR OFFSET
+    // tempWnResult_imag = vsadd(tempWnResult_imag, 1, MASKREAD_OFF,
+    //                           calculate_length); // Function FOR OFFSET
 
     // 重排序
     vshuffle(Data_without_CP_real, shuffle_add_stage1, tempAddResult_real, SHUFFLE_SCATTER, 1024);
@@ -5460,8 +5469,8 @@ int Task_nrOFDMDemodulation(__v4096i8 vin_real, __v4096i8 vin_imag, short_struct
     sin_tempWnResult  = MUL4096_8_FIXED(a_sub_b_real, Wn_sin, fft1024_fixed_vec[2], calculate_length);
     tempWnResult_imag = vsadd(cos_tempWnResult, sin_tempWnResult, MASKREAD_OFF, calculate_length);
 
-    tempWnResult_imag = vsadd(tempWnResult_imag, 1, MASKREAD_OFF,
-                              calculate_length); // Function FOR OFFSET
+    // tempWnResult_imag = vsadd(tempWnResult_imag, 1, MASKREAD_OFF,
+    //                           calculate_length); // Function FOR OFFSET
 
     // 重排序
     vshuffle(Data_without_CP_real, shuffle_add_stage2, tempAddResult_real, SHUFFLE_SCATTER, 1024);
@@ -5493,8 +5502,8 @@ int Task_nrOFDMDemodulation(__v4096i8 vin_real, __v4096i8 vin_imag, short_struct
     sin_tempWnResult  = MUL4096_8_FIXED(a_sub_b_real, Wn_sin, fft1024_fixed_vec[3], calculate_length);
     tempWnResult_imag = vsadd(cos_tempWnResult, sin_tempWnResult, MASKREAD_OFF, calculate_length);
 
-    tempWnResult_imag = vsadd(tempWnResult_imag, 1, MASKREAD_OFF,
-                              calculate_length); // Function FOR OFFSET
+    // tempWnResult_imag = vsadd(tempWnResult_imag, 1, MASKREAD_OFF,
+    //                           calculate_length); // Function FOR OFFSET
 
     // 重排序
     vshuffle(Data_without_CP_real, shuffle_add_stage3, tempAddResult_real, SHUFFLE_SCATTER, 1024);
@@ -5526,8 +5535,8 @@ int Task_nrOFDMDemodulation(__v4096i8 vin_real, __v4096i8 vin_imag, short_struct
     sin_tempWnResult  = MUL4096_8_FIXED(a_sub_b_real, Wn_sin, fft1024_fixed_vec[4], calculate_length);
     tempWnResult_imag = vsadd(cos_tempWnResult, sin_tempWnResult, MASKREAD_OFF, calculate_length);
 
-    tempWnResult_imag = vsadd(tempWnResult_imag, 1, MASKREAD_OFF,
-                              calculate_length); // Function FOR OFFSET
+    // tempWnResult_imag = vsadd(tempWnResult_imag, 1, MASKREAD_OFF,
+    //                           calculate_length); // Function FOR OFFSET
 
     // 重排序
     vshuffle(Data_without_CP_real, shuffle_add_stage4, tempAddResult_real, SHUFFLE_SCATTER, 1024);
@@ -5559,8 +5568,8 @@ int Task_nrOFDMDemodulation(__v4096i8 vin_real, __v4096i8 vin_imag, short_struct
     sin_tempWnResult  = MUL4096_8_FIXED(a_sub_b_real, Wn_sin, fft1024_fixed_vec[5], calculate_length);
     tempWnResult_imag = vsadd(cos_tempWnResult, sin_tempWnResult, MASKREAD_OFF, calculate_length);
 
-    tempWnResult_imag = vsadd(tempWnResult_imag, 1, MASKREAD_OFF,
-                              calculate_length); // Function FOR OFFSET
+    // tempWnResult_imag = vsadd(tempWnResult_imag, 1, MASKREAD_OFF,
+    //                           calculate_length); // Function FOR OFFSET
 
     // 重排序
     vshuffle(Data_without_CP_real, shuffle_add_stage5, tempAddResult_real, SHUFFLE_SCATTER, 1024);
@@ -5592,8 +5601,8 @@ int Task_nrOFDMDemodulation(__v4096i8 vin_real, __v4096i8 vin_imag, short_struct
     sin_tempWnResult  = MUL4096_8_FIXED(a_sub_b_real, Wn_sin, fft1024_fixed_vec[6], calculate_length);
     tempWnResult_imag = vsadd(cos_tempWnResult, sin_tempWnResult, MASKREAD_OFF, calculate_length);
 
-    tempWnResult_imag = vsadd(tempWnResult_imag, 1, MASKREAD_OFF,
-                              calculate_length); // Function FOR OFFSET
+    // tempWnResult_imag = vsadd(tempWnResult_imag, 1, MASKREAD_OFF,
+    //                           calculate_length); // Function FOR OFFSET
 
     // 重排序
     vshuffle(Data_without_CP_real, shuffle_add_stage6, tempAddResult_real, SHUFFLE_SCATTER, 1024);
@@ -5625,8 +5634,8 @@ int Task_nrOFDMDemodulation(__v4096i8 vin_real, __v4096i8 vin_imag, short_struct
     sin_tempWnResult  = MUL4096_8_FIXED(a_sub_b_real, Wn_sin, fft1024_fixed_vec[7], calculate_length);
     tempWnResult_imag = vsadd(cos_tempWnResult, sin_tempWnResult, MASKREAD_OFF, calculate_length);
 
-    tempWnResult_imag = vsadd(tempWnResult_imag, 1, MASKREAD_OFF,
-                              calculate_length); // Function FOR OFFSET
+    // tempWnResult_imag = vsadd(tempWnResult_imag, 1, MASKREAD_OFF,
+    //                           calculate_length); // Function FOR OFFSET
 
     // 重排序
     vshuffle(Data_without_CP_real, shuffle_add_stage7, tempAddResult_real, SHUFFLE_SCATTER, 1024);
@@ -5658,8 +5667,8 @@ int Task_nrOFDMDemodulation(__v4096i8 vin_real, __v4096i8 vin_imag, short_struct
     sin_tempWnResult  = MUL4096_8_FIXED(a_sub_b_real, Wn_sin, fft1024_fixed_vec[8], calculate_length);
     tempWnResult_imag = vsadd(cos_tempWnResult, sin_tempWnResult, MASKREAD_OFF, calculate_length);
 
-    tempWnResult_imag = vsadd(tempWnResult_imag, 1, MASKREAD_OFF,
-                              calculate_length); // Function FOR OFFSET
+    // tempWnResult_imag = vsadd(tempWnResult_imag, 1, MASKREAD_OFF,
+    //                           calculate_length); // Function FOR OFFSET
 
     // 重排序
     vshuffle(Data_without_CP_real, shuffle_add_stage8, tempAddResult_real, SHUFFLE_SCATTER, 1024);
@@ -5691,22 +5700,39 @@ int Task_nrOFDMDemodulation(__v4096i8 vin_real, __v4096i8 vin_imag, short_struct
     sin_tempWnResult  = MUL4096_8_FIXED(a_sub_b_real, Wn_sin, fft1024_fixed_vec[9], calculate_length);
     tempWnResult_imag = vsadd(cos_tempWnResult, sin_tempWnResult, MASKREAD_OFF, calculate_length);
 
-    tempWnResult_imag = vsadd(tempWnResult_imag, 1, MASKREAD_OFF,
-                              calculate_length); // Function FOR OFFSET
+    // tempWnResult_imag = vsadd(tempWnResult_imag, 1, MASKREAD_OFF,
+    //                           calculate_length); // Function FOR OFFSET
 
     // 重排序
     //  STEP 3 : fft shift
-    vshuffle(OFDM_OutReal, shuffle_wn_stage9, tempWnResult_real, SHUFFLE_SCATTER, 1024);
-    vshuffle(OFDM_OutReal, shuffle_add_stage9, tempAddResult_real, SHUFFLE_SCATTER, 1024);
-    vshuffle(OFDM_OutImag, shuffle_wn_stage9, tempWnResult_imag, SHUFFLE_SCATTER, 1024);
-    vshuffle(OFDM_OutImag, shuffle_add_stage9, tempAddResult_imag, SHUFFLE_SCATTER, 1024);
+    vshuffle(OFDM_OutReal, shuffle_wn_stage9, tempAddResult_real, SHUFFLE_SCATTER, 1024);
+    vshuffle(OFDM_OutReal, shuffle_add_stage9, tempWnResult_real, SHUFFLE_SCATTER, 1024);
+    vshuffle(OFDM_OutImag, shuffle_wn_stage9, tempAddResult_imag, SHUFFLE_SCATTER, 1024);
+    vshuffle(OFDM_OutImag, shuffle_add_stage9, tempWnResult_imag, SHUFFLE_SCATTER, 1024);
+
     //  STEP 3 'END'
     //---------------------------------------------
   }
 
-  vshuffle(OFDM_OutReal, targetIndices, OFDM_OutReal, SHUFFLE_GATHER, 240);
-  vshuffle(OFDM_OutImag, targetIndices, OFDM_OutImag, SHUFFLE_GATHER, 240);
+  __v2048i16 targetIndices1024;
+  vclaim(targetIndices1024);
+  __v2048i16 temp512;
+  vclaim(temp512);
+  vbrdcst(temp512, 512, MASKREAD_OFF, 240);
+  __v4096i8 OFDM_OutReal1;
+  __v4096i8 OFDM_OutImag1;
+  vclaim(OFDM_OutReal1);
+  vclaim(OFDM_OutImag1);
+  if (N_FFT == 2048) {
+    vshuffle(OFDM_OutReal1, targetIndices, OFDM_OutReal, SHUFFLE_GATHER, 240);
+    vshuffle(OFDM_OutImag1, targetIndices, OFDM_OutImag, SHUFFLE_GATHER, 240);
+  } else if (N_FFT == 1024) {
+    targetIndices1024 = vssub(temp512, targetIndices, MASKREAD_OFF, 240);
+    vshuffle(OFDM_OutReal1, targetIndices1024, OFDM_OutReal, SHUFFLE_GATHER, 240);
+    vshuffle(OFDM_OutImag1, targetIndices1024, OFDM_OutImag, SHUFFLE_GATHER, 240);
+  }
+
   //   printf("\n\nFFT_Length:%hd\n\n", &N_FFT);
 
-  vreturn(OFDM_OutReal, 256, OFDM_OutImag, 256);
+  vreturn(OFDM_OutReal1, 256, OFDM_OutImag1, 256);
 }

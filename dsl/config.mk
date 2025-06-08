@@ -1,9 +1,15 @@
-LLVM_PATH=/server17/ic/llvm-bin/bin
-# LLVM_PATH=/home/xusiyi/sys_llvm/llvm-project-cmake-build-debug/bin
-RVPATH=/server17/ic/riscv32im
+# LLVM path in your computer
+LLVM_PATH=/home/syh_gyh/文档/venus-llvm-project-venus/llvm-bin/bin
+
+# RISC-V gnu toolchain path in your computer
+RVPATH=/home/syh_gyh/SYH_Project/opt-riscv32-glibc-ima
+
+# change the target dag
+TARGET_DAG=ltePBCHDag1_hw
+
 RM=/usr/bin/rm
 PYTHON=/usr/bin/python3
-TARGET_DAG=ltePBCH
+mode=debug
 
 CC=$(LLVM_PATH)/clang
 OPT=$(LLVM_PATH)/opt
@@ -15,8 +21,8 @@ VENUSLANE=32
 # VENUSROW=1024
 # VENUSLANE=64
 VENUS_VRFADDR=0x80100000
-VenusInputStructAddr=0x8002F000
-VENUSARCH= --target=riscv32-unknown-elf --gcc-toolchain=/server17/ic/riscv32im -march=rv32imzvenus
+VenusInputStructAddr=0x80023000
+VENUSARCH= --target=riscv32-unknown-elf --gcc-toolchain=$(RVPATH) -march=rv32imzvenus
 VENUSCFLAGS= -mllvm --venus -mllvm --venus-nr-row=$(VENUSROW) -mllvm --venus-nr-lane=$(VENUSLANE) 
 VENUSIRFLAGS= -S -emit-llvm -Xclang -disable-O0-optnone
 CFLAGS= $(VENUSCFLAGS) $(VENUSARCH) $(VENUSIRFLAGS)

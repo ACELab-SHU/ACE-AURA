@@ -1,4 +1,3 @@
-
 #define MASKREAD_ON (1)
 #define MASKREAD_OFF (0)
 #define MASKWRITE_ON (1)
@@ -26,8 +25,10 @@
 #define vclaim(retvec, ...) retvec = __Venus_claim(retvec, ##__VA_ARGS__)
 #define vbrdcst(retvec, val, vmr, ...)                                         \
   retvec = __Venus_brdcst(retvec, val, vmr, ##__VA_ARGS__)
+// #define vshuffle(retvec, idxvec, tgtvec, sg, ...)                              \
+//   retvec = __Venus_shuffle(retvec, idxvec, tgtvec, sg, ##__VA_ARGS__)
 #define vshuffle(retvec, idxvec, tgtvec, sg, ...)                              \
-  retvec = __Venus_shuffle(retvec, idxvec, tgtvec, sg, ##__VA_ARGS__)
+  retvec = __Venus_shuffle_test(retvec, idxvec, tgtvec, sg, ##__VA_ARGS__)                         
 #define vredand(a, vmr, ...) __Venus_redand(a, 0xFFFF, vmr, ##__VA_ARGS__)
 #define vredor(a, vmr, ...) __Venus_redor(a, 0, vmr, ##__VA_ARGS__)
 #define vredxor(a, vmr, ...) __Venus_redxor(a, 0, vmr, ##__VA_ARGS__)

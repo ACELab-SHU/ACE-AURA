@@ -27,7 +27,7 @@ all: header ASM $(IR_TARGETS) $(SPLIT_IR_TARGETS) $(ASSEMBLY_TARGETS) $(ASSEMBLY
 # all: header ASM $(IR_TARGETS) $(SPLIT_IR_TARGETS) $(ASSEMBLY_TARGETS) $(ASSEMBLY_ANALYSIS_TARGETS) $(O_TARGETS) $(BIN_TARGETS) $(HEX_TARGETS) input_num input_type
 
 ASM: $(ASM_PATH)
-	$(PYTHON) asm.py $(TARGET_TASKS_NOT_DIR)
+	$(PYTHON) asm.py $(mode) $(TARGET_TASKS_NOT_DIR)
 
 header: venusbuiltin.h venustype.h
 
@@ -91,5 +91,6 @@ OUTBINHEX: $(HEX_FILES)
 clean:
 	-$(RM) *.d *.hash *.s *_asm.txt *.bin *.map $(TARGETS) *.json
 	$(RM) -rf $(VENUS_IR)/*
+	$(RM) -rf $(ASM_PATH)/*
 
 .PRECIOUS: $(VENUS_IR)%.s

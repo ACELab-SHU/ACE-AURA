@@ -42,24 +42,37 @@ int Task_inputSplit(__v8192i8 dfe_input, short_struct subCarrierSpace, short_str
   }
   symbolLength = N_FFT + cp_length;
 
-  // generate shuffle index
-  __v4096i16 shuffle_index;
-  vclaim(shuffle_index);
-  vrange(shuffle_index, symbolLength);
-  shuffle_index = vmul(shuffle_index, 2, MASKREAD_OFF, symbolLength);
-  shuffle_index = vsadd(shuffle_index, header_length, MASKREAD_OFF, symbolLength);
+  if ((symbol_num <= 13) && (symbol_num >= 0)) {
+    // generate shuffle index
+    __v4096i16 shuffle_index;
+    vclaim(shuffle_index);
+    vrange(shuffle_index, symbolLength);
+    shuffle_index = vmul(shuffle_index, 2, MASKREAD_OFF, symbolLength);
+    shuffle_index = vsadd(shuffle_index, header_length, MASKREAD_OFF, symbolLength);
 
-  __v8192i8 dfe_output_real;
-  __v8192i8 dfe_output_imag;
-  vclaim(dfe_output_real);
-  vclaim(dfe_output_imag);
+    __v8192i8 dfe_output_real;
+    __v8192i8 dfe_output_imag;
+    vclaim(dfe_output_real);
+    vclaim(dfe_output_imag);
 
-  // extract real data
-  vshuffle(dfe_output_real, shuffle_index, dfe_input, SHUFFLE_GATHER, symbolLength);
+    // extract real data
+    vshuffle(dfe_output_real, shuffle_index, dfe_input, SHUFFLE_GATHER, symbolLength);
 
-  // extract imag data
-  shuffle_index = vsadd(shuffle_index, 1, MASKREAD_OFF, symbolLength);
-  vshuffle(dfe_output_imag, shuffle_index, dfe_input, SHUFFLE_GATHER, symbolLength);
+    // extract imag data
+    shuffle_index = vsadd(shuffle_index, 1, MASKREAD_OFF, symbolLength);
+    vshuffle(dfe_output_imag, shuffle_index, dfe_input, SHUFFLE_GATHER, symbolLength);
 
-  vreturn(dfe_output_real, symbolLength, dfe_output_imag, symbolLength);
+    vreturn(dfe_output_real, symbolLength, dfe_output_imag, symbolLength);
+    // vreturn(dfe_output_real, sizeof(dfe_output_real), dfe_output_imag, sizeof(dfe_output_imag));
+  } else {
+
+    __v8192i8 dfe_output_real;
+    __v8192i8 dfe_output_imag;
+    vclaim(dfe_output_real);
+    vclaim(dfe_output_imag);
+    vbrdcst(dfe_output_real, 0, MASKREAD_OFF, 1);
+    vbrdcst(dfe_output_imag, 0, MASKREAD_OFF, 1);
+    vreturn(dfe_output_real, symbolLength, dfe_output_imag, symbolLength);
+    // vreturn(dfe_output_real, sizeof(dfe_output_real), dfe_output_imag, sizeof(dfe_output_imag));
+  }
 }

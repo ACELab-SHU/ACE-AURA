@@ -22,15 +22,19 @@ typedef struct {
   short data;
 } __attribute__((aligned(64))) short_struct;
 
-int Task_nrPBCHEqualize(__v4096i8 rxData_real, __v4096i8 rxData_imag, __v4096i8 H_real, __v4096i8 H_imag,
-                        __v2048i16 pbch_index, __v2048i16 rxData_shuffle_index) __attribute__((aligned(64))) {
+int Task_nrPBCHEqualize(__v4096i8 rxData_real0, __v4096i8 rxData_imag0, __v4096i8 H_real, __v4096i8 H_imag,
+                        __v2048i16 pbch_index, __v2048i16 rxData_shuffle_index) {
 
   int fractionLength = 6;
   int nVar           = 0;
 
   /*--------------------ExtractResources--------------------*/
-  vshuffle(rxData_real, rxData_shuffle_index, rxData_real, SHUFFLE_GATHER, 720);
-  vshuffle(rxData_imag, rxData_shuffle_index, rxData_imag, SHUFFLE_GATHER, 720);
+  __v4096i8 rxData_real;
+  __v4096i8 rxData_imag;
+  vclaim(rxData_real);
+  vclaim(rxData_imag);
+  vshuffle(rxData_real, rxData_shuffle_index, rxData_real0, SHUFFLE_GATHER, 720);
+  vshuffle(rxData_imag, rxData_shuffle_index, rxData_imag0, SHUFFLE_GATHER, 720);
 
   __v4096i8 rxSym_real;
   __v4096i8 rxSym_imag;
@@ -58,8 +62,8 @@ int Task_nrPBCHEqualize(__v4096i8 rxData_real, __v4096i8 rxData_imag, __v4096i8 
   csi_tmp2 = vmul(Hest_imag, Hest_imag, MASKREAD_OFF, PBCH_LENGTH);
   vsetshamt(0);
 
-  csi = vadd(csi_tmp1, csi_tmp2, MASKREAD_OFF, PBCH_LENGTH);
-  csi = vadd(csi, nVar, MASKREAD_OFF, PBCH_LENGTH);
+  csi = vsadd(csi_tmp1, csi_tmp2, MASKREAD_OFF, PBCH_LENGTH);
+  csi = vsadd(csi, nVar, MASKREAD_OFF, PBCH_LENGTH);
 
   __v4096i8 pbchEq_real;
   __v4096i8 pbchEq_imag;
@@ -77,13 +81,13 @@ int Task_nrPBCHEqualize(__v4096i8 rxData_real, __v4096i8 rxData_imag, __v4096i8 
   pbchEq_tmp1 = vmul(Hest_real, rxSym_real, MASKREAD_OFF, PBCH_LENGTH);
   pbchEq_tmp2 = vmul(Hest_imag, rxSym_imag, MASKREAD_OFF, PBCH_LENGTH);
   vsetshamt(0);
-  pbchEq_real = vadd(pbchEq_tmp1, pbchEq_tmp2, MASKREAD_OFF, PBCH_LENGTH);
+  pbchEq_real = vsadd(pbchEq_tmp1, pbchEq_tmp2, MASKREAD_OFF, PBCH_LENGTH);
 
   vsetshamt(fractionLength);
   pbchEq_tmp3 = vmul(Hest_real, rxSym_imag, MASKREAD_OFF, PBCH_LENGTH);
   pbchEq_tmp4 = vmul(Hest_imag, rxSym_real, MASKREAD_OFF, PBCH_LENGTH);
   vsetshamt(0);
-  pbchEq_imag = vsub(pbchEq_tmp4, pbchEq_tmp3, MASKREAD_OFF, PBCH_LENGTH);
+  pbchEq_imag = vssub(pbchEq_tmp4, pbchEq_tmp3, MASKREAD_OFF, PBCH_LENGTH);
 
   vreturn(pbchEq_real, PBCH_LENGTH, pbchEq_imag, PBCH_LENGTH, csi, PBCH_LENGTH);
 }
