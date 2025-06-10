@@ -20,9 +20,9 @@ In the realm of **wireless baseband processing**, **graph computing**, and **neu
 
 By utilizing **DAG scheduling**, we have developed an **innovative, highly scalable external DSL and toolchain** designed for **dataflow-driven heterogeneous systems** .
 
-<img title="" src="file:///E:/SYH/Sync_Projects/Ph.D/Activity/Aura/OpenProject/ACE-Echo/images/1749543529533.png" alt="loading-ag-400" data-align="inline">
+{% include image.html file="dsl_graph.png" caption=" DSL Workflow Graph." %}
 
-                                                        DSL Workflow Graph
+
 
 ## Data Types
 
