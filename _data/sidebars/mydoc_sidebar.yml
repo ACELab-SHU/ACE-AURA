@@ -23,7 +23,7 @@ entries:
     output: web, pdf
     folderitems:
     - title: Introduction
-      url: /index.html
+      url: /mydoc_introduction.html
       output: web, pdf
       type: homepage
     - title: Supported features

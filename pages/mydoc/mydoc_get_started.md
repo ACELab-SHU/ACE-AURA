@@ -10,7 +10,7 @@ folder: mydoc
 
 ## 
 
-Welcome to the **OpenAURA** project! This guide will walk you through setting up your development environment, installing required toolchains, cloning the project, and building the codebase.
+Welcome to the **OpenEcho** project! This guide will walk you through setting up your development environment, installing required toolchains, cloning the project, and building the codebase.
 
 ### ✅ System Requirements
 
