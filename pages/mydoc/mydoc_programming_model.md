@@ -13,33 +13,33 @@ folder: mydoc
 
 ## <font style="color:rgb(17, 17, 17);">Usage steps</font>
 
-**Step 1: Create a project file**
+### **Step 1: Create a project file**
 
   In the AceEcho/tasks path, create a folder.(e.g : AceProject)
 
-![](https://cdn.nlark.com/yuque/0/2025/png/56026285/1749553141407-bee8cdbc-1602-431e-a956-7a8fc9684923.png)
+{% include image.html file="step1.png" %}
 
-**Step 2: Create multiple task files**
+### **Step 2: Create multiple task files**
 
   In the AceEcho/tasks/AceProject/ directory, create multiple .c files according to the required functions, and write detailed rules as shown in Venus_User_Guide.
 
-![](https://cdn.nlark.com/yuque/0/2025/png/56026285/1749553492940-7596b3b1-770b-4e51-a2e1-407913b64292.png)
+{% include image.html file="step2.png" %}
 
-**Step 3: Create a bas file to connect multiple task files**
+### **Step 3: Create a bas file to connect multiple task files**
 
   In the AceEcho/tasks/AceProject/ directory, create an AceProject.bas file, and write the rules as shown in the Venus User Guide example: Create a bas file.
 
-![](https://cdn.nlark.com/yuque/0/2025/png/56026285/1749553605203-b784e283-6b7c-4e0e-94b2-8157f32de60f.png)
+{% include image.html file="step3.png" %}
 
 <blockquote style="background: #f0f8ff; border-left: 3px solid #4682b4; padding: 10px;">
 💡 Note: Only one bas file is allowed to exist in a project. 
 </blockquote>
 
-**Step 4: Observe the printed result after compilation**
+### **Step 4: Observe the printed result after compilation**
 
   In the AceEcho/tasks/Debug/emular_vins_result/, multiple task files will be output according to the order of writing, and there are multiple txt files under each file, and txt will output the printed content of each instruction.
 
-![](https://cdn.nlark.com/yuque/0/2025/png/56026285/1749553809733-4acefafe-2ea0-4750-b383-cf662bdf9f96.png)
+{% include image.html file="step4.png" %}
 
 ## <font style="color:rgb(17, 17, 17);">Example</font>
 
