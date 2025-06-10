@@ -6,6 +6,7 @@ summary: "bas is"
 sidebar: mydoc_sidebar
 permalink: mydoc_dsl_user_guide.html
 folder: mydoc
+
 ---
 
 ## DSL User Guide
@@ -19,7 +20,9 @@ In the realm of **wireless baseband processing**, **graph computing**, and **neu
 
 By utilizing **DAG scheduling**, we have developed an **innovative, highly scalable external DSL and toolchain** designed for **dataflow-driven heterogeneous systems** .
 
-![                              DSL Workflow Graph](/C:\Users\27532\Documents\xwechat_files\wxid_o64k2c6d1nrs22_d8c1\msg\file\2025-06\7f41bf5c-b9bf-4095-9b48-d7534b6e74e8_Export-cdd36499-bde8-474d-af2a-93382b8eb7e6/1749543529533.png) DSL Workflow Graph
+<img title="" src="file:///E:/SYH/Sync_Projects/Ph.D/Activity/Aura/OpenProject/ACE-Echo/images/1749543529533.png" alt="loading-ag-400" data-align="inline">
+
+                                                        DSL Workflow Graph
 
 ## Data Types
 
