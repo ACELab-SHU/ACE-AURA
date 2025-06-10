@@ -54,51 +54,81 @@ int Task_nrMIBDecode(__v4096i8 mib, short_struct input_sfn4lsb, short_struct inp
   bitOffset += 1;
 
   short sysFraNum = 0;
+
+  vbarrier();
+  VSPM_OPEN();
   int   mib_addr1 = vaddr(mib);
   for (int i = 0; i < 6; ++i)
     sysFraNum += (*(volatile char *)(mib_addr1 + bitOffset + i)) << (6 - i - 1);
+  VSPM_CLOSE();
   mibInfo.systemFrameNumber = sysFraNum;
   bitOffset += 6;
 
+  vbarrier();
+  VSPM_OPEN();
   int mib_addr2                   = vaddr(mib);
   mibInfo.subCarrierSpacingCommon = (*(volatile char *)(mib_addr2 + bitOffset));
+  VSPM_CLOSE();
+
   bitOffset += 1;
 
   short ssbNum    = 0;
+  vbarrier();
+  VSPM_OPEN();
   int   mib_addr3 = vaddr(mib);
   for (int i = 0; i < 4; ++i)
     ssbNum += (*(volatile char *)(mib_addr3 + bitOffset + i)) << (4 - i - 1);
+  VSPM_CLOSE();
   mibInfo.ssb_SubcarrierOffset = ssbNum;
   bitOffset += 4;
 
+  vbarrier();
+  VSPM_OPEN();
   int mib_addr4               = vaddr(mib);
   mibInfo.dmrs_TypeA_Position = (*(volatile char *)(mib_addr4 + bitOffset));
+  VSPM_CLOSE();
+
   bitOffset += 1;
 
   short ctrlNum   = 0;
+  vbarrier();
+  VSPM_OPEN();
   int   mib_addr5 = vaddr(mib);
   for (int i = 0; i < 4; ++i)
     ctrlNum += (*(volatile char *)(mib_addr5 + bitOffset + i)) << (4 - i - 1);
+  VSPM_CLOSE();
   mibInfo.pdcch_ConfigSIB1.controlResourceSetZero = ctrlNum;
   bitOffset += 4;
 
   short searchNum = 0;
+  vbarrier();
+  VSPM_OPEN();
   int   mib_addr6 = vaddr(mib);
   for (int i = 0; i < 4; ++i)
     searchNum += (*(volatile char *)(mib_addr6 + bitOffset + i)) << (4 - i - 1);
+  VSPM_CLOSE();
   mibInfo.pdcch_ConfigSIB1.searchSpaceZero = searchNum;
   bitOffset += 4;
 
+  vbarrier();
+  VSPM_OPEN();
   int mib_addr7      = vaddr(mib);
   mibInfo.cellBarred = (*(volatile char *)(mib_addr7 + bitOffset));
+  VSPM_CLOSE();
   bitOffset += 1;
 
+  vbarrier();
+  VSPM_OPEN();
   int mib_addr8                = vaddr(mib);
   mibInfo.intraFreqReselection = (*(volatile char *)(mib_addr8 + bitOffset));
+  VSPM_CLOSE();
   bitOffset += 1;
 
+  vbarrier();
+  VSPM_OPEN();
   int mib_addr9 = vaddr(mib);
   mibInfo.spare = (*(volatile char *)(mib_addr9 + bitOffset));
+  VSPM_CLOSE();
   bitOffset += 1;
 
   initialSystemInfo initialInfo;

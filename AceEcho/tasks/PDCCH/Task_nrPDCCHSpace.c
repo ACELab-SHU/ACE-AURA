@@ -218,9 +218,19 @@ int Task_nrPDCCHSpace(
   uint16_t C       = numREGs / (L * R);
   uint16_t nrb0    = (pdcch.CORESET.CORESETID == 0) ? 0 : (6 * (nStartBWP / 6 + 1) - nStartBWP);
 
+  // printf("L: %hd\n", &L);
+  // printf("R: %hd\n", &R);
+  // printf("nSym: %hd\n", &nSym);
+  // printf("nssStartsym: %hd\n", &nssStartsym);
+  // printf("n_shift: %hd\n", &n_shift);
+  // printf("rbOffset: %hd\n", &rbOffset);
+  // printf("nrb: %hd\n", &nrb);
+  // printf("numCCEs: %hd\n", &numCCEs);
+  // printf("aggLv: %hd\n", &aggLv);
+  // printf("cIdx: %hd\n", &cIdx);
+  // printf("numCand: %hd\n", &numCand);
   // printf("C: %hd\n", &C);
   // printf("R: %hd\n", &R);
-  // printf("n_shift: %hd\n", &n_shift);
   // get CCE-REG Mapping
   __v2048i16 f;
   vclaim(f);
@@ -251,9 +261,9 @@ int Task_nrPDCCHSpace(
   __v4096i8  dmrs_pdcch_imag;
   __v4096i8  dmrs_seq_reshape;
   __v2048i16 dmrs_shuffle_index;
-  __v2048i16 rbCCEIdx;
+  __v2048i16 rbCCEIdx0;
   __v2048i16 rbCCEIdx_sorted;
-  vclaim(rbCCEIdx);
+  vclaim(rbCCEIdx0);
   vclaim(rbCCEIdx_sorted);
   vclaim(dmrs_pdcch_real);
   vclaim(dmrs_seq_tmp);
@@ -284,7 +294,7 @@ int Task_nrPDCCHSpace(
   vclaim(mask);
   vclaim(cons);
   vclaim(rbIdx);
-
+  symIdxPerRB = vadd(symIdxPerRB, 0, MASKREAD_OFF, 2048);
   ///////////////////////////////////////////////////////////////////////////
   /*--------------------sym and dmrs index--------------------*/
   // int symIdxPerRB_addr = vaddr(symIdxPerRB);
@@ -313,8 +323,6 @@ int Task_nrPDCCHSpace(
   cceIndices =
       vadd(cceIndices, ((numCCEs * cIdx / (aggLv * numCand)) % (numCCEs / aggLv)) * aggLv, MASKREAD_OFF, aggLv);
   // VENUS_PRINTVEC_CHAR(cceIndices,aggLv);
-  // if (pdcch.CORESET.CCEREGMapping == 1)
-  // {
   for (int i = 0; i < nSym; i++) {
     vrange(index0, numREGs / nSym);
     index1 = vmul(index0, nSym, MASKREAD_OFF, numREGs / nSym);
@@ -330,22 +338,29 @@ int Task_nrPDCCHSpace(
     index1 = vadd(index1, i, MASKREAD_OFF, numCCEs);
     vshuffle(index2, f, index1, SHUFFLE_GATHER, numCCEs);
     vshuffle(index1, cceIndices, index2, SHUFFLE_GATHER, aggLv);
-    vshuffle(rbCCEIdx, index0, index1, SHUFFLE_SCATTER, aggLv);
+    vshuffle(rbCCEIdx0, index0, index1, SHUFFLE_SCATTER, aggLv);
   }
-  vshuffle(rbCCEIdx, rbCCEIdx, rbIdx, SHUFFLE_GATHER, 6 * aggLv);
+  __v2048i16 rbCCEIdx;
+  vclaim(rbCCEIdx);
+  vshuffle(rbCCEIdx, rbCCEIdx0, rbIdx, SHUFFLE_GATHER, 6 * aggLv);
 
   int rbCCEIdx_offset[16];
   int rbCCEIdx_offset_index[16];
-  int rbCCEIdx_addr = vaddr(rbCCEIdx);
   vbarrier();
   VSPM_OPEN();
   for (int i = 0; i < aggLv; i++) {
+    int rbCCEIdx_addr  = vaddr(rbCCEIdx);
     int current_addr   = rbCCEIdx_addr + (i << 1);
     int current        = *(volatile unsigned short *)(current_addr);
     rbCCEIdx_offset[i] = current;
   }
   VSPM_CLOSE();
-
+  // int temptemp = 11;
+  // printf("rbCCEIdx_offset: %d\n", &temptemp);
+  // for (int i = 0; i < aggLv; i++)
+  // {
+  //   printf("rbCCEIdx_offset: %d\n", &rbCCEIdx_offset[i]);
+  // }
   // asm("ebreak");
   for (int i = 0; i < aggLv; i++) {
     int min = INF;
@@ -357,6 +372,11 @@ int Task_nrPDCCHSpace(
     }
     rbCCEIdx_offset[rbCCEIdx_offset_index[i]] = INF;
   }
+
+  // for (int i = 0; i < aggLv; i++)
+  // {
+  //   printf("rbCCEIdx_offset_index: %d\n", &rbCCEIdx_offset_index[i]);
+  // }
   // asm("ebreak");
   vrange(index0, 6);
   index0 = vmul(index0, aggLv, MASKREAD_OFF, 6);
@@ -369,10 +389,6 @@ int Task_nrPDCCHSpace(
   }
   // VENUS_PRINTVEC_SHORT(rbCCEIdx_sorted, 6 * aggLv);
 
-  // }
-  // else{
-  //     ;
-  // }
   for (int i = 0; i < nSym; i++) {
     vrange(index0, 6 * aggLv / nSym);
     index1 = vmul(index0, nSym, MASKREAD_OFF, 6 * aggLv / nSym);
@@ -391,6 +407,7 @@ int Task_nrPDCCHSpace(
     VSPM_OPEN();
     idx = *(volatile unsigned short *)(rbCCEIdx_addr + (i << 1));
     VSPM_CLOSE();
+    // printf("idx: %hd\n", &idx);
     index1 = vadd(symIdxPerRB, 12 * idx, MASKREAD_OFF, 9);
     vshuffle(pdcchIdx, index0, index1, SHUFFLE_SCATTER, 9);
 
@@ -456,10 +473,10 @@ int Task_nrPDCCHSpace(
   ///////////////////////////////////////////////////////////////////
 
   /*--------------------DMRS GENERATION--------------------*/
-  __v4096i8 dmrs_seq;
+  __v4096i8 dmrs_seq0;
   __v4096i8 dmrs_real;
   __v4096i8 dmrs_imag;
-  vclaim(dmrs_seq);
+  vclaim(dmrs_seq0);
   vclaim(dmrs_real);
   vclaim(dmrs_imag);
 
@@ -477,18 +494,20 @@ int Task_nrPDCCHSpace(
       cinit                             = cinit >> 1;
     }
     VSPM_CLOSE();
-    dmrs_seq = nrPRBS(seq1_vec, init_vec, seq2_init_table_0_vec, seq2_init_table_1_vec, seq2_init_table_2_vec,
-                      seq2_init_table_3_vec, seq2_init_table_4_vec, seq2_init_table_5_vec, seq2_init_table_6_vec,
-                      seq2_init_table_7_vec, seq2_init_table_8_vec, seq2_init_table_9_vec, seq2_init_table_10_vec,
-                      seq2_init_table_11_vec, seq2_init_table_12_vec, seq2_init_table_13_vec, seq2_init_table_14_vec,
-                      seq2_init_table_15_vec, seq2_init_table_16_vec, seq2_init_table_17_vec, seq2_init_table_18_vec,
-                      seq2_init_table_19_vec, seq2_trans_table_0_vec, seq2_trans_table_1_vec, seq2_trans_table_2_vec,
-                      seq2_trans_table_3_vec, seq2_trans_table_4_vec, seq2_trans_table_5_vec, seq2_trans_table_6_vec,
-                      sequenceLength);
+    dmrs_seq0 = nrPRBS(seq1_vec, init_vec, seq2_init_table_0_vec, seq2_init_table_1_vec, seq2_init_table_2_vec,
+                       seq2_init_table_3_vec, seq2_init_table_4_vec, seq2_init_table_5_vec, seq2_init_table_6_vec,
+                       seq2_init_table_7_vec, seq2_init_table_8_vec, seq2_init_table_9_vec, seq2_init_table_10_vec,
+                       seq2_init_table_11_vec, seq2_init_table_12_vec, seq2_init_table_13_vec, seq2_init_table_14_vec,
+                       seq2_init_table_15_vec, seq2_init_table_16_vec, seq2_init_table_17_vec, seq2_init_table_18_vec,
+                       seq2_init_table_19_vec, seq2_trans_table_0_vec, seq2_trans_table_1_vec, seq2_trans_table_2_vec,
+                       seq2_trans_table_3_vec, seq2_trans_table_4_vec, seq2_trans_table_5_vec, seq2_trans_table_6_vec,
+                       sequenceLength);
     // VENUS_PRINTVEC_CHAR(dmrs_seq, sequenceLength);
     vrange(dmrs_shuffle_index, prbsLength);
     dmrs_shuffle_index = vadd(dmrs_shuffle_index, sequenceLength - prbsLength, MASKREAD_OFF, prbsLength);
-    vshuffle(dmrs_seq, dmrs_shuffle_index, dmrs_seq, SHUFFLE_GATHER, prbsLength);
+    __v4096i8 dmrs_seq;
+    vclaim(dmrs_seq);
+    vshuffle(dmrs_seq, dmrs_shuffle_index, dmrs_seq0, SHUFFLE_GATHER, prbsLength);
 
     for (int i = 0; i < seqSampPerRB; i++) {
       dmrs_shuffle_index = vmul(rbCCEIdx, 6, MASKREAD_OFF, 6 * aggLv / nSym);
@@ -519,7 +538,7 @@ int Task_nrPDCCHSpace(
   uint16_t temp                = -1 * nssStartsym * pdcch.NSizeBWP * 12;
 
   pdcchIdx     = vsadd(pdcchIdx, -1 * nssStartsym * pdcch.NSizeBWP * 12, MASKREAD_OFF, pdcchIdx_length);
-  pdcchdmrsIdx = vsadd(pdcchdmrsIdx, -1 * nssStartsym * pdcch.NSizeBWP * 12, MASKREAD_OFF, prbsLength);
+  pdcchdmrsIdx = vsadd(pdcchdmrsIdx, -1 * nssStartsym * pdcch.NSizeBWP * 12, MASKREAD_OFF, pdcchdmrsIdx_length);
 
   short_struct out_pdcchIdx_length;
   short_struct out_pdcchdmrsIdx_length;

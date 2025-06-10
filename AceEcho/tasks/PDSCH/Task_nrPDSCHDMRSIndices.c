@@ -88,6 +88,9 @@ typedef struct fTABLE {
  * */
 
 int Task_nrPDSCHDMRSIndices(nrPDSCHConfig pdsch, nrCarrierConfig carrier) {
+
+  VSPM_OPEN();
+
   uint16_t pdsch_NSizeBWP  = pdsch.NSizeBWP;
   uint16_t pdsch_NStartBWP = pdsch.NStartBWP;
   uint16_t nSizeGrid       = carrier.NSizeGrid;
@@ -927,8 +930,12 @@ int Task_nrPDSCHDMRSIndices(nrPDSCHConfig pdsch, nrCarrierConfig carrier) {
     *(volatile unsigned short *)(index_out_addr + (i << 1)) = index_dmrs[i] - symbolset[0] * nSizeGrid * 12;
   }
   VSPM_CLOSE();
-  index_out = vadd(index_out, 0, MASKREAD_OFF, 2048);
-
+  index_out = vsadd(index_out, 0, MASKREAD_OFF, 2048);
+  index_out = vsadd(index_out, 0, MASKREAD_OFF, 2048);
+  index_out = vsadd(index_out, 0, MASKREAD_OFF, 2048);
+  index_out = vsadd(index_out, 0, MASKREAD_OFF, 2048);
+  index_out = vsadd(index_out, 0, MASKREAD_OFF, 2048);
+  index_out = vsadd(index_out, 0, MASKREAD_OFF, 2048);
   __v2048i16 dmrs_symbol_location;
   vclaim(dmrs_symbol_location);
   vbarrier();
@@ -939,6 +946,7 @@ int Task_nrPDSCHDMRSIndices(nrPDSCHConfig pdsch, nrCarrierConfig carrier) {
   }
   VSPM_CLOSE();
 
+  VSPM_OPEN();
   short_struct dmrs_symbol_length;
   dmrs_symbol_length.data = dmrssymbolset_length;
 
@@ -947,8 +955,12 @@ int Task_nrPDSCHDMRSIndices(nrPDSCHConfig pdsch, nrCarrierConfig carrier) {
 
   short_struct dmrs_interval;
   dmrs_interval.data = 2;
+  VSPM_CLOSE();
 
-  vreturn(index_out, sizeof(index_out), dmrs_symbol_location, sizeof(dmrs_symbol_location), &dmrs_symbol_length,
+  vreturn(index_out, index_dmrs_length * 2, dmrs_symbol_location, dmrssymbolset_length * 2, &dmrs_symbol_length,
           sizeof(dmrs_symbol_length), &dmrs_length_one_symbol, sizeof(dmrs_length_one_symbol), &dmrs_interval,
           sizeof(dmrs_interval));
+  // vreturn(index_out, sizeof(index_out), dmrs_symbol_location, dmrssymbolset_length * 2, &dmrs_symbol_length,
+  //         sizeof(dmrs_symbol_length), &dmrs_length_one_symbol, sizeof(dmrs_length_one_symbol), &dmrs_interval,
+  //         sizeof(dmrs_interval));
 }

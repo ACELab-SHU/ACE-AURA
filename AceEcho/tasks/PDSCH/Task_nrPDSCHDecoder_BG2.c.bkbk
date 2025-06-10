@@ -1,0 +1,3335 @@
+#include "data_type.h"
+#include "riscv_printf.h"
+#include "venus.h"
+
+typedef short __v5000i16 __attribute__((ext_vector_type(5000)));
+typedef char  __v10000i8 __attribute__((ext_vector_type(10000)));
+
+enum crcType { CRC24A, CRC24B, CRC24C, CRC16, CRC11, CRC6 };
+
+#define BG1 0
+#define BG2 1
+
+#define FIX 64
+#define INF 0x7F
+
+#define ALPHA 5
+
+#define BG1_LAYERSIZE 46
+#define BG2_LAYERSIZE 42
+
+#define MIN(a, b) (((a) < (b)) ? (0) : (a - b))
+#define MAX(a, b) (((a) > (b)) ? (a) : (b))
+
+uint16_t BGlayer_1[46 * 2] = {
+    0,   19,  19,  38,  38,  57,  57,  76,  76,  79,  79,  87,  87,  96,  96,  103, 103, 113, 113, 122, 122, 129, 129,
+    137, 137, 144, 144, 150, 150, 157, 157, 164, 164, 170, 170, 176, 176, 182, 182, 188, 188, 194, 194, 200, 200, 205,
+    205, 210, 210, 216, 216, 221, 221, 226, 226, 230, 230, 235, 235, 240, 240, 245, 245, 250, 250, 255, 255, 260, 260,
+    265, 265, 270, 270, 275, 275, 279, 279, 284, 284, 289, 289, 293, 293, 298, 298, 302, 302, 307, 307, 312, 312, 316};
+
+uint16_t BGlayer_2[42 * 2] = {0,   8,   8,   18,  18,  26,  26,  36,  36,  40,  40,  46,  46,  52,  52,  58,  58,
+                              62,  62,  67,  67,  72,  72,  77,  77,  81,  81,  86,  86,  91,  91,  95,  95,  100,
+                              100, 105, 105, 109, 109, 113, 113, 117, 117, 121, 121, 124, 124, 128, 128, 132, 132,
+                              135, 135, 140, 140, 143, 143, 147, 147, 150, 150, 155, 155, 158, 158, 162, 162, 166,
+                              166, 170, 170, 174, 174, 178, 178, 181, 181, 185, 185, 189, 189, 193, 193, 197};
+
+int LayerEdgesCnts_BG1[9] = {3, 4, 5, 6, 7, 8, 9, 10, 19};
+
+int LayerEdgesCnts_BG2[6] = {3, 4, 5, 6, 8, 10};
+
+int LayerEdgesCnts_Layers_BG1[9 * 19] = {
+    1,  4,  0,  0,  0,  0,  0,  0,  0, 0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  5,  27, 37, 40, 42, 45, 0,  0,  0,  0,
+    0,  0,  0,  0,  0,  0,  0,  0,  0, 18, 22, 23, 25, 26, 28, 29, 30, 31, 32, 33, 34, 35, 36, 38, 39, 41, 43, 44, 8,
+    13, 16, 17, 18, 19, 20, 21, 24, 0, 0,  0,  0,  0,  0,  0,  0,  0,  0,  5,  7,  10, 12, 14, 15, 0,  0,  0,  0,  0,
+    0,  0,  0,  0,  0,  0,  0,  0,  2, 5,  11, 0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  2,  6,
+    9,  0,  0,  0,  0,  0,  0,  0,  0, 0,  0,  0,  0,  0,  0,  0,  0,  1,  8,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
+    0,  0,  0,  0,  0,  0,  0,  4,  0, 1,  2,  3,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0};
+
+int LayerEdgesCnts_Layers_BG2[6 * 21] = {
+    6,  22, 25, 27, 29, 31, 37, 0,  0,  0,  0,  0,  0,  0,  0,  0,  0, 0, 0,  0,  0,  20, 4,  8,  12, 15,
+    18, 19, 20, 21, 23, 24, 28, 32, 33, 34, 35, 36, 38, 39, 40, 41, 9, 9, 10, 11, 13, 14, 16, 17, 26, 30,
+    0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  3,  5,  6,  7,  0,  0, 0, 0,  0,  0,  0,  0,  0,  0,  0,
+    0,  0,  0,  0,  0,  0,  2,  0,  2,  0,  0,  0,  0,  0,  0,  0,  0, 0, 0,  0,  0,  0,  0,  0,  0,  0,
+    0,  2,  1,  3,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0, 0, 0,  0,  0,  0};
+
+// table
+uint16_t vNodesIdx_BG1[316];
+uint16_t nShifts_BG1[316];
+
+uint16_t vNodesIdx_BG2[197];
+uint16_t nShifts_BG2[197];
+
+struct LDPC {
+  uint16_t     mKBar;   // mKBar = mK - mF
+  uint16_t     mK;      //信息位长度
+  double       mR;      //码率
+  uint16_t     mBGn;    //基图类型
+  uint16_t     mZc;     //上升因子
+  uint16_t     mSetIdx; //上升因子所属的组
+  uint16_t     mF;      //填充位
+  uint16_t     mN;      //编码后的总长(未打掉前两列的长度)
+  uint16_t     mC;      //分割后的码块数
+  enum crcType CRC;     // CRC类型
+  uint16_t     mL;      // CRC长度
+  uint16_t     mLcb;    //码块分割添加的CRC长度
+} __attribute__((aligned(64)));
+
+#define FLOOR(n) ((((int)(n) < 0) && ((n) != (int)(n))) ? ((int)(n)-1) : (int)(n))
+#define CEIL(n)  ((((int)(n) < 0) && ((n) != (int)(n))) ? ((int)(n) + 1) : (int)(n))
+
+VENUS_INLINE __v10000i8 nrLDPCDecoder_BG2(uint16_t mBGn, uint16_t mZc, uint16_t mN, uint16_t mF, uint16_t mK,
+                                          __v10000i8 LLR) {
+
+  int nMaxLayer = 42;
+  int maxiter   = 10;
+  int edgeStart;
+  int edgeEnd;
+  int nLayerEdges;
+  int edgeIdx;
+  int vNodeIdx;
+  int nShifts;
+  int ss;
+  int nLayers;
+  int iEdges;
+
+  // __v10000i8 VtoCmsg_0;
+  // __v10000i8 VtoCmsg_1;
+  // __v10000i8 VtoCmsg_2;
+  // __v10000i8 VtoCmsg_3;
+  // __v10000i8 VtoCmsg_4;
+  // __v10000i8 VtoCmsg_5;
+  // __v10000i8 VtoCmsg_6;
+  // __v10000i8 VtoCmsg_7;
+  // __v10000i8 VtoCmsg_8;
+  // __v10000i8 VtoCmsg_9;
+  __v10000i8 Buffer;
+  __v10000i8 Buffer1;
+  __v10000i8 CtoVmsg;
+  __v10000i8 CtoVmsg0;
+  __v10000i8 parity_0;
+  __v10000i8 parity;
+  // __v10000i8 VtoCmsg_abs_0;
+  // __v10000i8 VtoCmsg_abs_1;
+  // __v10000i8 VtoCmsg_abs_2;
+  // __v10000i8 VtoCmsg_abs_3;
+  // __v10000i8 VtoCmsg_abs_4;
+  // __v10000i8 VtoCmsg_abs_5;
+  // __v10000i8 VtoCmsg_abs_6;
+  // __v10000i8 VtoCmsg_abs_7;
+  // __v10000i8 VtoCmsg_abs_8;
+  // __v10000i8 VtoCmsg_abs_9;
+  // __v10000i8 VtoCmsg_minsum_0;
+  // __v10000i8 VtoCmsg_minsum_1;
+  // __v10000i8 VtoCmsg_minsum_2;
+  // __v10000i8 VtoCmsg_minsum_3;
+  // __v10000i8 VtoCmsg_minsum_4;
+  // __v10000i8 VtoCmsg_minsum_5;
+  // __v10000i8 VtoCmsg_minsum_6;
+  // __v10000i8 VtoCmsg_minsum_7;
+  // __v10000i8 VtoCmsg_minsum_8;
+  // __v10000i8 VtoCmsg_minsum_9;
+  __v10000i8 minBuf;
+  __v10000i8 cons_i8;
+  __v5000i16 index;
+
+  // vclaim(VtoCmsg_0);
+  // vclaim(VtoCmsg_1);
+  // vclaim(VtoCmsg_2);
+  // vclaim(VtoCmsg_3);
+  // vclaim(VtoCmsg_4);
+  // vclaim(VtoCmsg_5);
+  // vclaim(VtoCmsg_6);
+  // vclaim(VtoCmsg_7);
+  // vclaim(VtoCmsg_8);
+  // vclaim(VtoCmsg_9);
+  vclaim(Buffer);
+  vclaim(Buffer1);
+  vclaim(CtoVmsg);
+  vclaim(CtoVmsg0);
+  vclaim(parity_0);
+  vclaim(parity);
+  // vclaim(VtoCmsg_abs_0);
+  // vclaim(VtoCmsg_abs_1);
+  // vclaim(VtoCmsg_abs_2);
+  // vclaim(VtoCmsg_abs_3);
+  // vclaim(VtoCmsg_abs_4);
+  // vclaim(VtoCmsg_abs_5);
+  // vclaim(VtoCmsg_abs_6);
+  // vclaim(VtoCmsg_abs_7);
+  // vclaim(VtoCmsg_abs_8);
+  // vclaim(VtoCmsg_abs_9);
+  // vclaim(VtoCmsg_minsum_0);
+  // vclaim(VtoCmsg_minsum_1);
+  // vclaim(VtoCmsg_minsum_2);
+  // vclaim(VtoCmsg_minsum_3);
+  // vclaim(VtoCmsg_minsum_4);
+  // vclaim(VtoCmsg_minsum_5);
+  // vclaim(VtoCmsg_minsum_6);
+  // vclaim(VtoCmsg_minsum_7);
+  // vclaim(VtoCmsg_minsum_8);
+  // vclaim(VtoCmsg_minsum_9);
+  vclaim(minBuf);
+  vclaim(cons_i8);
+  vclaim(index);
+
+  for (int iter = 0; iter < maxiter; iter++) {
+    vbrdcst(CtoVmsg0, 0, MASKREAD_OFF, mN);
+    for (int iLayerEdgesCnt = 0; iLayerEdgesCnt < 6; ++iLayerEdgesCnt) {
+      nLayers = LayerEdgesCnts_Layers_BG2[iLayerEdgesCnt * 21];
+      if (LayerEdgesCnts_BG2[iLayerEdgesCnt] == 3) {
+        __v10000i8 VtoCmsg_0;
+        __v10000i8 VtoCmsg_1;
+        __v10000i8 VtoCmsg_2;
+        __v10000i8 VtoCmsg_abs_0;
+        __v10000i8 VtoCmsg_abs_1;
+        __v10000i8 VtoCmsg_abs_2;
+        __v10000i8 VtoCmsg_minsum_0;
+        __v10000i8 VtoCmsg_minsum_1;
+        __v10000i8 VtoCmsg_minsum_2;
+        vclaim(VtoCmsg_0);
+        vclaim(VtoCmsg_1);
+        vclaim(VtoCmsg_2);
+        vclaim(VtoCmsg_abs_0);
+        vclaim(VtoCmsg_abs_1);
+        vclaim(VtoCmsg_abs_2);
+        vclaim(VtoCmsg_minsum_0);
+        vclaim(VtoCmsg_minsum_1);
+        vclaim(VtoCmsg_minsum_2);
+
+        for (int iLayer = 0; iLayer < nLayers; ++iLayer) {
+          edgeStart   = BGlayer_2[LayerEdgesCnts_Layers_BG2[iLayerEdgesCnt * 21 + iLayer + 1] * 2 + 0];
+          edgeEnd     = BGlayer_2[LayerEdgesCnts_Layers_BG2[iLayerEdgesCnt * 21 + iLayer + 1] * 2 + 1];
+          nLayerEdges = edgeEnd - edgeStart;
+          iEdges      = 0;
+
+          edgeIdx  = edgeStart + iEdges;
+          vNodeIdx = vNodesIdx_BG2[edgeIdx];
+          nShifts  = nShifts_BG2[edgeIdx];
+          ss       = mZc - nShifts;
+          vrange(index, mZc);
+          index = vsadd(index, nShifts - mZc, MASKREAD_OFF, mZc);
+          index = vsadd(index, (ss == 0) ? 0 : mZc, MASKREAD_OFF, (ss == 0) ? 10 : ss);
+          index = vsadd(index, mZc * vNodeIdx, MASKREAD_OFF, mZc);
+          vshuffle(Buffer, index, LLR, SHUFFLE_GATHER, mZc);
+
+          vrange(index, mZc);
+          index = vsadd(index, mZc * iLayer, MASKREAD_OFF, mZc);
+          vshuffle(VtoCmsg_0, index, Buffer, SHUFFLE_SCATTER, mZc);
+          iEdges++;
+
+          edgeIdx  = edgeStart + iEdges;
+          vNodeIdx = vNodesIdx_BG2[edgeIdx];
+          nShifts  = nShifts_BG2[edgeIdx];
+          ss       = mZc - nShifts;
+          vrange(index, mZc);
+          index = vsadd(index, nShifts - mZc, MASKREAD_OFF, mZc);
+          index = vsadd(index, (ss == 0) ? 0 : mZc, MASKREAD_OFF, (ss == 0) ? 10 : ss);
+          index = vsadd(index, mZc * vNodeIdx, MASKREAD_OFF, mZc);
+          vshuffle(Buffer, index, LLR, SHUFFLE_GATHER, mZc);
+
+          vrange(index, mZc);
+          index = vsadd(index, mZc * iLayer, MASKREAD_OFF, mZc);
+          vshuffle(VtoCmsg_1, index, Buffer, SHUFFLE_SCATTER, mZc);
+          iEdges++;
+
+          edgeIdx  = edgeStart + iEdges;
+          vNodeIdx = vNodesIdx_BG2[edgeIdx];
+          nShifts  = nShifts_BG2[edgeIdx];
+          ss       = mZc - nShifts;
+          vrange(index, mZc);
+          index = vsadd(index, nShifts - mZc, MASKREAD_OFF, mZc);
+          index = vsadd(index, (ss == 0) ? 0 : mZc, MASKREAD_OFF, (ss == 0) ? 10 : ss);
+          index = vsadd(index, mZc * vNodeIdx, MASKREAD_OFF, mZc);
+          vshuffle(Buffer, index, LLR, SHUFFLE_GATHER, mZc);
+
+          vrange(index, mZc);
+          index = vsadd(index, mZc * iLayer, MASKREAD_OFF, mZc);
+          vshuffle(VtoCmsg_2, index, Buffer, SHUFFLE_SCATTER, mZc);
+          iEdges++;
+        }
+        vbrdcst(parity, 0, MASKREAD_OFF, mZc * nLayers);
+        VtoCmsg_abs_0 = vsadd(VtoCmsg_0, 0, MASKREAD_OFF, mZc * nLayers);
+        vsgt(VtoCmsg_abs_0, 0, MASKREAD_OFF, MASKWRITE_ON, mZc * nLayers);
+        vbrdcst(cons_i8, 0xFF, MASKREAD_OFF, mZc * nLayers);
+        parity        = vxor(cons_i8, parity, MASKREAD_ON, mZc * nLayers);
+        VtoCmsg_abs_0 = vxor(cons_i8, VtoCmsg_abs_0, MASKREAD_ON, mZc * nLayers);
+        vbrdcst(cons_i8, 1, MASKREAD_OFF, mZc * nLayers);
+        VtoCmsg_abs_0 = vsadd(cons_i8, VtoCmsg_abs_0, MASKREAD_ON, mZc * nLayers);
+
+        VtoCmsg_abs_1 = vsadd(VtoCmsg_1, 0, MASKREAD_OFF, mZc * nLayers);
+        vsgt(VtoCmsg_abs_1, 0, MASKREAD_OFF, MASKWRITE_ON, mZc * nLayers);
+        vbrdcst(cons_i8, 0xFF, MASKREAD_OFF, mZc * nLayers);
+        parity        = vxor(cons_i8, parity, MASKREAD_ON, mZc * nLayers);
+        VtoCmsg_abs_1 = vxor(cons_i8, VtoCmsg_abs_1, MASKREAD_ON, mZc * nLayers);
+        vbrdcst(cons_i8, 1, MASKREAD_OFF, mZc * nLayers);
+        VtoCmsg_abs_1 = vsadd(cons_i8, VtoCmsg_abs_1, MASKREAD_ON, mZc * nLayers);
+
+        VtoCmsg_abs_2 = vsadd(VtoCmsg_2, 0, MASKREAD_OFF, mZc * nLayers);
+        vsgt(VtoCmsg_abs_2, 0, MASKREAD_OFF, MASKWRITE_ON, mZc * nLayers);
+        vbrdcst(cons_i8, 0xFF, MASKREAD_OFF, mZc * nLayers);
+        parity        = vxor(cons_i8, parity, MASKREAD_ON, mZc * nLayers);
+        VtoCmsg_abs_2 = vxor(cons_i8, VtoCmsg_abs_2, MASKREAD_ON, mZc * nLayers);
+        vbrdcst(cons_i8, 1, MASKREAD_OFF, mZc * nLayers);
+        VtoCmsg_abs_2 = vsadd(cons_i8, VtoCmsg_abs_2, MASKREAD_ON, mZc * nLayers);
+
+        vbrdcst(minBuf, INF, MASKREAD_OFF, mZc * nLayers);
+        vbrdcst(parity_0, 0, MASKREAD_OFF, mZc * nLayers);
+        vbrdcst(VtoCmsg_minsum_0, 0, MASKREAD_OFF, mZc * nLayers);
+        vsle(minBuf, VtoCmsg_abs_1, MASKREAD_OFF, MASKWRITE_ON, mZc * nLayers);
+        minBuf = vxor(minBuf, minBuf, MASKREAD_ON, mZc * nLayers);
+        minBuf = vsadd(VtoCmsg_abs_1, minBuf, MASKREAD_ON, mZc * nLayers);
+
+        vsle(minBuf, VtoCmsg_abs_2, MASKREAD_OFF, MASKWRITE_ON, mZc * nLayers);
+        minBuf = vxor(minBuf, minBuf, MASKREAD_ON, mZc * nLayers);
+        minBuf = vsadd(VtoCmsg_abs_2, minBuf, MASKREAD_ON, mZc * nLayers);
+
+        vsgt(minBuf, ALPHA + 1, MASKREAD_OFF, MASKWRITE_ON, mZc * nLayers);
+        minBuf = vxor(minBuf, minBuf, MASKREAD_ON, mZc * nLayers);
+        vsle(minBuf, ALPHA, MASKREAD_OFF, MASKWRITE_ON, mZc * nLayers);
+        vbrdcst(cons_i8, -1 * ALPHA, MASKREAD_OFF, mZc * nLayers);
+        minBuf = vsadd(cons_i8, minBuf, MASKREAD_ON, mZc * nLayers);
+
+        vsgt(VtoCmsg_0, 0, MASKREAD_OFF, MASKWRITE_ON, mZc * nLayers);
+        vbrdcst(cons_i8, 0xFF, MASKREAD_OFF, mZc * nLayers);
+        parity_0 = vxor(cons_i8, parity_0, MASKREAD_ON, mZc * nLayers);
+        parity_0 = vxor(parity_0, parity, MASKREAD_OFF, mZc * nLayers);
+        parity_0 = vmul(parity_0, 2, MASKREAD_OFF, mZc * nLayers);
+        parity_0 = vsadd(parity_0, 1, MASKREAD_OFF, mZc * nLayers);
+
+        VtoCmsg_minsum_0 = vxor(VtoCmsg_minsum_0, minBuf, MASKREAD_OFF, mZc * nLayers);
+        VtoCmsg_minsum_0 = vsra(VtoCmsg_minsum_0, 1, MASKREAD_OFF, mZc * nLayers);
+        VtoCmsg_minsum_0 = vmul(VtoCmsg_minsum_0, parity_0, MASKREAD_OFF, mZc * nLayers);
+
+        vbrdcst(minBuf, INF, MASKREAD_OFF, mZc * nLayers);
+        vbrdcst(parity_0, 0, MASKREAD_OFF, mZc * nLayers);
+        vbrdcst(VtoCmsg_minsum_1, 0, MASKREAD_OFF, mZc * nLayers);
+        vsle(minBuf, VtoCmsg_abs_0, MASKREAD_OFF, MASKWRITE_ON, mZc * nLayers);
+        minBuf = vxor(minBuf, minBuf, MASKREAD_ON, mZc * nLayers);
+        minBuf = vsadd(VtoCmsg_abs_0, minBuf, MASKREAD_ON, mZc * nLayers);
+
+        vsle(minBuf, VtoCmsg_abs_2, MASKREAD_OFF, MASKWRITE_ON, mZc * nLayers);
+        minBuf = vxor(minBuf, minBuf, MASKREAD_ON, mZc * nLayers);
+        minBuf = vsadd(VtoCmsg_abs_2, minBuf, MASKREAD_ON, mZc * nLayers);
+
+        vsgt(minBuf, ALPHA + 1, MASKREAD_OFF, MASKWRITE_ON, mZc * nLayers);
+        minBuf = vxor(minBuf, minBuf, MASKREAD_ON, mZc * nLayers);
+        vsle(minBuf, ALPHA, MASKREAD_OFF, MASKWRITE_ON, mZc * nLayers);
+        vbrdcst(cons_i8, -1 * ALPHA, MASKREAD_OFF, mZc * nLayers);
+        minBuf = vsadd(cons_i8, minBuf, MASKREAD_ON, mZc * nLayers);
+
+        vsgt(VtoCmsg_1, 0, MASKREAD_OFF, MASKWRITE_ON, mZc * nLayers);
+        vbrdcst(cons_i8, 0xFF, MASKREAD_OFF, mZc * nLayers);
+        parity_0 = vxor(cons_i8, parity_0, MASKREAD_ON, mZc * nLayers);
+        parity_0 = vxor(parity_0, parity, MASKREAD_OFF, mZc * nLayers);
+        parity_0 = vmul(parity_0, 2, MASKREAD_OFF, mZc * nLayers);
+        parity_0 = vsadd(parity_0, 1, MASKREAD_OFF, mZc * nLayers);
+
+        VtoCmsg_minsum_1 = vxor(VtoCmsg_minsum_1, minBuf, MASKREAD_OFF, mZc * nLayers);
+        VtoCmsg_minsum_1 = vsra(VtoCmsg_minsum_1, 1, MASKREAD_OFF, mZc * nLayers);
+        VtoCmsg_minsum_1 = vmul(VtoCmsg_minsum_1, parity_0, MASKREAD_OFF, mZc * nLayers);
+
+        vbrdcst(minBuf, INF, MASKREAD_OFF, mZc * nLayers);
+        vbrdcst(parity_0, 0, MASKREAD_OFF, mZc * nLayers);
+        vbrdcst(VtoCmsg_minsum_2, 0, MASKREAD_OFF, mZc * nLayers);
+        vsle(minBuf, VtoCmsg_abs_0, MASKREAD_OFF, MASKWRITE_ON, mZc * nLayers);
+        minBuf = vxor(minBuf, minBuf, MASKREAD_ON, mZc * nLayers);
+        minBuf = vsadd(VtoCmsg_abs_0, minBuf, MASKREAD_ON, mZc * nLayers);
+
+        vsle(minBuf, VtoCmsg_abs_1, MASKREAD_OFF, MASKWRITE_ON, mZc * nLayers);
+        minBuf = vxor(minBuf, minBuf, MASKREAD_ON, mZc * nLayers);
+        minBuf = vsadd(VtoCmsg_abs_1, minBuf, MASKREAD_ON, mZc * nLayers);
+
+        vsgt(minBuf, ALPHA + 1, MASKREAD_OFF, MASKWRITE_ON, mZc * nLayers);
+        minBuf = vxor(minBuf, minBuf, MASKREAD_ON, mZc * nLayers);
+        vsle(minBuf, ALPHA, MASKREAD_OFF, MASKWRITE_ON, mZc * nLayers);
+        vbrdcst(cons_i8, -1 * ALPHA, MASKREAD_OFF, mZc * nLayers);
+        minBuf = vsadd(cons_i8, minBuf, MASKREAD_ON, mZc * nLayers);
+
+        vsgt(VtoCmsg_2, 0, MASKREAD_OFF, MASKWRITE_ON, mZc * nLayers);
+        vbrdcst(cons_i8, 0xFF, MASKREAD_OFF, mZc * nLayers);
+        parity_0 = vxor(cons_i8, parity_0, MASKREAD_ON, mZc * nLayers);
+        parity_0 = vxor(parity_0, parity, MASKREAD_OFF, mZc * nLayers);
+        parity_0 = vmul(parity_0, 2, MASKREAD_OFF, mZc * nLayers);
+        parity_0 = vsadd(parity_0, 1, MASKREAD_OFF, mZc * nLayers);
+
+        VtoCmsg_minsum_2 = vxor(VtoCmsg_minsum_2, minBuf, MASKREAD_OFF, mZc * nLayers);
+        VtoCmsg_minsum_2 = vsra(VtoCmsg_minsum_2, 1, MASKREAD_OFF, mZc * nLayers);
+        VtoCmsg_minsum_2 = vmul(VtoCmsg_minsum_2, parity_0, MASKREAD_OFF, mZc * nLayers);
+
+        for (int iLayer = 0; iLayer < nLayers; ++iLayer) {
+          edgeStart   = BGlayer_2[LayerEdgesCnts_Layers_BG2[iLayerEdgesCnt * 21 + iLayer + 1] * 2 + 0];
+          edgeEnd     = BGlayer_2[LayerEdgesCnts_Layers_BG2[iLayerEdgesCnt * 21 + iLayer + 1] * 2 + 1];
+          nLayerEdges = edgeEnd - edgeStart;
+
+          iEdges = 0;
+          vbrdcst(CtoVmsg, 0, MASKREAD_OFF, mN);
+          edgeIdx  = edgeStart + iEdges;
+          vNodeIdx = vNodesIdx_BG2[edgeIdx];
+          nShifts  = nShifts_BG2[edgeIdx];
+          vrange(index, mZc);
+          index = vsadd(index, 0 - nShifts, MASKREAD_OFF, mZc);
+          index = vsadd(index, (nShifts == 0) ? 0 : mZc, MASKREAD_OFF, (nShifts == 0) ? 10 : nShifts);
+          index = vsadd(index, mZc * iLayer, MASKREAD_OFF, mZc);
+          vshuffle(Buffer, index, VtoCmsg_minsum_0, SHUFFLE_GATHER, mZc);
+
+          vrange(index, mZc);
+          index = vsadd(index, mZc * vNodeIdx, MASKREAD_OFF, mZc);
+          vshuffle(CtoVmsg, index, Buffer, SHUFFLE_SCATTER, mZc);
+          iEdges++;
+          edgeIdx  = edgeStart + iEdges;
+          vNodeIdx = vNodesIdx_BG2[edgeIdx];
+          nShifts  = nShifts_BG2[edgeIdx];
+          vrange(index, mZc);
+          index = vsadd(index, 0 - nShifts, MASKREAD_OFF, mZc);
+          index = vsadd(index, (nShifts == 0) ? 0 : mZc, MASKREAD_OFF, (nShifts == 0) ? 10 : nShifts);
+          index = vsadd(index, mZc * iLayer, MASKREAD_OFF, mZc);
+          vshuffle(Buffer, index, VtoCmsg_minsum_1, SHUFFLE_GATHER, mZc);
+
+          vrange(index, mZc);
+          index = vsadd(index, mZc * vNodeIdx, MASKREAD_OFF, mZc);
+          vshuffle(CtoVmsg, index, Buffer, SHUFFLE_SCATTER, mZc);
+          iEdges++;
+          edgeIdx  = edgeStart + iEdges;
+          vNodeIdx = vNodesIdx_BG2[edgeIdx];
+          nShifts  = nShifts_BG2[edgeIdx];
+          vrange(index, mZc);
+          index = vsadd(index, 0 - nShifts, MASKREAD_OFF, mZc);
+          index = vsadd(index, (nShifts == 0) ? 0 : mZc, MASKREAD_OFF, (nShifts == 0) ? 10 : nShifts);
+          index = vsadd(index, mZc * iLayer, MASKREAD_OFF, mZc);
+          vshuffle(Buffer, index, VtoCmsg_minsum_2, SHUFFLE_GATHER, mZc);
+
+          vrange(index, mZc);
+          index = vsadd(index, mZc * vNodeIdx, MASKREAD_OFF, mZc);
+          vshuffle(CtoVmsg, index, Buffer, SHUFFLE_SCATTER, mZc);
+          iEdges++;
+          CtoVmsg0 = vsadd(CtoVmsg0, CtoVmsg, MASKREAD_OFF, mN);
+        }
+      } 
+      else if (LayerEdgesCnts_BG2[iLayerEdgesCnt] == 4) {
+        __v10000i8 VtoCmsg_0;
+        __v10000i8 VtoCmsg_1;
+        __v10000i8 VtoCmsg_2;
+        __v10000i8 VtoCmsg_3;
+        __v10000i8 VtoCmsg_abs_0;
+        __v10000i8 VtoCmsg_abs_1;
+        __v10000i8 VtoCmsg_abs_2;
+        __v10000i8 VtoCmsg_abs_3;
+        __v10000i8 VtoCmsg_minsum_0;
+        __v10000i8 VtoCmsg_minsum_1;
+        __v10000i8 VtoCmsg_minsum_2;
+        __v10000i8 VtoCmsg_minsum_3;
+        vclaim(VtoCmsg_0);
+        vclaim(VtoCmsg_1);
+        vclaim(VtoCmsg_2);
+        vclaim(VtoCmsg_3);
+        vclaim(VtoCmsg_abs_0);
+        vclaim(VtoCmsg_abs_1);
+        vclaim(VtoCmsg_abs_2);
+        vclaim(VtoCmsg_abs_3);
+        vclaim(VtoCmsg_minsum_0);
+        vclaim(VtoCmsg_minsum_1);
+        vclaim(VtoCmsg_minsum_2);
+        vclaim(VtoCmsg_minsum_3);
+        for (int iLayer = 0; iLayer < nLayers; ++iLayer) {
+          edgeStart   = BGlayer_2[LayerEdgesCnts_Layers_BG2[iLayerEdgesCnt * 21 + iLayer + 1] * 2 + 0];
+          edgeEnd     = BGlayer_2[LayerEdgesCnts_Layers_BG2[iLayerEdgesCnt * 21 + iLayer + 1] * 2 + 1];
+          nLayerEdges = edgeEnd - edgeStart;
+          iEdges      = 0;
+          edgeIdx  = edgeStart + iEdges;
+          vNodeIdx = vNodesIdx_BG2[edgeIdx];
+          nShifts  = nShifts_BG2[edgeIdx];
+          ss       = mZc - nShifts;
+          vrange(index, mZc);
+          index = vsadd(index, nShifts - mZc, MASKREAD_OFF, mZc);
+          index = vsadd(index, (ss == 0) ? 0 : mZc, MASKREAD_OFF, (ss == 0) ? 10 : ss);
+          index = vsadd(index, mZc * vNodeIdx, MASKREAD_OFF, mZc);
+          vshuffle(Buffer, index, LLR, SHUFFLE_GATHER, mZc);
+          vrange(index, mZc);
+          index = vsadd(index, mZc * iLayer, MASKREAD_OFF, mZc);
+          vshuffle(VtoCmsg_0, index, Buffer, SHUFFLE_SCATTER, mZc);
+          iEdges++;
+          edgeIdx  = edgeStart + iEdges;
+          vNodeIdx = vNodesIdx_BG2[edgeIdx];
+          nShifts  = nShifts_BG2[edgeIdx];
+          ss       = mZc - nShifts;
+          vrange(index, mZc);
+          index = vsadd(index, nShifts - mZc, MASKREAD_OFF, mZc);
+          index = vsadd(index, (ss == 0) ? 0 : mZc, MASKREAD_OFF, (ss == 0) ? 10 : ss);
+          index = vsadd(index, mZc * vNodeIdx, MASKREAD_OFF, mZc);
+          vshuffle(Buffer, index, LLR, SHUFFLE_GATHER, mZc);
+
+          vrange(index, mZc);
+          index = vsadd(index, mZc * iLayer, MASKREAD_OFF, mZc);
+          vshuffle(VtoCmsg_1, index, Buffer, SHUFFLE_SCATTER, mZc);
+          iEdges++;
+
+          edgeIdx  = edgeStart + iEdges;
+          vNodeIdx = vNodesIdx_BG2[edgeIdx];
+          nShifts  = nShifts_BG2[edgeIdx];
+          ss       = mZc - nShifts;
+          vrange(index, mZc);
+          index = vsadd(index, nShifts - mZc, MASKREAD_OFF, mZc);
+          index = vsadd(index, (ss == 0) ? 0 : mZc, MASKREAD_OFF, (ss == 0) ? 10 : ss);
+          index = vsadd(index, mZc * vNodeIdx, MASKREAD_OFF, mZc);
+          vshuffle(Buffer, index, LLR, SHUFFLE_GATHER, mZc);
+
+          vrange(index, mZc);
+          index = vsadd(index, mZc * iLayer, MASKREAD_OFF, mZc);
+          vshuffle(VtoCmsg_2, index, Buffer, SHUFFLE_SCATTER, mZc);
+          iEdges++;
+
+          edgeIdx  = edgeStart + iEdges;
+          vNodeIdx = vNodesIdx_BG2[edgeIdx];
+          nShifts  = nShifts_BG2[edgeIdx];
+          ss       = mZc - nShifts;
+          vrange(index, mZc);
+          index = vsadd(index, nShifts - mZc, MASKREAD_OFF, mZc);
+          index = vsadd(index, (ss == 0) ? 0 : mZc, MASKREAD_OFF, (ss == 0) ? 10 : ss);
+          index = vsadd(index, mZc * vNodeIdx, MASKREAD_OFF, mZc);
+          vshuffle(Buffer, index, LLR, SHUFFLE_GATHER, mZc);
+
+          vrange(index, mZc);
+          index = vsadd(index, mZc * iLayer, MASKREAD_OFF, mZc);
+          vshuffle(VtoCmsg_3, index, Buffer, SHUFFLE_SCATTER, mZc);
+          iEdges++;
+        }
+        vbrdcst(parity, 0, MASKREAD_OFF, mZc * nLayers);
+        VtoCmsg_abs_0 = vsadd(VtoCmsg_0, 0, MASKREAD_OFF, mZc * nLayers);
+        vsgt(VtoCmsg_abs_0, 0, MASKREAD_OFF, MASKWRITE_ON, mZc * nLayers);
+        vbrdcst(cons_i8, 0xFF, MASKREAD_OFF, mZc * nLayers);
+        parity        = vxor(cons_i8, parity, MASKREAD_ON, mZc * nLayers);
+        VtoCmsg_abs_0 = vxor(cons_i8, VtoCmsg_abs_0, MASKREAD_ON, mZc * nLayers);
+        vbrdcst(cons_i8, 1, MASKREAD_OFF, mZc * nLayers);
+        VtoCmsg_abs_0 = vsadd(cons_i8, VtoCmsg_abs_0, MASKREAD_ON, mZc * nLayers);
+
+        VtoCmsg_abs_1 = vsadd(VtoCmsg_1, 0, MASKREAD_OFF, mZc * nLayers);
+        vsgt(VtoCmsg_abs_1, 0, MASKREAD_OFF, MASKWRITE_ON, mZc * nLayers);
+        vbrdcst(cons_i8, 0xFF, MASKREAD_OFF, mZc * nLayers);
+        parity        = vxor(cons_i8, parity, MASKREAD_ON, mZc * nLayers);
+        VtoCmsg_abs_1 = vxor(cons_i8, VtoCmsg_abs_1, MASKREAD_ON, mZc * nLayers);
+        vbrdcst(cons_i8, 1, MASKREAD_OFF, mZc * nLayers);
+        VtoCmsg_abs_1 = vsadd(cons_i8, VtoCmsg_abs_1, MASKREAD_ON, mZc * nLayers);
+
+        VtoCmsg_abs_2 = vsadd(VtoCmsg_2, 0, MASKREAD_OFF, mZc * nLayers);
+        vsgt(VtoCmsg_abs_2, 0, MASKREAD_OFF, MASKWRITE_ON, mZc * nLayers);
+        vbrdcst(cons_i8, 0xFF, MASKREAD_OFF, mZc * nLayers);
+        parity        = vxor(cons_i8, parity, MASKREAD_ON, mZc * nLayers);
+        VtoCmsg_abs_2 = vxor(cons_i8, VtoCmsg_abs_2, MASKREAD_ON, mZc * nLayers);
+        vbrdcst(cons_i8, 1, MASKREAD_OFF, mZc * nLayers);
+        VtoCmsg_abs_2 = vsadd(cons_i8, VtoCmsg_abs_2, MASKREAD_ON, mZc * nLayers);
+
+        VtoCmsg_abs_3 = vsadd(VtoCmsg_3, 0, MASKREAD_OFF, mZc * nLayers);
+        vsgt(VtoCmsg_abs_3, 0, MASKREAD_OFF, MASKWRITE_ON, mZc * nLayers);
+        vbrdcst(cons_i8, 0xFF, MASKREAD_OFF, mZc * nLayers);
+        parity        = vxor(cons_i8, parity, MASKREAD_ON, mZc * nLayers);
+        VtoCmsg_abs_3 = vxor(cons_i8, VtoCmsg_abs_3, MASKREAD_ON, mZc * nLayers);
+        vbrdcst(cons_i8, 1, MASKREAD_OFF, mZc * nLayers);
+        VtoCmsg_abs_3 = vsadd(cons_i8, VtoCmsg_abs_3, MASKREAD_ON, mZc * nLayers);
+
+        vbrdcst(minBuf, INF, MASKREAD_OFF, mZc * nLayers);
+        vbrdcst(parity_0, 0, MASKREAD_OFF, mZc * nLayers);
+        vbrdcst(VtoCmsg_minsum_0, 0, MASKREAD_OFF, mZc * nLayers);
+        vsle(minBuf, VtoCmsg_abs_1, MASKREAD_OFF, MASKWRITE_ON, mZc * nLayers);
+        minBuf = vxor(minBuf, minBuf, MASKREAD_ON, mZc * nLayers);
+        minBuf = vsadd(VtoCmsg_abs_1, minBuf, MASKREAD_ON, mZc * nLayers);
+
+        vsle(minBuf, VtoCmsg_abs_2, MASKREAD_OFF, MASKWRITE_ON, mZc * nLayers);
+        minBuf = vxor(minBuf, minBuf, MASKREAD_ON, mZc * nLayers);
+        minBuf = vsadd(VtoCmsg_abs_2, minBuf, MASKREAD_ON, mZc * nLayers);
+
+        vsle(minBuf, VtoCmsg_abs_3, MASKREAD_OFF, MASKWRITE_ON, mZc * nLayers);
+        minBuf = vxor(minBuf, minBuf, MASKREAD_ON, mZc * nLayers);
+        minBuf = vsadd(VtoCmsg_abs_3, minBuf, MASKREAD_ON, mZc * nLayers);
+
+        vsgt(minBuf, ALPHA + 1, MASKREAD_OFF, MASKWRITE_ON, mZc * nLayers);
+        minBuf = vxor(minBuf, minBuf, MASKREAD_ON, mZc * nLayers);
+        vsle(minBuf, ALPHA, MASKREAD_OFF, MASKWRITE_ON, mZc * nLayers);
+        vbrdcst(cons_i8, -1 * ALPHA, MASKREAD_OFF, mZc * nLayers);
+        minBuf = vsadd(cons_i8, minBuf, MASKREAD_ON, mZc * nLayers);
+
+        vsgt(VtoCmsg_0, 0, MASKREAD_OFF, MASKWRITE_ON, mZc * nLayers);
+        vbrdcst(cons_i8, 0xFF, MASKREAD_OFF, mZc * nLayers);
+        parity_0 = vxor(cons_i8, parity_0, MASKREAD_ON, mZc * nLayers);
+        parity_0 = vxor(parity_0, parity, MASKREAD_OFF, mZc * nLayers);
+        parity_0 = vmul(parity_0, 2, MASKREAD_OFF, mZc * nLayers);
+        parity_0 = vsadd(parity_0, 1, MASKREAD_OFF, mZc * nLayers);
+
+        VtoCmsg_minsum_0 = vxor(VtoCmsg_minsum_0, minBuf, MASKREAD_OFF, mZc * nLayers);
+        VtoCmsg_minsum_0 = vsra(VtoCmsg_minsum_0, 1, MASKREAD_OFF, mZc * nLayers);
+        VtoCmsg_minsum_0 = vmul(VtoCmsg_minsum_0, parity_0, MASKREAD_OFF, mZc * nLayers);
+
+        vbrdcst(minBuf, INF, MASKREAD_OFF, mZc * nLayers);
+        vbrdcst(parity_0, 0, MASKREAD_OFF, mZc * nLayers);
+        vbrdcst(VtoCmsg_minsum_1, 0, MASKREAD_OFF, mZc * nLayers);
+        vsle(minBuf, VtoCmsg_abs_0, MASKREAD_OFF, MASKWRITE_ON, mZc * nLayers);
+        minBuf = vxor(minBuf, minBuf, MASKREAD_ON, mZc * nLayers);
+        minBuf = vsadd(VtoCmsg_abs_0, minBuf, MASKREAD_ON, mZc * nLayers);
+
+        vsle(minBuf, VtoCmsg_abs_2, MASKREAD_OFF, MASKWRITE_ON, mZc * nLayers);
+        minBuf = vxor(minBuf, minBuf, MASKREAD_ON, mZc * nLayers);
+        minBuf = vsadd(VtoCmsg_abs_2, minBuf, MASKREAD_ON, mZc * nLayers);
+
+        vsle(minBuf, VtoCmsg_abs_3, MASKREAD_OFF, MASKWRITE_ON, mZc * nLayers);
+        minBuf = vxor(minBuf, minBuf, MASKREAD_ON, mZc * nLayers);
+        minBuf = vsadd(VtoCmsg_abs_3, minBuf, MASKREAD_ON, mZc * nLayers);
+
+        vsgt(minBuf, ALPHA + 1, MASKREAD_OFF, MASKWRITE_ON, mZc * nLayers);
+        minBuf = vxor(minBuf, minBuf, MASKREAD_ON, mZc * nLayers);
+        vsle(minBuf, ALPHA, MASKREAD_OFF, MASKWRITE_ON, mZc * nLayers);
+        vbrdcst(cons_i8, -1 * ALPHA, MASKREAD_OFF, mZc * nLayers);
+        minBuf = vsadd(cons_i8, minBuf, MASKREAD_ON, mZc * nLayers);
+
+        vsgt(VtoCmsg_1, 0, MASKREAD_OFF, MASKWRITE_ON, mZc * nLayers);
+        vbrdcst(cons_i8, 0xFF, MASKREAD_OFF, mZc * nLayers);
+        parity_0 = vxor(cons_i8, parity_0, MASKREAD_ON, mZc * nLayers);
+        parity_0 = vxor(parity_0, parity, MASKREAD_OFF, mZc * nLayers);
+        parity_0 = vmul(parity_0, 2, MASKREAD_OFF, mZc * nLayers);
+        parity_0 = vsadd(parity_0, 1, MASKREAD_OFF, mZc * nLayers);
+
+        VtoCmsg_minsum_1 = vxor(VtoCmsg_minsum_1, minBuf, MASKREAD_OFF, mZc * nLayers);
+        VtoCmsg_minsum_1 = vsra(VtoCmsg_minsum_1, 1, MASKREAD_OFF, mZc * nLayers);
+        VtoCmsg_minsum_1 = vmul(VtoCmsg_minsum_1, parity_0, MASKREAD_OFF, mZc * nLayers);
+
+        vbrdcst(minBuf, INF, MASKREAD_OFF, mZc * nLayers);
+        vbrdcst(parity_0, 0, MASKREAD_OFF, mZc * nLayers);
+        vbrdcst(VtoCmsg_minsum_2, 0, MASKREAD_OFF, mZc * nLayers);
+        vsle(minBuf, VtoCmsg_abs_0, MASKREAD_OFF, MASKWRITE_ON, mZc * nLayers);
+        minBuf = vxor(minBuf, minBuf, MASKREAD_ON, mZc * nLayers);
+        minBuf = vsadd(VtoCmsg_abs_0, minBuf, MASKREAD_ON, mZc * nLayers);
+
+        vsle(minBuf, VtoCmsg_abs_1, MASKREAD_OFF, MASKWRITE_ON, mZc * nLayers);
+        minBuf = vxor(minBuf, minBuf, MASKREAD_ON, mZc * nLayers);
+        minBuf = vsadd(VtoCmsg_abs_1, minBuf, MASKREAD_ON, mZc * nLayers);
+
+        vsle(minBuf, VtoCmsg_abs_3, MASKREAD_OFF, MASKWRITE_ON, mZc * nLayers);
+        minBuf = vxor(minBuf, minBuf, MASKREAD_ON, mZc * nLayers);
+        minBuf = vsadd(VtoCmsg_abs_3, minBuf, MASKREAD_ON, mZc * nLayers);
+
+        vsgt(minBuf, ALPHA + 1, MASKREAD_OFF, MASKWRITE_ON, mZc * nLayers);
+        minBuf = vxor(minBuf, minBuf, MASKREAD_ON, mZc * nLayers);
+        vsle(minBuf, ALPHA, MASKREAD_OFF, MASKWRITE_ON, mZc * nLayers);
+        vbrdcst(cons_i8, -1 * ALPHA, MASKREAD_OFF, mZc * nLayers);
+        minBuf = vsadd(cons_i8, minBuf, MASKREAD_ON, mZc * nLayers);
+
+        vsgt(VtoCmsg_2, 0, MASKREAD_OFF, MASKWRITE_ON, mZc * nLayers);
+        vbrdcst(cons_i8, 0xFF, MASKREAD_OFF, mZc * nLayers);
+        parity_0 = vxor(cons_i8, parity_0, MASKREAD_ON, mZc * nLayers);
+        parity_0 = vxor(parity_0, parity, MASKREAD_OFF, mZc * nLayers);
+        parity_0 = vmul(parity_0, 2, MASKREAD_OFF, mZc * nLayers);
+        parity_0 = vsadd(parity_0, 1, MASKREAD_OFF, mZc * nLayers);
+
+        VtoCmsg_minsum_2 = vxor(VtoCmsg_minsum_2, minBuf, MASKREAD_OFF, mZc * nLayers);
+        VtoCmsg_minsum_2 = vsra(VtoCmsg_minsum_2, 1, MASKREAD_OFF, mZc * nLayers);
+        VtoCmsg_minsum_2 = vmul(VtoCmsg_minsum_2, parity_0, MASKREAD_OFF, mZc * nLayers);
+
+        vbrdcst(minBuf, INF, MASKREAD_OFF, mZc * nLayers);
+        vbrdcst(parity_0, 0, MASKREAD_OFF, mZc * nLayers);
+        vbrdcst(VtoCmsg_minsum_3, 0, MASKREAD_OFF, mZc * nLayers);
+        vsle(minBuf, VtoCmsg_abs_0, MASKREAD_OFF, MASKWRITE_ON, mZc * nLayers);
+        minBuf = vxor(minBuf, minBuf, MASKREAD_ON, mZc * nLayers);
+        minBuf = vsadd(VtoCmsg_abs_0, minBuf, MASKREAD_ON, mZc * nLayers);
+
+        vsle(minBuf, VtoCmsg_abs_1, MASKREAD_OFF, MASKWRITE_ON, mZc * nLayers);
+        minBuf = vxor(minBuf, minBuf, MASKREAD_ON, mZc * nLayers);
+        minBuf = vsadd(VtoCmsg_abs_1, minBuf, MASKREAD_ON, mZc * nLayers);
+
+        vsle(minBuf, VtoCmsg_abs_2, MASKREAD_OFF, MASKWRITE_ON, mZc * nLayers);
+        minBuf = vxor(minBuf, minBuf, MASKREAD_ON, mZc * nLayers);
+        minBuf = vsadd(VtoCmsg_abs_2, minBuf, MASKREAD_ON, mZc * nLayers);
+
+        vsgt(minBuf, ALPHA + 1, MASKREAD_OFF, MASKWRITE_ON, mZc * nLayers);
+        minBuf = vxor(minBuf, minBuf, MASKREAD_ON, mZc * nLayers);
+        vsle(minBuf, ALPHA, MASKREAD_OFF, MASKWRITE_ON, mZc * nLayers);
+        vbrdcst(cons_i8, -1 * ALPHA, MASKREAD_OFF, mZc * nLayers);
+        minBuf = vsadd(cons_i8, minBuf, MASKREAD_ON, mZc * nLayers);
+
+        vsgt(VtoCmsg_3, 0, MASKREAD_OFF, MASKWRITE_ON, mZc * nLayers);
+        vbrdcst(cons_i8, 0xFF, MASKREAD_OFF, mZc * nLayers);
+        parity_0 = vxor(cons_i8, parity_0, MASKREAD_ON, mZc * nLayers);
+        parity_0 = vxor(parity_0, parity, MASKREAD_OFF, mZc * nLayers);
+        parity_0 = vmul(parity_0, 2, MASKREAD_OFF, mZc * nLayers);
+        parity_0 = vsadd(parity_0, 1, MASKREAD_OFF, mZc * nLayers);
+
+        VtoCmsg_minsum_3 = vxor(VtoCmsg_minsum_3, minBuf, MASKREAD_OFF, mZc * nLayers);
+        VtoCmsg_minsum_3 = vsra(VtoCmsg_minsum_3, 1, MASKREAD_OFF, mZc * nLayers);
+        VtoCmsg_minsum_3 = vmul(VtoCmsg_minsum_3, parity_0, MASKREAD_OFF, mZc * nLayers);
+
+        for (int iLayer = 0; iLayer < nLayers; ++iLayer) {
+          edgeStart   = BGlayer_2[LayerEdgesCnts_Layers_BG2[iLayerEdgesCnt * 21 + iLayer + 1] * 2 + 0];
+          edgeEnd     = BGlayer_2[LayerEdgesCnts_Layers_BG2[iLayerEdgesCnt * 21 + iLayer + 1] * 2 + 1];
+          nLayerEdges = edgeEnd - edgeStart;
+
+          iEdges = 0;
+          vbrdcst(CtoVmsg, 0, MASKREAD_OFF, mN);
+          edgeIdx  = edgeStart + iEdges;
+          vNodeIdx = vNodesIdx_BG2[edgeIdx];
+          nShifts  = nShifts_BG2[edgeIdx];
+          vrange(index, mZc);
+          index = vsadd(index, 0 - nShifts, MASKREAD_OFF, mZc);
+          index = vsadd(index, (nShifts == 0) ? 0 : mZc, MASKREAD_OFF, (nShifts == 0) ? 10 : nShifts);
+          index = vsadd(index, mZc * iLayer, MASKREAD_OFF, mZc);
+          vshuffle(Buffer, index, VtoCmsg_minsum_0, SHUFFLE_GATHER, mZc);
+
+          vrange(index, mZc);
+          index = vsadd(index, mZc * vNodeIdx, MASKREAD_OFF, mZc);
+          vshuffle(CtoVmsg, index, Buffer, SHUFFLE_SCATTER, mZc);
+          iEdges++;
+          edgeIdx  = edgeStart + iEdges;
+          vNodeIdx = vNodesIdx_BG2[edgeIdx];
+          nShifts  = nShifts_BG2[edgeIdx];
+          vrange(index, mZc);
+          index = vsadd(index, 0 - nShifts, MASKREAD_OFF, mZc);
+          index = vsadd(index, (nShifts == 0) ? 0 : mZc, MASKREAD_OFF, (nShifts == 0) ? 10 : nShifts);
+          index = vsadd(index, mZc * iLayer, MASKREAD_OFF, mZc);
+          vshuffle(Buffer, index, VtoCmsg_minsum_1, SHUFFLE_GATHER, mZc);
+
+          vrange(index, mZc);
+          index = vsadd(index, mZc * vNodeIdx, MASKREAD_OFF, mZc);
+          vshuffle(CtoVmsg, index, Buffer, SHUFFLE_SCATTER, mZc);
+          iEdges++;
+          edgeIdx  = edgeStart + iEdges;
+          vNodeIdx = vNodesIdx_BG2[edgeIdx];
+          nShifts  = nShifts_BG2[edgeIdx];
+          vrange(index, mZc);
+          index = vsadd(index, 0 - nShifts, MASKREAD_OFF, mZc);
+          index = vsadd(index, (nShifts == 0) ? 0 : mZc, MASKREAD_OFF, (nShifts == 0) ? 10 : nShifts);
+          index = vsadd(index, mZc * iLayer, MASKREAD_OFF, mZc);
+          vshuffle(Buffer, index, VtoCmsg_minsum_2, SHUFFLE_GATHER, mZc);
+
+          vrange(index, mZc);
+          index = vsadd(index, mZc * vNodeIdx, MASKREAD_OFF, mZc);
+          vshuffle(CtoVmsg, index, Buffer, SHUFFLE_SCATTER, mZc);
+          iEdges++;
+          edgeIdx  = edgeStart + iEdges;
+          vNodeIdx = vNodesIdx_BG2[edgeIdx];
+          nShifts  = nShifts_BG2[edgeIdx];
+          vrange(index, mZc);
+          index = vsadd(index, 0 - nShifts, MASKREAD_OFF, mZc);
+          index = vsadd(index, (nShifts == 0) ? 0 : mZc, MASKREAD_OFF, (nShifts == 0) ? 10 : nShifts);
+          index = vsadd(index, mZc * iLayer, MASKREAD_OFF, mZc);
+          vshuffle(Buffer, index, VtoCmsg_minsum_3, SHUFFLE_GATHER, mZc);
+
+          vrange(index, mZc);
+          index = vsadd(index, mZc * vNodeIdx, MASKREAD_OFF, mZc);
+          vshuffle(CtoVmsg, index, Buffer, SHUFFLE_SCATTER, mZc);
+          iEdges++;
+          CtoVmsg0 = vsadd(CtoVmsg0, CtoVmsg, MASKREAD_OFF, mN);
+        }
+      } 
+      else if (LayerEdgesCnts_BG2[iLayerEdgesCnt] == 5) {
+        __v10000i8 VtoCmsg_0;
+        __v10000i8 VtoCmsg_1;
+        __v10000i8 VtoCmsg_2;
+        __v10000i8 VtoCmsg_3;
+        __v10000i8 VtoCmsg_4;
+        __v10000i8 VtoCmsg_abs_0;
+        __v10000i8 VtoCmsg_abs_1;
+        __v10000i8 VtoCmsg_abs_2;
+        __v10000i8 VtoCmsg_abs_3;
+        __v10000i8 VtoCmsg_abs_4;
+        __v10000i8 VtoCmsg_minsum_0;
+        __v10000i8 VtoCmsg_minsum_1;
+        __v10000i8 VtoCmsg_minsum_2;
+        __v10000i8 VtoCmsg_minsum_3;
+        __v10000i8 VtoCmsg_minsum_4;
+        vclaim(VtoCmsg_0);
+        vclaim(VtoCmsg_1);
+        vclaim(VtoCmsg_2);
+        vclaim(VtoCmsg_3);
+        vclaim(VtoCmsg_4);
+        vclaim(VtoCmsg_abs_0);
+        vclaim(VtoCmsg_abs_1);
+        vclaim(VtoCmsg_abs_2);
+        vclaim(VtoCmsg_abs_3);
+        vclaim(VtoCmsg_abs_4);
+        vclaim(VtoCmsg_minsum_0);
+        vclaim(VtoCmsg_minsum_1);
+        vclaim(VtoCmsg_minsum_2);
+        vclaim(VtoCmsg_minsum_3);
+        vclaim(VtoCmsg_minsum_4);
+        for (int iLayer = 0; iLayer < nLayers; ++iLayer) {
+          edgeStart   = BGlayer_2[LayerEdgesCnts_Layers_BG2[iLayerEdgesCnt * 21 + iLayer + 1] * 2 + 0];
+          edgeEnd     = BGlayer_2[LayerEdgesCnts_Layers_BG2[iLayerEdgesCnt * 21 + iLayer + 1] * 2 + 1];
+          nLayerEdges = edgeEnd - edgeStart;
+          iEdges      = 0;
+
+          edgeIdx  = edgeStart + iEdges;
+          vNodeIdx = vNodesIdx_BG2[edgeIdx];
+          nShifts  = nShifts_BG2[edgeIdx];
+          ss       = mZc - nShifts;
+          vrange(index, mZc);
+          index = vsadd(index, nShifts - mZc, MASKREAD_OFF, mZc);
+          index = vsadd(index, (ss == 0) ? 0 : mZc, MASKREAD_OFF, (ss == 0) ? 10 : ss);
+          index = vsadd(index, mZc * vNodeIdx, MASKREAD_OFF, mZc);
+          vshuffle(Buffer, index, LLR, SHUFFLE_GATHER, mZc);
+
+          vrange(index, mZc);
+          index = vsadd(index, mZc * iLayer, MASKREAD_OFF, mZc);
+          vshuffle(VtoCmsg_0, index, Buffer, SHUFFLE_SCATTER, mZc);
+          iEdges++;
+
+          edgeIdx  = edgeStart + iEdges;
+          vNodeIdx = vNodesIdx_BG2[edgeIdx];
+          nShifts  = nShifts_BG2[edgeIdx];
+          ss       = mZc - nShifts;
+          vrange(index, mZc);
+          index = vsadd(index, nShifts - mZc, MASKREAD_OFF, mZc);
+          index = vsadd(index, (ss == 0) ? 0 : mZc, MASKREAD_OFF, (ss == 0) ? 10 : ss);
+          index = vsadd(index, mZc * vNodeIdx, MASKREAD_OFF, mZc);
+          vshuffle(Buffer, index, LLR, SHUFFLE_GATHER, mZc);
+
+          vrange(index, mZc);
+          index = vsadd(index, mZc * iLayer, MASKREAD_OFF, mZc);
+          vshuffle(VtoCmsg_1, index, Buffer, SHUFFLE_SCATTER, mZc);
+          iEdges++;
+
+          edgeIdx  = edgeStart + iEdges;
+          vNodeIdx = vNodesIdx_BG2[edgeIdx];
+          nShifts  = nShifts_BG2[edgeIdx];
+          ss       = mZc - nShifts;
+          vrange(index, mZc);
+          index = vsadd(index, nShifts - mZc, MASKREAD_OFF, mZc);
+          index = vsadd(index, (ss == 0) ? 0 : mZc, MASKREAD_OFF, (ss == 0) ? 10 : ss);
+          index = vsadd(index, mZc * vNodeIdx, MASKREAD_OFF, mZc);
+          vshuffle(Buffer, index, LLR, SHUFFLE_GATHER, mZc);
+
+          vrange(index, mZc);
+          index = vsadd(index, mZc * iLayer, MASKREAD_OFF, mZc);
+          vshuffle(VtoCmsg_2, index, Buffer, SHUFFLE_SCATTER, mZc);
+          iEdges++;
+
+          edgeIdx  = edgeStart + iEdges;
+          vNodeIdx = vNodesIdx_BG2[edgeIdx];
+          nShifts  = nShifts_BG2[edgeIdx];
+          ss       = mZc - nShifts;
+          vrange(index, mZc);
+          index = vsadd(index, nShifts - mZc, MASKREAD_OFF, mZc);
+          index = vsadd(index, (ss == 0) ? 0 : mZc, MASKREAD_OFF, (ss == 0) ? 10 : ss);
+          index = vsadd(index, mZc * vNodeIdx, MASKREAD_OFF, mZc);
+          vshuffle(Buffer, index, LLR, SHUFFLE_GATHER, mZc);
+
+          vrange(index, mZc);
+          index = vsadd(index, mZc * iLayer, MASKREAD_OFF, mZc);
+          vshuffle(VtoCmsg_3, index, Buffer, SHUFFLE_SCATTER, mZc);
+          iEdges++;
+
+          edgeIdx  = edgeStart + iEdges;
+          vNodeIdx = vNodesIdx_BG2[edgeIdx];
+          nShifts  = nShifts_BG2[edgeIdx];
+          ss       = mZc - nShifts;
+          vrange(index, mZc);
+          index = vsadd(index, nShifts - mZc, MASKREAD_OFF, mZc);
+          index = vsadd(index, (ss == 0) ? 0 : mZc, MASKREAD_OFF, (ss == 0) ? 10 : ss);
+          index = vsadd(index, mZc * vNodeIdx, MASKREAD_OFF, mZc);
+          vshuffle(Buffer, index, LLR, SHUFFLE_GATHER, mZc);
+
+          vrange(index, mZc);
+          index = vsadd(index, mZc * iLayer, MASKREAD_OFF, mZc);
+          vshuffle(VtoCmsg_4, index, Buffer, SHUFFLE_SCATTER, mZc);
+          iEdges++;
+        }
+        vbrdcst(parity, 0, MASKREAD_OFF, mZc * nLayers);
+        VtoCmsg_abs_0 = vsadd(VtoCmsg_0, 0, MASKREAD_OFF, mZc * nLayers);
+        vsgt(VtoCmsg_abs_0, 0, MASKREAD_OFF, MASKWRITE_ON, mZc * nLayers);
+        vbrdcst(cons_i8, 0xFF, MASKREAD_OFF, mZc * nLayers);
+        parity        = vxor(cons_i8, parity, MASKREAD_ON, mZc * nLayers);
+        VtoCmsg_abs_0 = vxor(cons_i8, VtoCmsg_abs_0, MASKREAD_ON, mZc * nLayers);
+        vbrdcst(cons_i8, 1, MASKREAD_OFF, mZc * nLayers);
+        VtoCmsg_abs_0 = vsadd(cons_i8, VtoCmsg_abs_0, MASKREAD_ON, mZc * nLayers);
+
+        VtoCmsg_abs_1 = vsadd(VtoCmsg_1, 0, MASKREAD_OFF, mZc * nLayers);
+        vsgt(VtoCmsg_abs_1, 0, MASKREAD_OFF, MASKWRITE_ON, mZc * nLayers);
+        vbrdcst(cons_i8, 0xFF, MASKREAD_OFF, mZc * nLayers);
+        parity        = vxor(cons_i8, parity, MASKREAD_ON, mZc * nLayers);
+        VtoCmsg_abs_1 = vxor(cons_i8, VtoCmsg_abs_1, MASKREAD_ON, mZc * nLayers);
+        vbrdcst(cons_i8, 1, MASKREAD_OFF, mZc * nLayers);
+        VtoCmsg_abs_1 = vsadd(cons_i8, VtoCmsg_abs_1, MASKREAD_ON, mZc * nLayers);
+
+        VtoCmsg_abs_2 = vsadd(VtoCmsg_2, 0, MASKREAD_OFF, mZc * nLayers);
+        vsgt(VtoCmsg_abs_2, 0, MASKREAD_OFF, MASKWRITE_ON, mZc * nLayers);
+        vbrdcst(cons_i8, 0xFF, MASKREAD_OFF, mZc * nLayers);
+        parity        = vxor(cons_i8, parity, MASKREAD_ON, mZc * nLayers);
+        VtoCmsg_abs_2 = vxor(cons_i8, VtoCmsg_abs_2, MASKREAD_ON, mZc * nLayers);
+        vbrdcst(cons_i8, 1, MASKREAD_OFF, mZc * nLayers);
+        VtoCmsg_abs_2 = vsadd(cons_i8, VtoCmsg_abs_2, MASKREAD_ON, mZc * nLayers);
+
+        VtoCmsg_abs_3 = vsadd(VtoCmsg_3, 0, MASKREAD_OFF, mZc * nLayers);
+        vsgt(VtoCmsg_abs_3, 0, MASKREAD_OFF, MASKWRITE_ON, mZc * nLayers);
+        vbrdcst(cons_i8, 0xFF, MASKREAD_OFF, mZc * nLayers);
+        parity        = vxor(cons_i8, parity, MASKREAD_ON, mZc * nLayers);
+        VtoCmsg_abs_3 = vxor(cons_i8, VtoCmsg_abs_3, MASKREAD_ON, mZc * nLayers);
+        vbrdcst(cons_i8, 1, MASKREAD_OFF, mZc * nLayers);
+        VtoCmsg_abs_3 = vsadd(cons_i8, VtoCmsg_abs_3, MASKREAD_ON, mZc * nLayers);
+
+        VtoCmsg_abs_4 = vsadd(VtoCmsg_4, 0, MASKREAD_OFF, mZc * nLayers);
+        vsgt(VtoCmsg_abs_4, 0, MASKREAD_OFF, MASKWRITE_ON, mZc * nLayers);
+        vbrdcst(cons_i8, 0xFF, MASKREAD_OFF, mZc * nLayers);
+        parity        = vxor(cons_i8, parity, MASKREAD_ON, mZc * nLayers);
+        VtoCmsg_abs_4 = vxor(cons_i8, VtoCmsg_abs_4, MASKREAD_ON, mZc * nLayers);
+        vbrdcst(cons_i8, 1, MASKREAD_OFF, mZc * nLayers);
+        VtoCmsg_abs_4 = vsadd(cons_i8, VtoCmsg_abs_4, MASKREAD_ON, mZc * nLayers);
+
+        vbrdcst(minBuf, INF, MASKREAD_OFF, mZc * nLayers);
+        vbrdcst(parity_0, 0, MASKREAD_OFF, mZc * nLayers);
+        vbrdcst(VtoCmsg_minsum_0, 0, MASKREAD_OFF, mZc * nLayers);
+        vsle(minBuf, VtoCmsg_abs_1, MASKREAD_OFF, MASKWRITE_ON, mZc * nLayers);
+        minBuf = vxor(minBuf, minBuf, MASKREAD_ON, mZc * nLayers);
+        minBuf = vsadd(VtoCmsg_abs_1, minBuf, MASKREAD_ON, mZc * nLayers);
+
+        vsle(minBuf, VtoCmsg_abs_2, MASKREAD_OFF, MASKWRITE_ON, mZc * nLayers);
+        minBuf = vxor(minBuf, minBuf, MASKREAD_ON, mZc * nLayers);
+        minBuf = vsadd(VtoCmsg_abs_2, minBuf, MASKREAD_ON, mZc * nLayers);
+
+        vsle(minBuf, VtoCmsg_abs_3, MASKREAD_OFF, MASKWRITE_ON, mZc * nLayers);
+        minBuf = vxor(minBuf, minBuf, MASKREAD_ON, mZc * nLayers);
+        minBuf = vsadd(VtoCmsg_abs_3, minBuf, MASKREAD_ON, mZc * nLayers);
+
+        vsle(minBuf, VtoCmsg_abs_4, MASKREAD_OFF, MASKWRITE_ON, mZc * nLayers);
+        minBuf = vxor(minBuf, minBuf, MASKREAD_ON, mZc * nLayers);
+        minBuf = vsadd(VtoCmsg_abs_4, minBuf, MASKREAD_ON, mZc * nLayers);
+
+        vsgt(minBuf, ALPHA + 1, MASKREAD_OFF, MASKWRITE_ON, mZc * nLayers);
+        minBuf = vxor(minBuf, minBuf, MASKREAD_ON, mZc * nLayers);
+        vsle(minBuf, ALPHA, MASKREAD_OFF, MASKWRITE_ON, mZc * nLayers);
+        vbrdcst(cons_i8, -1 * ALPHA, MASKREAD_OFF, mZc * nLayers);
+        minBuf = vsadd(cons_i8, minBuf, MASKREAD_ON, mZc * nLayers);
+
+        vsgt(VtoCmsg_0, 0, MASKREAD_OFF, MASKWRITE_ON, mZc * nLayers);
+        vbrdcst(cons_i8, 0xFF, MASKREAD_OFF, mZc * nLayers);
+        parity_0 = vxor(cons_i8, parity_0, MASKREAD_ON, mZc * nLayers);
+        parity_0 = vxor(parity_0, parity, MASKREAD_OFF, mZc * nLayers);
+        parity_0 = vmul(parity_0, 2, MASKREAD_OFF, mZc * nLayers);
+        parity_0 = vsadd(parity_0, 1, MASKREAD_OFF, mZc * nLayers);
+
+        VtoCmsg_minsum_0 = vxor(VtoCmsg_minsum_0, minBuf, MASKREAD_OFF, mZc * nLayers);
+        VtoCmsg_minsum_0 = vsra(VtoCmsg_minsum_0, 1, MASKREAD_OFF, mZc * nLayers);
+        VtoCmsg_minsum_0 = vmul(VtoCmsg_minsum_0, parity_0, MASKREAD_OFF, mZc * nLayers);
+
+        vbrdcst(minBuf, INF, MASKREAD_OFF, mZc * nLayers);
+        vbrdcst(parity_0, 0, MASKREAD_OFF, mZc * nLayers);
+        vbrdcst(VtoCmsg_minsum_1, 0, MASKREAD_OFF, mZc * nLayers);
+        vsle(minBuf, VtoCmsg_abs_0, MASKREAD_OFF, MASKWRITE_ON, mZc * nLayers);
+        minBuf = vxor(minBuf, minBuf, MASKREAD_ON, mZc * nLayers);
+        minBuf = vsadd(VtoCmsg_abs_0, minBuf, MASKREAD_ON, mZc * nLayers);
+
+        vsle(minBuf, VtoCmsg_abs_2, MASKREAD_OFF, MASKWRITE_ON, mZc * nLayers);
+        minBuf = vxor(minBuf, minBuf, MASKREAD_ON, mZc * nLayers);
+        minBuf = vsadd(VtoCmsg_abs_2, minBuf, MASKREAD_ON, mZc * nLayers);
+
+        vsle(minBuf, VtoCmsg_abs_3, MASKREAD_OFF, MASKWRITE_ON, mZc * nLayers);
+        minBuf = vxor(minBuf, minBuf, MASKREAD_ON, mZc * nLayers);
+        minBuf = vsadd(VtoCmsg_abs_3, minBuf, MASKREAD_ON, mZc * nLayers);
+
+        vsle(minBuf, VtoCmsg_abs_4, MASKREAD_OFF, MASKWRITE_ON, mZc * nLayers);
+        minBuf = vxor(minBuf, minBuf, MASKREAD_ON, mZc * nLayers);
+        minBuf = vsadd(VtoCmsg_abs_4, minBuf, MASKREAD_ON, mZc * nLayers);
+
+        vsgt(minBuf, ALPHA + 1, MASKREAD_OFF, MASKWRITE_ON, mZc * nLayers);
+        minBuf = vxor(minBuf, minBuf, MASKREAD_ON, mZc * nLayers);
+        vsle(minBuf, ALPHA, MASKREAD_OFF, MASKWRITE_ON, mZc * nLayers);
+        vbrdcst(cons_i8, -1 * ALPHA, MASKREAD_OFF, mZc * nLayers);
+        minBuf = vsadd(cons_i8, minBuf, MASKREAD_ON, mZc * nLayers);
+
+        vsgt(VtoCmsg_1, 0, MASKREAD_OFF, MASKWRITE_ON, mZc * nLayers);
+        vbrdcst(cons_i8, 0xFF, MASKREAD_OFF, mZc * nLayers);
+        parity_0 = vxor(cons_i8, parity_0, MASKREAD_ON, mZc * nLayers);
+        parity_0 = vxor(parity_0, parity, MASKREAD_OFF, mZc * nLayers);
+        parity_0 = vmul(parity_0, 2, MASKREAD_OFF, mZc * nLayers);
+        parity_0 = vsadd(parity_0, 1, MASKREAD_OFF, mZc * nLayers);
+
+        VtoCmsg_minsum_1 = vxor(VtoCmsg_minsum_1, minBuf, MASKREAD_OFF, mZc * nLayers);
+        VtoCmsg_minsum_1 = vsra(VtoCmsg_minsum_1, 1, MASKREAD_OFF, mZc * nLayers);
+        VtoCmsg_minsum_1 = vmul(VtoCmsg_minsum_1, parity_0, MASKREAD_OFF, mZc * nLayers);
+
+        vbrdcst(minBuf, INF, MASKREAD_OFF, mZc * nLayers);
+        vbrdcst(parity_0, 0, MASKREAD_OFF, mZc * nLayers);
+        vbrdcst(VtoCmsg_minsum_2, 0, MASKREAD_OFF, mZc * nLayers);
+        vsle(minBuf, VtoCmsg_abs_0, MASKREAD_OFF, MASKWRITE_ON, mZc * nLayers);
+        minBuf = vxor(minBuf, minBuf, MASKREAD_ON, mZc * nLayers);
+        minBuf = vsadd(VtoCmsg_abs_0, minBuf, MASKREAD_ON, mZc * nLayers);
+
+        vsle(minBuf, VtoCmsg_abs_1, MASKREAD_OFF, MASKWRITE_ON, mZc * nLayers);
+        minBuf = vxor(minBuf, minBuf, MASKREAD_ON, mZc * nLayers);
+        minBuf = vsadd(VtoCmsg_abs_1, minBuf, MASKREAD_ON, mZc * nLayers);
+
+        vsle(minBuf, VtoCmsg_abs_3, MASKREAD_OFF, MASKWRITE_ON, mZc * nLayers);
+        minBuf = vxor(minBuf, minBuf, MASKREAD_ON, mZc * nLayers);
+        minBuf = vsadd(VtoCmsg_abs_3, minBuf, MASKREAD_ON, mZc * nLayers);
+
+        vsle(minBuf, VtoCmsg_abs_4, MASKREAD_OFF, MASKWRITE_ON, mZc * nLayers);
+        minBuf = vxor(minBuf, minBuf, MASKREAD_ON, mZc * nLayers);
+        minBuf = vsadd(VtoCmsg_abs_4, minBuf, MASKREAD_ON, mZc * nLayers);
+
+        vsgt(minBuf, ALPHA + 1, MASKREAD_OFF, MASKWRITE_ON, mZc * nLayers);
+        minBuf = vxor(minBuf, minBuf, MASKREAD_ON, mZc * nLayers);
+        vsle(minBuf, ALPHA, MASKREAD_OFF, MASKWRITE_ON, mZc * nLayers);
+        vbrdcst(cons_i8, -1 * ALPHA, MASKREAD_OFF, mZc * nLayers);
+        minBuf = vsadd(cons_i8, minBuf, MASKREAD_ON, mZc * nLayers);
+
+        vsgt(VtoCmsg_2, 0, MASKREAD_OFF, MASKWRITE_ON, mZc * nLayers);
+        vbrdcst(cons_i8, 0xFF, MASKREAD_OFF, mZc * nLayers);
+        parity_0 = vxor(cons_i8, parity_0, MASKREAD_ON, mZc * nLayers);
+        parity_0 = vxor(parity_0, parity, MASKREAD_OFF, mZc * nLayers);
+        parity_0 = vmul(parity_0, 2, MASKREAD_OFF, mZc * nLayers);
+        parity_0 = vsadd(parity_0, 1, MASKREAD_OFF, mZc * nLayers);
+
+        VtoCmsg_minsum_2 = vxor(VtoCmsg_minsum_2, minBuf, MASKREAD_OFF, mZc * nLayers);
+        VtoCmsg_minsum_2 = vsra(VtoCmsg_minsum_2, 1, MASKREAD_OFF, mZc * nLayers);
+        VtoCmsg_minsum_2 = vmul(VtoCmsg_minsum_2, parity_0, MASKREAD_OFF, mZc * nLayers);
+
+        vbrdcst(minBuf, INF, MASKREAD_OFF, mZc * nLayers);
+        vbrdcst(parity_0, 0, MASKREAD_OFF, mZc * nLayers);
+        vbrdcst(VtoCmsg_minsum_3, 0, MASKREAD_OFF, mZc * nLayers);
+        vsle(minBuf, VtoCmsg_abs_0, MASKREAD_OFF, MASKWRITE_ON, mZc * nLayers);
+        minBuf = vxor(minBuf, minBuf, MASKREAD_ON, mZc * nLayers);
+        minBuf = vsadd(VtoCmsg_abs_0, minBuf, MASKREAD_ON, mZc * nLayers);
+
+        vsle(minBuf, VtoCmsg_abs_1, MASKREAD_OFF, MASKWRITE_ON, mZc * nLayers);
+        minBuf = vxor(minBuf, minBuf, MASKREAD_ON, mZc * nLayers);
+        minBuf = vsadd(VtoCmsg_abs_1, minBuf, MASKREAD_ON, mZc * nLayers);
+
+        vsle(minBuf, VtoCmsg_abs_2, MASKREAD_OFF, MASKWRITE_ON, mZc * nLayers);
+        minBuf = vxor(minBuf, minBuf, MASKREAD_ON, mZc * nLayers);
+        minBuf = vsadd(VtoCmsg_abs_2, minBuf, MASKREAD_ON, mZc * nLayers);
+
+        vsle(minBuf, VtoCmsg_abs_4, MASKREAD_OFF, MASKWRITE_ON, mZc * nLayers);
+        minBuf = vxor(minBuf, minBuf, MASKREAD_ON, mZc * nLayers);
+        minBuf = vsadd(VtoCmsg_abs_4, minBuf, MASKREAD_ON, mZc * nLayers);
+
+        vsgt(minBuf, ALPHA + 1, MASKREAD_OFF, MASKWRITE_ON, mZc * nLayers);
+        minBuf = vxor(minBuf, minBuf, MASKREAD_ON, mZc * nLayers);
+        vsle(minBuf, ALPHA, MASKREAD_OFF, MASKWRITE_ON, mZc * nLayers);
+        vbrdcst(cons_i8, -1 * ALPHA, MASKREAD_OFF, mZc * nLayers);
+        minBuf = vsadd(cons_i8, minBuf, MASKREAD_ON, mZc * nLayers);
+
+        vsgt(VtoCmsg_3, 0, MASKREAD_OFF, MASKWRITE_ON, mZc * nLayers);
+        vbrdcst(cons_i8, 0xFF, MASKREAD_OFF, mZc * nLayers);
+        parity_0 = vxor(cons_i8, parity_0, MASKREAD_ON, mZc * nLayers);
+        parity_0 = vxor(parity_0, parity, MASKREAD_OFF, mZc * nLayers);
+        parity_0 = vmul(parity_0, 2, MASKREAD_OFF, mZc * nLayers);
+        parity_0 = vsadd(parity_0, 1, MASKREAD_OFF, mZc * nLayers);
+
+        VtoCmsg_minsum_3 = vxor(VtoCmsg_minsum_3, minBuf, MASKREAD_OFF, mZc * nLayers);
+        VtoCmsg_minsum_3 = vsra(VtoCmsg_minsum_3, 1, MASKREAD_OFF, mZc * nLayers);
+        VtoCmsg_minsum_3 = vmul(VtoCmsg_minsum_3, parity_0, MASKREAD_OFF, mZc * nLayers);
+
+        vbrdcst(minBuf, INF, MASKREAD_OFF, mZc * nLayers);
+        vbrdcst(parity_0, 0, MASKREAD_OFF, mZc * nLayers);
+        vbrdcst(VtoCmsg_minsum_4, 0, MASKREAD_OFF, mZc * nLayers);
+        vsle(minBuf, VtoCmsg_abs_0, MASKREAD_OFF, MASKWRITE_ON, mZc * nLayers);
+        minBuf = vxor(minBuf, minBuf, MASKREAD_ON, mZc * nLayers);
+        minBuf = vsadd(VtoCmsg_abs_0, minBuf, MASKREAD_ON, mZc * nLayers);
+
+        vsle(minBuf, VtoCmsg_abs_1, MASKREAD_OFF, MASKWRITE_ON, mZc * nLayers);
+        minBuf = vxor(minBuf, minBuf, MASKREAD_ON, mZc * nLayers);
+        minBuf = vsadd(VtoCmsg_abs_1, minBuf, MASKREAD_ON, mZc * nLayers);
+
+        vsle(minBuf, VtoCmsg_abs_2, MASKREAD_OFF, MASKWRITE_ON, mZc * nLayers);
+        minBuf = vxor(minBuf, minBuf, MASKREAD_ON, mZc * nLayers);
+        minBuf = vsadd(VtoCmsg_abs_2, minBuf, MASKREAD_ON, mZc * nLayers);
+
+        vsle(minBuf, VtoCmsg_abs_3, MASKREAD_OFF, MASKWRITE_ON, mZc * nLayers);
+        minBuf = vxor(minBuf, minBuf, MASKREAD_ON, mZc * nLayers);
+        minBuf = vsadd(VtoCmsg_abs_3, minBuf, MASKREAD_ON, mZc * nLayers);
+
+        vsgt(minBuf, ALPHA + 1, MASKREAD_OFF, MASKWRITE_ON, mZc * nLayers);
+        minBuf = vxor(minBuf, minBuf, MASKREAD_ON, mZc * nLayers);
+        vsle(minBuf, ALPHA, MASKREAD_OFF, MASKWRITE_ON, mZc * nLayers);
+        vbrdcst(cons_i8, -1 * ALPHA, MASKREAD_OFF, mZc * nLayers);
+        minBuf = vsadd(cons_i8, minBuf, MASKREAD_ON, mZc * nLayers);
+
+        vsgt(VtoCmsg_4, 0, MASKREAD_OFF, MASKWRITE_ON, mZc * nLayers);
+        vbrdcst(cons_i8, 0xFF, MASKREAD_OFF, mZc * nLayers);
+        parity_0 = vxor(cons_i8, parity_0, MASKREAD_ON, mZc * nLayers);
+        parity_0 = vxor(parity_0, parity, MASKREAD_OFF, mZc * nLayers);
+        parity_0 = vmul(parity_0, 2, MASKREAD_OFF, mZc * nLayers);
+        parity_0 = vsadd(parity_0, 1, MASKREAD_OFF, mZc * nLayers);
+
+        VtoCmsg_minsum_4 = vxor(VtoCmsg_minsum_4, minBuf, MASKREAD_OFF, mZc * nLayers);
+        VtoCmsg_minsum_4 = vsra(VtoCmsg_minsum_4, 1, MASKREAD_OFF, mZc * nLayers);
+        VtoCmsg_minsum_4 = vmul(VtoCmsg_minsum_4, parity_0, MASKREAD_OFF, mZc * nLayers);
+
+        for (int iLayer = 0; iLayer < nLayers; ++iLayer) {
+          edgeStart   = BGlayer_2[LayerEdgesCnts_Layers_BG2[iLayerEdgesCnt * 21 + iLayer + 1] * 2 + 0];
+          edgeEnd     = BGlayer_2[LayerEdgesCnts_Layers_BG2[iLayerEdgesCnt * 21 + iLayer + 1] * 2 + 1];
+          nLayerEdges = edgeEnd - edgeStart;
+
+          iEdges = 0;
+          vbrdcst(CtoVmsg, 0, MASKREAD_OFF, mN);
+          edgeIdx  = edgeStart + iEdges;
+          vNodeIdx = vNodesIdx_BG2[edgeIdx];
+          nShifts  = nShifts_BG2[edgeIdx];
+          vrange(index, mZc);
+          index = vsadd(index, 0 - nShifts, MASKREAD_OFF, mZc);
+          index = vsadd(index, (nShifts == 0) ? 0 : mZc, MASKREAD_OFF, (nShifts == 0) ? 10 : nShifts);
+          index = vsadd(index, mZc * iLayer, MASKREAD_OFF, mZc);
+          vshuffle(Buffer, index, VtoCmsg_minsum_0, SHUFFLE_GATHER, mZc);
+
+          vrange(index, mZc);
+          index = vsadd(index, mZc * vNodeIdx, MASKREAD_OFF, mZc);
+          vshuffle(CtoVmsg, index, Buffer, SHUFFLE_SCATTER, mZc);
+          iEdges++;
+          edgeIdx  = edgeStart + iEdges;
+          vNodeIdx = vNodesIdx_BG2[edgeIdx];
+          nShifts  = nShifts_BG2[edgeIdx];
+          vrange(index, mZc);
+          index = vsadd(index, 0 - nShifts, MASKREAD_OFF, mZc);
+          index = vsadd(index, (nShifts == 0) ? 0 : mZc, MASKREAD_OFF, (nShifts == 0) ? 10 : nShifts);
+          index = vsadd(index, mZc * iLayer, MASKREAD_OFF, mZc);
+          vshuffle(Buffer, index, VtoCmsg_minsum_1, SHUFFLE_GATHER, mZc);
+
+          vrange(index, mZc);
+          index = vsadd(index, mZc * vNodeIdx, MASKREAD_OFF, mZc);
+          vshuffle(CtoVmsg, index, Buffer, SHUFFLE_SCATTER, mZc);
+          iEdges++;
+          edgeIdx  = edgeStart + iEdges;
+          vNodeIdx = vNodesIdx_BG2[edgeIdx];
+          nShifts  = nShifts_BG2[edgeIdx];
+          vrange(index, mZc);
+          index = vsadd(index, 0 - nShifts, MASKREAD_OFF, mZc);
+          index = vsadd(index, (nShifts == 0) ? 0 : mZc, MASKREAD_OFF, (nShifts == 0) ? 10 : nShifts);
+          index = vsadd(index, mZc * iLayer, MASKREAD_OFF, mZc);
+          vshuffle(Buffer, index, VtoCmsg_minsum_2, SHUFFLE_GATHER, mZc);
+
+          vrange(index, mZc);
+          index = vsadd(index, mZc * vNodeIdx, MASKREAD_OFF, mZc);
+          vshuffle(CtoVmsg, index, Buffer, SHUFFLE_SCATTER, mZc);
+          iEdges++;
+          edgeIdx  = edgeStart + iEdges;
+          vNodeIdx = vNodesIdx_BG2[edgeIdx];
+          nShifts  = nShifts_BG2[edgeIdx];
+          vrange(index, mZc);
+          index = vsadd(index, 0 - nShifts, MASKREAD_OFF, mZc);
+          index = vsadd(index, (nShifts == 0) ? 0 : mZc, MASKREAD_OFF, (nShifts == 0) ? 10 : nShifts);
+          index = vsadd(index, mZc * iLayer, MASKREAD_OFF, mZc);
+          vshuffle(Buffer, index, VtoCmsg_minsum_3, SHUFFLE_GATHER, mZc);
+
+          vrange(index, mZc);
+          index = vsadd(index, mZc * vNodeIdx, MASKREAD_OFF, mZc);
+          vshuffle(CtoVmsg, index, Buffer, SHUFFLE_SCATTER, mZc);
+          iEdges++;
+          edgeIdx  = edgeStart + iEdges;
+          vNodeIdx = vNodesIdx_BG2[edgeIdx];
+          nShifts  = nShifts_BG2[edgeIdx];
+          vrange(index, mZc);
+          index = vsadd(index, 0 - nShifts, MASKREAD_OFF, mZc);
+          index = vsadd(index, (nShifts == 0) ? 0 : mZc, MASKREAD_OFF, (nShifts == 0) ? 10 : nShifts);
+          index = vsadd(index, mZc * iLayer, MASKREAD_OFF, mZc);
+          vshuffle(Buffer, index, VtoCmsg_minsum_4, SHUFFLE_GATHER, mZc);
+
+          vrange(index, mZc);
+          index = vsadd(index, mZc * vNodeIdx, MASKREAD_OFF, mZc);
+          vshuffle(CtoVmsg, index, Buffer, SHUFFLE_SCATTER, mZc);
+          iEdges++;
+          CtoVmsg0 = vsadd(CtoVmsg0, CtoVmsg, MASKREAD_OFF, mN);
+        }
+      } 
+      // else if (LayerEdgesCnts_BG2[iLayerEdgesCnt] == 6) {
+      //   for (int iLayer = 0; iLayer < nLayers; ++iLayer) {
+      //     edgeStart   = BGlayer_2[LayerEdgesCnts_Layers_BG2[iLayerEdgesCnt * 21 + iLayer + 1] * 2 + 0];
+      //     edgeEnd     = BGlayer_2[LayerEdgesCnts_Layers_BG2[iLayerEdgesCnt * 21 + iLayer + 1] * 2 + 1];
+      //     nLayerEdges = edgeEnd - edgeStart;
+      //     iEdges      = 0;
+
+      //     edgeIdx  = edgeStart + iEdges;
+      //     vNodeIdx = vNodesIdx_BG2[edgeIdx];
+      //     nShifts  = nShifts_BG2[edgeIdx];
+      //     ss       = mZc - nShifts;
+      //     vrange(index, mZc);
+      //     index = vsadd(index, nShifts - mZc, MASKREAD_OFF, mZc);
+      //     index = vsadd(index, (ss == 0) ? 0 : mZc, MASKREAD_OFF, (ss == 0) ? 10 : ss);
+      //     index = vsadd(index, mZc * vNodeIdx, MASKREAD_OFF, mZc);
+      //     vshuffle(Buffer, index, LLR, SHUFFLE_GATHER, mZc);
+
+      //     vrange(index, mZc);
+      //     index = vsadd(index, mZc * iLayer, MASKREAD_OFF, mZc);
+      //     vshuffle(VtoCmsg_0, index, Buffer, SHUFFLE_SCATTER, mZc);
+      //     iEdges++;
+
+      //     edgeIdx  = edgeStart + iEdges;
+      //     vNodeIdx = vNodesIdx_BG2[edgeIdx];
+      //     nShifts  = nShifts_BG2[edgeIdx];
+      //     ss       = mZc - nShifts;
+      //     vrange(index, mZc);
+      //     index = vsadd(index, nShifts - mZc, MASKREAD_OFF, mZc);
+      //     index = vsadd(index, (ss == 0) ? 0 : mZc, MASKREAD_OFF, (ss == 0) ? 10 : ss);
+      //     index = vsadd(index, mZc * vNodeIdx, MASKREAD_OFF, mZc);
+      //     vshuffle(Buffer, index, LLR, SHUFFLE_GATHER, mZc);
+
+      //     vrange(index, mZc);
+      //     index = vsadd(index, mZc * iLayer, MASKREAD_OFF, mZc);
+      //     vshuffle(VtoCmsg_1, index, Buffer, SHUFFLE_SCATTER, mZc);
+      //     iEdges++;
+
+      //     edgeIdx  = edgeStart + iEdges;
+      //     vNodeIdx = vNodesIdx_BG2[edgeIdx];
+      //     nShifts  = nShifts_BG2[edgeIdx];
+      //     ss       = mZc - nShifts;
+      //     vrange(index, mZc);
+      //     index = vsadd(index, nShifts - mZc, MASKREAD_OFF, mZc);
+      //     index = vsadd(index, (ss == 0) ? 0 : mZc, MASKREAD_OFF, (ss == 0) ? 10 : ss);
+      //     index = vsadd(index, mZc * vNodeIdx, MASKREAD_OFF, mZc);
+      //     vshuffle(Buffer, index, LLR, SHUFFLE_GATHER, mZc);
+
+      //     vrange(index, mZc);
+      //     index = vsadd(index, mZc * iLayer, MASKREAD_OFF, mZc);
+      //     vshuffle(VtoCmsg_2, index, Buffer, SHUFFLE_SCATTER, mZc);
+      //     iEdges++;
+
+      //     edgeIdx  = edgeStart + iEdges;
+      //     vNodeIdx = vNodesIdx_BG2[edgeIdx];
+      //     nShifts  = nShifts_BG2[edgeIdx];
+      //     ss       = mZc - nShifts;
+      //     vrange(index, mZc);
+      //     index = vsadd(index, nShifts - mZc, MASKREAD_OFF, mZc);
+      //     index = vsadd(index, (ss == 0) ? 0 : mZc, MASKREAD_OFF, (ss == 0) ? 10 : ss);
+      //     index = vsadd(index, mZc * vNodeIdx, MASKREAD_OFF, mZc);
+      //     vshuffle(Buffer, index, LLR, SHUFFLE_GATHER, mZc);
+
+      //     vrange(index, mZc);
+      //     index = vsadd(index, mZc * iLayer, MASKREAD_OFF, mZc);
+      //     vshuffle(VtoCmsg_3, index, Buffer, SHUFFLE_SCATTER, mZc);
+      //     iEdges++;
+
+      //     edgeIdx  = edgeStart + iEdges;
+      //     vNodeIdx = vNodesIdx_BG2[edgeIdx];
+      //     nShifts  = nShifts_BG2[edgeIdx];
+      //     ss       = mZc - nShifts;
+      //     vrange(index, mZc);
+      //     index = vsadd(index, nShifts - mZc, MASKREAD_OFF, mZc);
+      //     index = vsadd(index, (ss == 0) ? 0 : mZc, MASKREAD_OFF, (ss == 0) ? 10 : ss);
+      //     index = vsadd(index, mZc * vNodeIdx, MASKREAD_OFF, mZc);
+      //     vshuffle(Buffer, index, LLR, SHUFFLE_GATHER, mZc);
+
+      //     vrange(index, mZc);
+      //     index = vsadd(index, mZc * iLayer, MASKREAD_OFF, mZc);
+      //     vshuffle(VtoCmsg_4, index, Buffer, SHUFFLE_SCATTER, mZc);
+      //     iEdges++;
+
+      //     edgeIdx  = edgeStart + iEdges;
+      //     vNodeIdx = vNodesIdx_BG2[edgeIdx];
+      //     nShifts  = nShifts_BG2[edgeIdx];
+      //     ss       = mZc - nShifts;
+      //     vrange(index, mZc);
+      //     index = vsadd(index, nShifts - mZc, MASKREAD_OFF, mZc);
+      //     index = vsadd(index, (ss == 0) ? 0 : mZc, MASKREAD_OFF, (ss == 0) ? 10 : ss);
+      //     index = vsadd(index, mZc * vNodeIdx, MASKREAD_OFF, mZc);
+      //     vshuffle(Buffer, index, LLR, SHUFFLE_GATHER, mZc);
+
+      //     vrange(index, mZc);
+      //     index = vsadd(index, mZc * iLayer, MASKREAD_OFF, mZc);
+      //     vshuffle(VtoCmsg_5, index, Buffer, SHUFFLE_SCATTER, mZc);
+      //     iEdges++;
+      //   }
+      //   vbrdcst(parity, 0, MASKREAD_OFF, mZc * nLayers);
+      //   VtoCmsg_abs_0 = vsadd(VtoCmsg_0, 0, MASKREAD_OFF, mZc * nLayers);
+      //   vsgt(VtoCmsg_abs_0, 0, MASKREAD_OFF, MASKWRITE_ON, mZc * nLayers);
+      //   vbrdcst(cons_i8, 0xFF, MASKREAD_OFF, mZc * nLayers);
+      //   parity        = vxor(cons_i8, parity, MASKREAD_ON, mZc * nLayers);
+      //   VtoCmsg_abs_0 = vxor(cons_i8, VtoCmsg_abs_0, MASKREAD_ON, mZc * nLayers);
+      //   vbrdcst(cons_i8, 1, MASKREAD_OFF, mZc * nLayers);
+      //   VtoCmsg_abs_0 = vsadd(cons_i8, VtoCmsg_abs_0, MASKREAD_ON, mZc * nLayers);
+
+      //   VtoCmsg_abs_1 = vsadd(VtoCmsg_1, 0, MASKREAD_OFF, mZc * nLayers);
+      //   vsgt(VtoCmsg_abs_1, 0, MASKREAD_OFF, MASKWRITE_ON, mZc * nLayers);
+      //   vbrdcst(cons_i8, 0xFF, MASKREAD_OFF, mZc * nLayers);
+      //   parity        = vxor(cons_i8, parity, MASKREAD_ON, mZc * nLayers);
+      //   VtoCmsg_abs_1 = vxor(cons_i8, VtoCmsg_abs_1, MASKREAD_ON, mZc * nLayers);
+      //   vbrdcst(cons_i8, 1, MASKREAD_OFF, mZc * nLayers);
+      //   VtoCmsg_abs_1 = vsadd(cons_i8, VtoCmsg_abs_1, MASKREAD_ON, mZc * nLayers);
+
+      //   VtoCmsg_abs_2 = vsadd(VtoCmsg_2, 0, MASKREAD_OFF, mZc * nLayers);
+      //   vsgt(VtoCmsg_abs_2, 0, MASKREAD_OFF, MASKWRITE_ON, mZc * nLayers);
+      //   vbrdcst(cons_i8, 0xFF, MASKREAD_OFF, mZc * nLayers);
+      //   parity        = vxor(cons_i8, parity, MASKREAD_ON, mZc * nLayers);
+      //   VtoCmsg_abs_2 = vxor(cons_i8, VtoCmsg_abs_2, MASKREAD_ON, mZc * nLayers);
+      //   vbrdcst(cons_i8, 1, MASKREAD_OFF, mZc * nLayers);
+      //   VtoCmsg_abs_2 = vsadd(cons_i8, VtoCmsg_abs_2, MASKREAD_ON, mZc * nLayers);
+
+      //   VtoCmsg_abs_3 = vsadd(VtoCmsg_3, 0, MASKREAD_OFF, mZc * nLayers);
+      //   vsgt(VtoCmsg_abs_3, 0, MASKREAD_OFF, MASKWRITE_ON, mZc * nLayers);
+      //   vbrdcst(cons_i8, 0xFF, MASKREAD_OFF, mZc * nLayers);
+      //   parity        = vxor(cons_i8, parity, MASKREAD_ON, mZc * nLayers);
+      //   VtoCmsg_abs_3 = vxor(cons_i8, VtoCmsg_abs_3, MASKREAD_ON, mZc * nLayers);
+      //   vbrdcst(cons_i8, 1, MASKREAD_OFF, mZc * nLayers);
+      //   VtoCmsg_abs_3 = vsadd(cons_i8, VtoCmsg_abs_3, MASKREAD_ON, mZc * nLayers);
+
+      //   VtoCmsg_abs_4 = vsadd(VtoCmsg_4, 0, MASKREAD_OFF, mZc * nLayers);
+      //   vsgt(VtoCmsg_abs_4, 0, MASKREAD_OFF, MASKWRITE_ON, mZc * nLayers);
+      //   vbrdcst(cons_i8, 0xFF, MASKREAD_OFF, mZc * nLayers);
+      //   parity        = vxor(cons_i8, parity, MASKREAD_ON, mZc * nLayers);
+      //   VtoCmsg_abs_4 = vxor(cons_i8, VtoCmsg_abs_4, MASKREAD_ON, mZc * nLayers);
+      //   vbrdcst(cons_i8, 1, MASKREAD_OFF, mZc * nLayers);
+      //   VtoCmsg_abs_4 = vsadd(cons_i8, VtoCmsg_abs_4, MASKREAD_ON, mZc * nLayers);
+
+      //   VtoCmsg_abs_5 = vsadd(VtoCmsg_5, 0, MASKREAD_OFF, mZc * nLayers);
+      //   vsgt(VtoCmsg_abs_5, 0, MASKREAD_OFF, MASKWRITE_ON, mZc * nLayers);
+      //   vbrdcst(cons_i8, 0xFF, MASKREAD_OFF, mZc * nLayers);
+      //   parity        = vxor(cons_i8, parity, MASKREAD_ON, mZc * nLayers);
+      //   VtoCmsg_abs_5 = vxor(cons_i8, VtoCmsg_abs_5, MASKREAD_ON, mZc * nLayers);
+      //   vbrdcst(cons_i8, 1, MASKREAD_OFF, mZc * nLayers);
+      //   VtoCmsg_abs_5 = vsadd(cons_i8, VtoCmsg_abs_5, MASKREAD_ON, mZc * nLayers);
+
+      //   vbrdcst(minBuf, INF, MASKREAD_OFF, mZc * nLayers);
+      //   vbrdcst(parity_0, 0, MASKREAD_OFF, mZc * nLayers);
+      //   vbrdcst(VtoCmsg_minsum_0, 0, MASKREAD_OFF, mZc * nLayers);
+      //   vsle(minBuf, VtoCmsg_abs_1, MASKREAD_OFF, MASKWRITE_ON, mZc * nLayers);
+      //   minBuf = vxor(minBuf, minBuf, MASKREAD_ON, mZc * nLayers);
+      //   minBuf = vsadd(VtoCmsg_abs_1, minBuf, MASKREAD_ON, mZc * nLayers);
+
+      //   vsle(minBuf, VtoCmsg_abs_2, MASKREAD_OFF, MASKWRITE_ON, mZc * nLayers);
+      //   minBuf = vxor(minBuf, minBuf, MASKREAD_ON, mZc * nLayers);
+      //   minBuf = vsadd(VtoCmsg_abs_2, minBuf, MASKREAD_ON, mZc * nLayers);
+
+      //   vsle(minBuf, VtoCmsg_abs_3, MASKREAD_OFF, MASKWRITE_ON, mZc * nLayers);
+      //   minBuf = vxor(minBuf, minBuf, MASKREAD_ON, mZc * nLayers);
+      //   minBuf = vsadd(VtoCmsg_abs_3, minBuf, MASKREAD_ON, mZc * nLayers);
+
+      //   vsle(minBuf, VtoCmsg_abs_4, MASKREAD_OFF, MASKWRITE_ON, mZc * nLayers);
+      //   minBuf = vxor(minBuf, minBuf, MASKREAD_ON, mZc * nLayers);
+      //   minBuf = vsadd(VtoCmsg_abs_4, minBuf, MASKREAD_ON, mZc * nLayers);
+
+      //   vsle(minBuf, VtoCmsg_abs_5, MASKREAD_OFF, MASKWRITE_ON, mZc * nLayers);
+      //   minBuf = vxor(minBuf, minBuf, MASKREAD_ON, mZc * nLayers);
+      //   minBuf = vsadd(VtoCmsg_abs_5, minBuf, MASKREAD_ON, mZc * nLayers);
+
+      //   vsgt(minBuf, ALPHA + 1, MASKREAD_OFF, MASKWRITE_ON, mZc * nLayers);
+      //   minBuf = vxor(minBuf, minBuf, MASKREAD_ON, mZc * nLayers);
+      //   vsle(minBuf, ALPHA, MASKREAD_OFF, MASKWRITE_ON, mZc * nLayers);
+      //   vbrdcst(cons_i8, -1 * ALPHA, MASKREAD_OFF, mZc * nLayers);
+      //   minBuf = vsadd(cons_i8, minBuf, MASKREAD_ON, mZc * nLayers);
+
+      //   vsgt(VtoCmsg_0, 0, MASKREAD_OFF, MASKWRITE_ON, mZc * nLayers);
+      //   vbrdcst(cons_i8, 0xFF, MASKREAD_OFF, mZc * nLayers);
+      //   parity_0 = vxor(cons_i8, parity_0, MASKREAD_ON, mZc * nLayers);
+      //   parity_0 = vxor(parity_0, parity, MASKREAD_OFF, mZc * nLayers);
+      //   parity_0 = vmul(parity_0, 2, MASKREAD_OFF, mZc * nLayers);
+      //   parity_0 = vsadd(parity_0, 1, MASKREAD_OFF, mZc * nLayers);
+
+      //   VtoCmsg_minsum_0 = vxor(VtoCmsg_minsum_0, minBuf, MASKREAD_OFF, mZc * nLayers);
+      //   VtoCmsg_minsum_0 = vsra(VtoCmsg_minsum_0, 1, MASKREAD_OFF, mZc * nLayers);
+      //   VtoCmsg_minsum_0 = vmul(VtoCmsg_minsum_0, parity_0, MASKREAD_OFF, mZc * nLayers);
+
+      //   vbrdcst(minBuf, INF, MASKREAD_OFF, mZc * nLayers);
+      //   vbrdcst(parity_0, 0, MASKREAD_OFF, mZc * nLayers);
+      //   vbrdcst(VtoCmsg_minsum_1, 0, MASKREAD_OFF, mZc * nLayers);
+      //   vsle(minBuf, VtoCmsg_abs_0, MASKREAD_OFF, MASKWRITE_ON, mZc * nLayers);
+      //   minBuf = vxor(minBuf, minBuf, MASKREAD_ON, mZc * nLayers);
+      //   minBuf = vsadd(VtoCmsg_abs_0, minBuf, MASKREAD_ON, mZc * nLayers);
+
+      //   vsle(minBuf, VtoCmsg_abs_2, MASKREAD_OFF, MASKWRITE_ON, mZc * nLayers);
+      //   minBuf = vxor(minBuf, minBuf, MASKREAD_ON, mZc * nLayers);
+      //   minBuf = vsadd(VtoCmsg_abs_2, minBuf, MASKREAD_ON, mZc * nLayers);
+
+      //   vsle(minBuf, VtoCmsg_abs_3, MASKREAD_OFF, MASKWRITE_ON, mZc * nLayers);
+      //   minBuf = vxor(minBuf, minBuf, MASKREAD_ON, mZc * nLayers);
+      //   minBuf = vsadd(VtoCmsg_abs_3, minBuf, MASKREAD_ON, mZc * nLayers);
+
+      //   vsle(minBuf, VtoCmsg_abs_4, MASKREAD_OFF, MASKWRITE_ON, mZc * nLayers);
+      //   minBuf = vxor(minBuf, minBuf, MASKREAD_ON, mZc * nLayers);
+      //   minBuf = vsadd(VtoCmsg_abs_4, minBuf, MASKREAD_ON, mZc * nLayers);
+
+      //   vsle(minBuf, VtoCmsg_abs_5, MASKREAD_OFF, MASKWRITE_ON, mZc * nLayers);
+      //   minBuf = vxor(minBuf, minBuf, MASKREAD_ON, mZc * nLayers);
+      //   minBuf = vsadd(VtoCmsg_abs_5, minBuf, MASKREAD_ON, mZc * nLayers);
+
+      //   vsgt(minBuf, ALPHA + 1, MASKREAD_OFF, MASKWRITE_ON, mZc * nLayers);
+      //   minBuf = vxor(minBuf, minBuf, MASKREAD_ON, mZc * nLayers);
+      //   vsle(minBuf, ALPHA, MASKREAD_OFF, MASKWRITE_ON, mZc * nLayers);
+      //   vbrdcst(cons_i8, -1 * ALPHA, MASKREAD_OFF, mZc * nLayers);
+      //   minBuf = vsadd(cons_i8, minBuf, MASKREAD_ON, mZc * nLayers);
+
+      //   vsgt(VtoCmsg_1, 0, MASKREAD_OFF, MASKWRITE_ON, mZc * nLayers);
+      //   vbrdcst(cons_i8, 0xFF, MASKREAD_OFF, mZc * nLayers);
+      //   parity_0 = vxor(cons_i8, parity_0, MASKREAD_ON, mZc * nLayers);
+      //   parity_0 = vxor(parity_0, parity, MASKREAD_OFF, mZc * nLayers);
+      //   parity_0 = vmul(parity_0, 2, MASKREAD_OFF, mZc * nLayers);
+      //   parity_0 = vsadd(parity_0, 1, MASKREAD_OFF, mZc * nLayers);
+
+      //   VtoCmsg_minsum_1 = vxor(VtoCmsg_minsum_1, minBuf, MASKREAD_OFF, mZc * nLayers);
+      //   VtoCmsg_minsum_1 = vsra(VtoCmsg_minsum_1, 1, MASKREAD_OFF, mZc * nLayers);
+      //   VtoCmsg_minsum_1 = vmul(VtoCmsg_minsum_1, parity_0, MASKREAD_OFF, mZc * nLayers);
+
+      //   vbrdcst(minBuf, INF, MASKREAD_OFF, mZc * nLayers);
+      //   vbrdcst(parity_0, 0, MASKREAD_OFF, mZc * nLayers);
+      //   vbrdcst(VtoCmsg_minsum_2, 0, MASKREAD_OFF, mZc * nLayers);
+      //   vsle(minBuf, VtoCmsg_abs_0, MASKREAD_OFF, MASKWRITE_ON, mZc * nLayers);
+      //   minBuf = vxor(minBuf, minBuf, MASKREAD_ON, mZc * nLayers);
+      //   minBuf = vsadd(VtoCmsg_abs_0, minBuf, MASKREAD_ON, mZc * nLayers);
+
+      //   vsle(minBuf, VtoCmsg_abs_1, MASKREAD_OFF, MASKWRITE_ON, mZc * nLayers);
+      //   minBuf = vxor(minBuf, minBuf, MASKREAD_ON, mZc * nLayers);
+      //   minBuf = vsadd(VtoCmsg_abs_1, minBuf, MASKREAD_ON, mZc * nLayers);
+
+      //   vsle(minBuf, VtoCmsg_abs_3, MASKREAD_OFF, MASKWRITE_ON, mZc * nLayers);
+      //   minBuf = vxor(minBuf, minBuf, MASKREAD_ON, mZc * nLayers);
+      //   minBuf = vsadd(VtoCmsg_abs_3, minBuf, MASKREAD_ON, mZc * nLayers);
+
+      //   vsle(minBuf, VtoCmsg_abs_4, MASKREAD_OFF, MASKWRITE_ON, mZc * nLayers);
+      //   minBuf = vxor(minBuf, minBuf, MASKREAD_ON, mZc * nLayers);
+      //   minBuf = vsadd(VtoCmsg_abs_4, minBuf, MASKREAD_ON, mZc * nLayers);
+
+      //   vsle(minBuf, VtoCmsg_abs_5, MASKREAD_OFF, MASKWRITE_ON, mZc * nLayers);
+      //   minBuf = vxor(minBuf, minBuf, MASKREAD_ON, mZc * nLayers);
+      //   minBuf = vsadd(VtoCmsg_abs_5, minBuf, MASKREAD_ON, mZc * nLayers);
+
+      //   vsgt(minBuf, ALPHA + 1, MASKREAD_OFF, MASKWRITE_ON, mZc * nLayers);
+      //   minBuf = vxor(minBuf, minBuf, MASKREAD_ON, mZc * nLayers);
+      //   vsle(minBuf, ALPHA, MASKREAD_OFF, MASKWRITE_ON, mZc * nLayers);
+      //   vbrdcst(cons_i8, -1 * ALPHA, MASKREAD_OFF, mZc * nLayers);
+      //   minBuf = vsadd(cons_i8, minBuf, MASKREAD_ON, mZc * nLayers);
+
+      //   vsgt(VtoCmsg_2, 0, MASKREAD_OFF, MASKWRITE_ON, mZc * nLayers);
+      //   vbrdcst(cons_i8, 0xFF, MASKREAD_OFF, mZc * nLayers);
+      //   parity_0 = vxor(cons_i8, parity_0, MASKREAD_ON, mZc * nLayers);
+      //   parity_0 = vxor(parity_0, parity, MASKREAD_OFF, mZc * nLayers);
+      //   parity_0 = vmul(parity_0, 2, MASKREAD_OFF, mZc * nLayers);
+      //   parity_0 = vsadd(parity_0, 1, MASKREAD_OFF, mZc * nLayers);
+
+      //   VtoCmsg_minsum_2 = vxor(VtoCmsg_minsum_2, minBuf, MASKREAD_OFF, mZc * nLayers);
+      //   VtoCmsg_minsum_2 = vsra(VtoCmsg_minsum_2, 1, MASKREAD_OFF, mZc * nLayers);
+      //   VtoCmsg_minsum_2 = vmul(VtoCmsg_minsum_2, parity_0, MASKREAD_OFF, mZc * nLayers);
+
+      //   vbrdcst(minBuf, INF, MASKREAD_OFF, mZc * nLayers);
+      //   vbrdcst(parity_0, 0, MASKREAD_OFF, mZc * nLayers);
+      //   vbrdcst(VtoCmsg_minsum_3, 0, MASKREAD_OFF, mZc * nLayers);
+      //   vsle(minBuf, VtoCmsg_abs_0, MASKREAD_OFF, MASKWRITE_ON, mZc * nLayers);
+      //   minBuf = vxor(minBuf, minBuf, MASKREAD_ON, mZc * nLayers);
+      //   minBuf = vsadd(VtoCmsg_abs_0, minBuf, MASKREAD_ON, mZc * nLayers);
+
+      //   vsle(minBuf, VtoCmsg_abs_1, MASKREAD_OFF, MASKWRITE_ON, mZc * nLayers);
+      //   minBuf = vxor(minBuf, minBuf, MASKREAD_ON, mZc * nLayers);
+      //   minBuf = vsadd(VtoCmsg_abs_1, minBuf, MASKREAD_ON, mZc * nLayers);
+
+      //   vsle(minBuf, VtoCmsg_abs_2, MASKREAD_OFF, MASKWRITE_ON, mZc * nLayers);
+      //   minBuf = vxor(minBuf, minBuf, MASKREAD_ON, mZc * nLayers);
+      //   minBuf = vsadd(VtoCmsg_abs_2, minBuf, MASKREAD_ON, mZc * nLayers);
+
+      //   vsle(minBuf, VtoCmsg_abs_4, MASKREAD_OFF, MASKWRITE_ON, mZc * nLayers);
+      //   minBuf = vxor(minBuf, minBuf, MASKREAD_ON, mZc * nLayers);
+      //   minBuf = vsadd(VtoCmsg_abs_4, minBuf, MASKREAD_ON, mZc * nLayers);
+
+      //   vsle(minBuf, VtoCmsg_abs_5, MASKREAD_OFF, MASKWRITE_ON, mZc * nLayers);
+      //   minBuf = vxor(minBuf, minBuf, MASKREAD_ON, mZc * nLayers);
+      //   minBuf = vsadd(VtoCmsg_abs_5, minBuf, MASKREAD_ON, mZc * nLayers);
+
+      //   vsgt(minBuf, ALPHA + 1, MASKREAD_OFF, MASKWRITE_ON, mZc * nLayers);
+      //   minBuf = vxor(minBuf, minBuf, MASKREAD_ON, mZc * nLayers);
+      //   vsle(minBuf, ALPHA, MASKREAD_OFF, MASKWRITE_ON, mZc * nLayers);
+      //   vbrdcst(cons_i8, -1 * ALPHA, MASKREAD_OFF, mZc * nLayers);
+      //   minBuf = vsadd(cons_i8, minBuf, MASKREAD_ON, mZc * nLayers);
+
+      //   vsgt(VtoCmsg_3, 0, MASKREAD_OFF, MASKWRITE_ON, mZc * nLayers);
+      //   vbrdcst(cons_i8, 0xFF, MASKREAD_OFF, mZc * nLayers);
+      //   parity_0 = vxor(cons_i8, parity_0, MASKREAD_ON, mZc * nLayers);
+      //   parity_0 = vxor(parity_0, parity, MASKREAD_OFF, mZc * nLayers);
+      //   parity_0 = vmul(parity_0, 2, MASKREAD_OFF, mZc * nLayers);
+      //   parity_0 = vsadd(parity_0, 1, MASKREAD_OFF, mZc * nLayers);
+
+      //   VtoCmsg_minsum_3 = vxor(VtoCmsg_minsum_3, minBuf, MASKREAD_OFF, mZc * nLayers);
+      //   VtoCmsg_minsum_3 = vsra(VtoCmsg_minsum_3, 1, MASKREAD_OFF, mZc * nLayers);
+      //   VtoCmsg_minsum_3 = vmul(VtoCmsg_minsum_3, parity_0, MASKREAD_OFF, mZc * nLayers);
+
+      //   vbrdcst(minBuf, INF, MASKREAD_OFF, mZc * nLayers);
+      //   vbrdcst(parity_0, 0, MASKREAD_OFF, mZc * nLayers);
+      //   vbrdcst(VtoCmsg_minsum_4, 0, MASKREAD_OFF, mZc * nLayers);
+      //   vsle(minBuf, VtoCmsg_abs_0, MASKREAD_OFF, MASKWRITE_ON, mZc * nLayers);
+      //   minBuf = vxor(minBuf, minBuf, MASKREAD_ON, mZc * nLayers);
+      //   minBuf = vsadd(VtoCmsg_abs_0, minBuf, MASKREAD_ON, mZc * nLayers);
+
+      //   vsle(minBuf, VtoCmsg_abs_1, MASKREAD_OFF, MASKWRITE_ON, mZc * nLayers);
+      //   minBuf = vxor(minBuf, minBuf, MASKREAD_ON, mZc * nLayers);
+      //   minBuf = vsadd(VtoCmsg_abs_1, minBuf, MASKREAD_ON, mZc * nLayers);
+
+      //   vsle(minBuf, VtoCmsg_abs_2, MASKREAD_OFF, MASKWRITE_ON, mZc * nLayers);
+      //   minBuf = vxor(minBuf, minBuf, MASKREAD_ON, mZc * nLayers);
+      //   minBuf = vsadd(VtoCmsg_abs_2, minBuf, MASKREAD_ON, mZc * nLayers);
+
+      //   vsle(minBuf, VtoCmsg_abs_3, MASKREAD_OFF, MASKWRITE_ON, mZc * nLayers);
+      //   minBuf = vxor(minBuf, minBuf, MASKREAD_ON, mZc * nLayers);
+      //   minBuf = vsadd(VtoCmsg_abs_3, minBuf, MASKREAD_ON, mZc * nLayers);
+
+      //   vsle(minBuf, VtoCmsg_abs_5, MASKREAD_OFF, MASKWRITE_ON, mZc * nLayers);
+      //   minBuf = vxor(minBuf, minBuf, MASKREAD_ON, mZc * nLayers);
+      //   minBuf = vsadd(VtoCmsg_abs_5, minBuf, MASKREAD_ON, mZc * nLayers);
+
+      //   vsgt(minBuf, ALPHA + 1, MASKREAD_OFF, MASKWRITE_ON, mZc * nLayers);
+      //   minBuf = vxor(minBuf, minBuf, MASKREAD_ON, mZc * nLayers);
+      //   vsle(minBuf, ALPHA, MASKREAD_OFF, MASKWRITE_ON, mZc * nLayers);
+      //   vbrdcst(cons_i8, -1 * ALPHA, MASKREAD_OFF, mZc * nLayers);
+      //   minBuf = vsadd(cons_i8, minBuf, MASKREAD_ON, mZc * nLayers);
+
+      //   vsgt(VtoCmsg_4, 0, MASKREAD_OFF, MASKWRITE_ON, mZc * nLayers);
+      //   vbrdcst(cons_i8, 0xFF, MASKREAD_OFF, mZc * nLayers);
+      //   parity_0 = vxor(cons_i8, parity_0, MASKREAD_ON, mZc * nLayers);
+      //   parity_0 = vxor(parity_0, parity, MASKREAD_OFF, mZc * nLayers);
+      //   parity_0 = vmul(parity_0, 2, MASKREAD_OFF, mZc * nLayers);
+      //   parity_0 = vsadd(parity_0, 1, MASKREAD_OFF, mZc * nLayers);
+
+      //   VtoCmsg_minsum_4 = vxor(VtoCmsg_minsum_4, minBuf, MASKREAD_OFF, mZc * nLayers);
+      //   VtoCmsg_minsum_4 = vsra(VtoCmsg_minsum_4, 1, MASKREAD_OFF, mZc * nLayers);
+      //   VtoCmsg_minsum_4 = vmul(VtoCmsg_minsum_4, parity_0, MASKREAD_OFF, mZc * nLayers);
+
+      //   vbrdcst(minBuf, INF, MASKREAD_OFF, mZc * nLayers);
+      //   vbrdcst(parity_0, 0, MASKREAD_OFF, mZc * nLayers);
+      //   vbrdcst(VtoCmsg_minsum_5, 0, MASKREAD_OFF, mZc * nLayers);
+      //   vsle(minBuf, VtoCmsg_abs_0, MASKREAD_OFF, MASKWRITE_ON, mZc * nLayers);
+      //   minBuf = vxor(minBuf, minBuf, MASKREAD_ON, mZc * nLayers);
+      //   minBuf = vsadd(VtoCmsg_abs_0, minBuf, MASKREAD_ON, mZc * nLayers);
+
+      //   vsle(minBuf, VtoCmsg_abs_1, MASKREAD_OFF, MASKWRITE_ON, mZc * nLayers);
+      //   minBuf = vxor(minBuf, minBuf, MASKREAD_ON, mZc * nLayers);
+      //   minBuf = vsadd(VtoCmsg_abs_1, minBuf, MASKREAD_ON, mZc * nLayers);
+
+      //   vsle(minBuf, VtoCmsg_abs_2, MASKREAD_OFF, MASKWRITE_ON, mZc * nLayers);
+      //   minBuf = vxor(minBuf, minBuf, MASKREAD_ON, mZc * nLayers);
+      //   minBuf = vsadd(VtoCmsg_abs_2, minBuf, MASKREAD_ON, mZc * nLayers);
+
+      //   vsle(minBuf, VtoCmsg_abs_3, MASKREAD_OFF, MASKWRITE_ON, mZc * nLayers);
+      //   minBuf = vxor(minBuf, minBuf, MASKREAD_ON, mZc * nLayers);
+      //   minBuf = vsadd(VtoCmsg_abs_3, minBuf, MASKREAD_ON, mZc * nLayers);
+
+      //   vsle(minBuf, VtoCmsg_abs_4, MASKREAD_OFF, MASKWRITE_ON, mZc * nLayers);
+      //   minBuf = vxor(minBuf, minBuf, MASKREAD_ON, mZc * nLayers);
+      //   minBuf = vsadd(VtoCmsg_abs_4, minBuf, MASKREAD_ON, mZc * nLayers);
+
+      //   vsgt(minBuf, ALPHA + 1, MASKREAD_OFF, MASKWRITE_ON, mZc * nLayers);
+      //   minBuf = vxor(minBuf, minBuf, MASKREAD_ON, mZc * nLayers);
+      //   vsle(minBuf, ALPHA, MASKREAD_OFF, MASKWRITE_ON, mZc * nLayers);
+      //   vbrdcst(cons_i8, -1 * ALPHA, MASKREAD_OFF, mZc * nLayers);
+      //   minBuf = vsadd(cons_i8, minBuf, MASKREAD_ON, mZc * nLayers);
+
+      //   vsgt(VtoCmsg_5, 0, MASKREAD_OFF, MASKWRITE_ON, mZc * nLayers);
+      //   vbrdcst(cons_i8, 0xFF, MASKREAD_OFF, mZc * nLayers);
+      //   parity_0 = vxor(cons_i8, parity_0, MASKREAD_ON, mZc * nLayers);
+      //   parity_0 = vxor(parity_0, parity, MASKREAD_OFF, mZc * nLayers);
+      //   parity_0 = vmul(parity_0, 2, MASKREAD_OFF, mZc * nLayers);
+      //   parity_0 = vsadd(parity_0, 1, MASKREAD_OFF, mZc * nLayers);
+
+      //   VtoCmsg_minsum_5 = vxor(VtoCmsg_minsum_5, minBuf, MASKREAD_OFF, mZc * nLayers);
+      //   VtoCmsg_minsum_5 = vsra(VtoCmsg_minsum_5, 1, MASKREAD_OFF, mZc * nLayers);
+      //   VtoCmsg_minsum_5 = vmul(VtoCmsg_minsum_5, parity_0, MASKREAD_OFF, mZc * nLayers);
+
+      //   for (int iLayer = 0; iLayer < nLayers; ++iLayer) {
+      //     edgeStart   = BGlayer_2[LayerEdgesCnts_Layers_BG2[iLayerEdgesCnt * 21 + iLayer + 1] * 2 + 0];
+      //     edgeEnd     = BGlayer_2[LayerEdgesCnts_Layers_BG2[iLayerEdgesCnt * 21 + iLayer + 1] * 2 + 1];
+      //     nLayerEdges = edgeEnd - edgeStart;
+
+      //     iEdges = 0;
+      //     vbrdcst(CtoVmsg, 0, MASKREAD_OFF, mN);
+      //     edgeIdx  = edgeStart + iEdges;
+      //     vNodeIdx = vNodesIdx_BG2[edgeIdx];
+      //     nShifts  = nShifts_BG2[edgeIdx];
+      //     vrange(index, mZc);
+      //     index = vsadd(index, 0 - nShifts, MASKREAD_OFF, mZc);
+      //     index = vsadd(index, (nShifts == 0) ? 0 : mZc, MASKREAD_OFF, (nShifts == 0) ? 10 : nShifts);
+      //     index = vsadd(index, mZc * iLayer, MASKREAD_OFF, mZc);
+      //     vshuffle(Buffer, index, VtoCmsg_minsum_0, SHUFFLE_GATHER, mZc);
+
+      //     vrange(index, mZc);
+      //     index = vsadd(index, mZc * vNodeIdx, MASKREAD_OFF, mZc);
+      //     vshuffle(CtoVmsg, index, Buffer, SHUFFLE_SCATTER, mZc);
+      //     iEdges++;
+      //     edgeIdx  = edgeStart + iEdges;
+      //     vNodeIdx = vNodesIdx_BG2[edgeIdx];
+      //     nShifts  = nShifts_BG2[edgeIdx];
+      //     vrange(index, mZc);
+      //     index = vsadd(index, 0 - nShifts, MASKREAD_OFF, mZc);
+      //     index = vsadd(index, (nShifts == 0) ? 0 : mZc, MASKREAD_OFF, (nShifts == 0) ? 10 : nShifts);
+      //     index = vsadd(index, mZc * iLayer, MASKREAD_OFF, mZc);
+      //     vshuffle(Buffer, index, VtoCmsg_minsum_1, SHUFFLE_GATHER, mZc);
+
+      //     vrange(index, mZc);
+      //     index = vsadd(index, mZc * vNodeIdx, MASKREAD_OFF, mZc);
+      //     vshuffle(CtoVmsg, index, Buffer, SHUFFLE_SCATTER, mZc);
+      //     iEdges++;
+      //     edgeIdx  = edgeStart + iEdges;
+      //     vNodeIdx = vNodesIdx_BG2[edgeIdx];
+      //     nShifts  = nShifts_BG2[edgeIdx];
+      //     vrange(index, mZc);
+      //     index = vsadd(index, 0 - nShifts, MASKREAD_OFF, mZc);
+      //     index = vsadd(index, (nShifts == 0) ? 0 : mZc, MASKREAD_OFF, (nShifts == 0) ? 10 : nShifts);
+      //     index = vsadd(index, mZc * iLayer, MASKREAD_OFF, mZc);
+      //     vshuffle(Buffer, index, VtoCmsg_minsum_2, SHUFFLE_GATHER, mZc);
+
+      //     vrange(index, mZc);
+      //     index = vsadd(index, mZc * vNodeIdx, MASKREAD_OFF, mZc);
+      //     vshuffle(CtoVmsg, index, Buffer, SHUFFLE_SCATTER, mZc);
+      //     iEdges++;
+      //     edgeIdx  = edgeStart + iEdges;
+      //     vNodeIdx = vNodesIdx_BG2[edgeIdx];
+      //     nShifts  = nShifts_BG2[edgeIdx];
+      //     vrange(index, mZc);
+      //     index = vsadd(index, 0 - nShifts, MASKREAD_OFF, mZc);
+      //     index = vsadd(index, (nShifts == 0) ? 0 : mZc, MASKREAD_OFF, (nShifts == 0) ? 10 : nShifts);
+      //     index = vsadd(index, mZc * iLayer, MASKREAD_OFF, mZc);
+      //     vshuffle(Buffer, index, VtoCmsg_minsum_3, SHUFFLE_GATHER, mZc);
+
+      //     vrange(index, mZc);
+      //     index = vsadd(index, mZc * vNodeIdx, MASKREAD_OFF, mZc);
+      //     vshuffle(CtoVmsg, index, Buffer, SHUFFLE_SCATTER, mZc);
+      //     iEdges++;
+      //     edgeIdx  = edgeStart + iEdges;
+      //     vNodeIdx = vNodesIdx_BG2[edgeIdx];
+      //     nShifts  = nShifts_BG2[edgeIdx];
+      //     vrange(index, mZc);
+      //     index = vsadd(index, 0 - nShifts, MASKREAD_OFF, mZc);
+      //     index = vsadd(index, (nShifts == 0) ? 0 : mZc, MASKREAD_OFF, (nShifts == 0) ? 10 : nShifts);
+      //     index = vsadd(index, mZc * iLayer, MASKREAD_OFF, mZc);
+      //     vshuffle(Buffer, index, VtoCmsg_minsum_4, SHUFFLE_GATHER, mZc);
+
+      //     vrange(index, mZc);
+      //     index = vsadd(index, mZc * vNodeIdx, MASKREAD_OFF, mZc);
+      //     vshuffle(CtoVmsg, index, Buffer, SHUFFLE_SCATTER, mZc);
+      //     iEdges++;
+      //     edgeIdx  = edgeStart + iEdges;
+      //     vNodeIdx = vNodesIdx_BG2[edgeIdx];
+      //     nShifts  = nShifts_BG2[edgeIdx];
+      //     vrange(index, mZc);
+      //     index = vsadd(index, 0 - nShifts, MASKREAD_OFF, mZc);
+      //     index = vsadd(index, (nShifts == 0) ? 0 : mZc, MASKREAD_OFF, (nShifts == 0) ? 10 : nShifts);
+      //     index = vsadd(index, mZc * iLayer, MASKREAD_OFF, mZc);
+      //     vshuffle(Buffer, index, VtoCmsg_minsum_5, SHUFFLE_GATHER, mZc);
+
+      //     vrange(index, mZc);
+      //     index = vsadd(index, mZc * vNodeIdx, MASKREAD_OFF, mZc);
+      //     vshuffle(CtoVmsg, index, Buffer, SHUFFLE_SCATTER, mZc);
+      //     iEdges++;
+      //     CtoVmsg0 = vsadd(CtoVmsg0, CtoVmsg, MASKREAD_OFF, mN);
+      //   }
+      // } 
+      // else if (LayerEdgesCnts_BG2[iLayerEdgesCnt] == 8) {
+      //   for (int iLayer = 0; iLayer < nLayers; ++iLayer) {
+      //     edgeStart   = BGlayer_2[LayerEdgesCnts_Layers_BG2[iLayerEdgesCnt * 21 + iLayer + 1] * 2 + 0];
+      //     edgeEnd     = BGlayer_2[LayerEdgesCnts_Layers_BG2[iLayerEdgesCnt * 21 + iLayer + 1] * 2 + 1];
+      //     nLayerEdges = edgeEnd - edgeStart;
+      //     iEdges      = 0;
+
+      //     edgeIdx  = edgeStart + iEdges;
+      //     vNodeIdx = vNodesIdx_BG2[edgeIdx];
+      //     nShifts  = nShifts_BG2[edgeIdx];
+      //     ss       = mZc - nShifts;
+      //     vrange(index, mZc);
+      //     index = vsadd(index, nShifts - mZc, MASKREAD_OFF, mZc);
+      //     index = vsadd(index, (ss == 0) ? 0 : mZc, MASKREAD_OFF, (ss == 0) ? 10 : ss);
+      //     index = vsadd(index, mZc * vNodeIdx, MASKREAD_OFF, mZc);
+      //     vshuffle(Buffer, index, LLR, SHUFFLE_GATHER, mZc);
+
+      //     vrange(index, mZc);
+      //     index = vsadd(index, mZc * iLayer, MASKREAD_OFF, mZc);
+      //     vshuffle(VtoCmsg_0, index, Buffer, SHUFFLE_SCATTER, mZc);
+      //     iEdges++;
+
+      //     edgeIdx  = edgeStart + iEdges;
+      //     vNodeIdx = vNodesIdx_BG2[edgeIdx];
+      //     nShifts  = nShifts_BG2[edgeIdx];
+      //     ss       = mZc - nShifts;
+      //     vrange(index, mZc);
+      //     index = vsadd(index, nShifts - mZc, MASKREAD_OFF, mZc);
+      //     index = vsadd(index, (ss == 0) ? 0 : mZc, MASKREAD_OFF, (ss == 0) ? 10 : ss);
+      //     index = vsadd(index, mZc * vNodeIdx, MASKREAD_OFF, mZc);
+      //     vshuffle(Buffer, index, LLR, SHUFFLE_GATHER, mZc);
+
+      //     vrange(index, mZc);
+      //     index = vsadd(index, mZc * iLayer, MASKREAD_OFF, mZc);
+      //     vshuffle(VtoCmsg_1, index, Buffer, SHUFFLE_SCATTER, mZc);
+      //     iEdges++;
+
+      //     edgeIdx  = edgeStart + iEdges;
+      //     vNodeIdx = vNodesIdx_BG2[edgeIdx];
+      //     nShifts  = nShifts_BG2[edgeIdx];
+      //     ss       = mZc - nShifts;
+      //     vrange(index, mZc);
+      //     index = vsadd(index, nShifts - mZc, MASKREAD_OFF, mZc);
+      //     index = vsadd(index, (ss == 0) ? 0 : mZc, MASKREAD_OFF, (ss == 0) ? 10 : ss);
+      //     index = vsadd(index, mZc * vNodeIdx, MASKREAD_OFF, mZc);
+      //     vshuffle(Buffer, index, LLR, SHUFFLE_GATHER, mZc);
+
+      //     vrange(index, mZc);
+      //     index = vsadd(index, mZc * iLayer, MASKREAD_OFF, mZc);
+      //     vshuffle(VtoCmsg_2, index, Buffer, SHUFFLE_SCATTER, mZc);
+      //     iEdges++;
+
+      //     edgeIdx  = edgeStart + iEdges;
+      //     vNodeIdx = vNodesIdx_BG2[edgeIdx];
+      //     nShifts  = nShifts_BG2[edgeIdx];
+      //     ss       = mZc - nShifts;
+      //     vrange(index, mZc);
+      //     index = vsadd(index, nShifts - mZc, MASKREAD_OFF, mZc);
+      //     index = vsadd(index, (ss == 0) ? 0 : mZc, MASKREAD_OFF, (ss == 0) ? 10 : ss);
+      //     index = vsadd(index, mZc * vNodeIdx, MASKREAD_OFF, mZc);
+      //     vshuffle(Buffer, index, LLR, SHUFFLE_GATHER, mZc);
+
+      //     vrange(index, mZc);
+      //     index = vsadd(index, mZc * iLayer, MASKREAD_OFF, mZc);
+      //     vshuffle(VtoCmsg_3, index, Buffer, SHUFFLE_SCATTER, mZc);
+      //     iEdges++;
+
+      //     edgeIdx  = edgeStart + iEdges;
+      //     vNodeIdx = vNodesIdx_BG2[edgeIdx];
+      //     nShifts  = nShifts_BG2[edgeIdx];
+      //     ss       = mZc - nShifts;
+      //     vrange(index, mZc);
+      //     index = vsadd(index, nShifts - mZc, MASKREAD_OFF, mZc);
+      //     index = vsadd(index, (ss == 0) ? 0 : mZc, MASKREAD_OFF, (ss == 0) ? 10 : ss);
+      //     index = vsadd(index, mZc * vNodeIdx, MASKREAD_OFF, mZc);
+      //     vshuffle(Buffer, index, LLR, SHUFFLE_GATHER, mZc);
+
+      //     vrange(index, mZc);
+      //     index = vsadd(index, mZc * iLayer, MASKREAD_OFF, mZc);
+      //     vshuffle(VtoCmsg_4, index, Buffer, SHUFFLE_SCATTER, mZc);
+      //     iEdges++;
+
+      //     edgeIdx  = edgeStart + iEdges;
+      //     vNodeIdx = vNodesIdx_BG2[edgeIdx];
+      //     nShifts  = nShifts_BG2[edgeIdx];
+      //     ss       = mZc - nShifts;
+      //     vrange(index, mZc);
+      //     index = vsadd(index, nShifts - mZc, MASKREAD_OFF, mZc);
+      //     index = vsadd(index, (ss == 0) ? 0 : mZc, MASKREAD_OFF, (ss == 0) ? 10 : ss);
+      //     index = vsadd(index, mZc * vNodeIdx, MASKREAD_OFF, mZc);
+      //     vshuffle(Buffer, index, LLR, SHUFFLE_GATHER, mZc);
+
+      //     vrange(index, mZc);
+      //     index = vsadd(index, mZc * iLayer, MASKREAD_OFF, mZc);
+      //     vshuffle(VtoCmsg_5, index, Buffer, SHUFFLE_SCATTER, mZc);
+      //     iEdges++;
+
+      //     edgeIdx  = edgeStart + iEdges;
+      //     vNodeIdx = vNodesIdx_BG2[edgeIdx];
+      //     nShifts  = nShifts_BG2[edgeIdx];
+      //     ss       = mZc - nShifts;
+      //     vrange(index, mZc);
+      //     index = vsadd(index, nShifts - mZc, MASKREAD_OFF, mZc);
+      //     index = vsadd(index, (ss == 0) ? 0 : mZc, MASKREAD_OFF, (ss == 0) ? 10 : ss);
+      //     index = vsadd(index, mZc * vNodeIdx, MASKREAD_OFF, mZc);
+      //     vshuffle(Buffer, index, LLR, SHUFFLE_GATHER, mZc);
+
+      //     vrange(index, mZc);
+      //     index = vsadd(index, mZc * iLayer, MASKREAD_OFF, mZc);
+      //     vshuffle(VtoCmsg_6, index, Buffer, SHUFFLE_SCATTER, mZc);
+      //     iEdges++;
+
+      //     edgeIdx  = edgeStart + iEdges;
+      //     vNodeIdx = vNodesIdx_BG2[edgeIdx];
+      //     nShifts  = nShifts_BG2[edgeIdx];
+      //     ss       = mZc - nShifts;
+      //     vrange(index, mZc);
+      //     index = vsadd(index, nShifts - mZc, MASKREAD_OFF, mZc);
+      //     index = vsadd(index, (ss == 0) ? 0 : mZc, MASKREAD_OFF, (ss == 0) ? 10 : ss);
+      //     index = vsadd(index, mZc * vNodeIdx, MASKREAD_OFF, mZc);
+      //     vshuffle(Buffer, index, LLR, SHUFFLE_GATHER, mZc);
+
+      //     vrange(index, mZc);
+      //     index = vsadd(index, mZc * iLayer, MASKREAD_OFF, mZc);
+      //     vshuffle(VtoCmsg_7, index, Buffer, SHUFFLE_SCATTER, mZc);
+      //     iEdges++;
+      //   }
+      //   vbrdcst(parity, 0, MASKREAD_OFF, mZc * nLayers);
+      //   VtoCmsg_abs_0 = vsadd(VtoCmsg_0, 0, MASKREAD_OFF, mZc * nLayers);
+      //   vsgt(VtoCmsg_abs_0, 0, MASKREAD_OFF, MASKWRITE_ON, mZc * nLayers);
+      //   vbrdcst(cons_i8, 0xFF, MASKREAD_OFF, mZc * nLayers);
+      //   parity        = vxor(cons_i8, parity, MASKREAD_ON, mZc * nLayers);
+      //   VtoCmsg_abs_0 = vxor(cons_i8, VtoCmsg_abs_0, MASKREAD_ON, mZc * nLayers);
+      //   vbrdcst(cons_i8, 1, MASKREAD_OFF, mZc * nLayers);
+      //   VtoCmsg_abs_0 = vsadd(cons_i8, VtoCmsg_abs_0, MASKREAD_ON, mZc * nLayers);
+
+      //   VtoCmsg_abs_1 = vsadd(VtoCmsg_1, 0, MASKREAD_OFF, mZc * nLayers);
+      //   vsgt(VtoCmsg_abs_1, 0, MASKREAD_OFF, MASKWRITE_ON, mZc * nLayers);
+      //   vbrdcst(cons_i8, 0xFF, MASKREAD_OFF, mZc * nLayers);
+      //   parity        = vxor(cons_i8, parity, MASKREAD_ON, mZc * nLayers);
+      //   VtoCmsg_abs_1 = vxor(cons_i8, VtoCmsg_abs_1, MASKREAD_ON, mZc * nLayers);
+      //   vbrdcst(cons_i8, 1, MASKREAD_OFF, mZc * nLayers);
+      //   VtoCmsg_abs_1 = vsadd(cons_i8, VtoCmsg_abs_1, MASKREAD_ON, mZc * nLayers);
+
+      //   VtoCmsg_abs_2 = vsadd(VtoCmsg_2, 0, MASKREAD_OFF, mZc * nLayers);
+      //   vsgt(VtoCmsg_abs_2, 0, MASKREAD_OFF, MASKWRITE_ON, mZc * nLayers);
+      //   vbrdcst(cons_i8, 0xFF, MASKREAD_OFF, mZc * nLayers);
+      //   parity        = vxor(cons_i8, parity, MASKREAD_ON, mZc * nLayers);
+      //   VtoCmsg_abs_2 = vxor(cons_i8, VtoCmsg_abs_2, MASKREAD_ON, mZc * nLayers);
+      //   vbrdcst(cons_i8, 1, MASKREAD_OFF, mZc * nLayers);
+      //   VtoCmsg_abs_2 = vsadd(cons_i8, VtoCmsg_abs_2, MASKREAD_ON, mZc * nLayers);
+
+      //   VtoCmsg_abs_3 = vsadd(VtoCmsg_3, 0, MASKREAD_OFF, mZc * nLayers);
+      //   vsgt(VtoCmsg_abs_3, 0, MASKREAD_OFF, MASKWRITE_ON, mZc * nLayers);
+      //   vbrdcst(cons_i8, 0xFF, MASKREAD_OFF, mZc * nLayers);
+      //   parity        = vxor(cons_i8, parity, MASKREAD_ON, mZc * nLayers);
+      //   VtoCmsg_abs_3 = vxor(cons_i8, VtoCmsg_abs_3, MASKREAD_ON, mZc * nLayers);
+      //   vbrdcst(cons_i8, 1, MASKREAD_OFF, mZc * nLayers);
+      //   VtoCmsg_abs_3 = vsadd(cons_i8, VtoCmsg_abs_3, MASKREAD_ON, mZc * nLayers);
+
+      //   VtoCmsg_abs_4 = vsadd(VtoCmsg_4, 0, MASKREAD_OFF, mZc * nLayers);
+      //   vsgt(VtoCmsg_abs_4, 0, MASKREAD_OFF, MASKWRITE_ON, mZc * nLayers);
+      //   vbrdcst(cons_i8, 0xFF, MASKREAD_OFF, mZc * nLayers);
+      //   parity        = vxor(cons_i8, parity, MASKREAD_ON, mZc * nLayers);
+      //   VtoCmsg_abs_4 = vxor(cons_i8, VtoCmsg_abs_4, MASKREAD_ON, mZc * nLayers);
+      //   vbrdcst(cons_i8, 1, MASKREAD_OFF, mZc * nLayers);
+      //   VtoCmsg_abs_4 = vsadd(cons_i8, VtoCmsg_abs_4, MASKREAD_ON, mZc * nLayers);
+
+      //   VtoCmsg_abs_5 = vsadd(VtoCmsg_5, 0, MASKREAD_OFF, mZc * nLayers);
+      //   vsgt(VtoCmsg_abs_5, 0, MASKREAD_OFF, MASKWRITE_ON, mZc * nLayers);
+      //   vbrdcst(cons_i8, 0xFF, MASKREAD_OFF, mZc * nLayers);
+      //   parity        = vxor(cons_i8, parity, MASKREAD_ON, mZc * nLayers);
+      //   VtoCmsg_abs_5 = vxor(cons_i8, VtoCmsg_abs_5, MASKREAD_ON, mZc * nLayers);
+      //   vbrdcst(cons_i8, 1, MASKREAD_OFF, mZc * nLayers);
+      //   VtoCmsg_abs_5 = vsadd(cons_i8, VtoCmsg_abs_5, MASKREAD_ON, mZc * nLayers);
+
+      //   VtoCmsg_abs_6 = vsadd(VtoCmsg_6, 0, MASKREAD_OFF, mZc * nLayers);
+      //   vsgt(VtoCmsg_abs_6, 0, MASKREAD_OFF, MASKWRITE_ON, mZc * nLayers);
+      //   vbrdcst(cons_i8, 0xFF, MASKREAD_OFF, mZc * nLayers);
+      //   parity        = vxor(cons_i8, parity, MASKREAD_ON, mZc * nLayers);
+      //   VtoCmsg_abs_6 = vxor(cons_i8, VtoCmsg_abs_6, MASKREAD_ON, mZc * nLayers);
+      //   vbrdcst(cons_i8, 1, MASKREAD_OFF, mZc * nLayers);
+      //   VtoCmsg_abs_6 = vsadd(cons_i8, VtoCmsg_abs_6, MASKREAD_ON, mZc * nLayers);
+
+      //   VtoCmsg_abs_7 = vsadd(VtoCmsg_7, 0, MASKREAD_OFF, mZc * nLayers);
+      //   vsgt(VtoCmsg_abs_7, 0, MASKREAD_OFF, MASKWRITE_ON, mZc * nLayers);
+      //   vbrdcst(cons_i8, 0xFF, MASKREAD_OFF, mZc * nLayers);
+      //   parity        = vxor(cons_i8, parity, MASKREAD_ON, mZc * nLayers);
+      //   VtoCmsg_abs_7 = vxor(cons_i8, VtoCmsg_abs_7, MASKREAD_ON, mZc * nLayers);
+      //   vbrdcst(cons_i8, 1, MASKREAD_OFF, mZc * nLayers);
+      //   VtoCmsg_abs_7 = vsadd(cons_i8, VtoCmsg_abs_7, MASKREAD_ON, mZc * nLayers);
+
+      //   vbrdcst(minBuf, INF, MASKREAD_OFF, mZc * nLayers);
+      //   vbrdcst(parity_0, 0, MASKREAD_OFF, mZc * nLayers);
+      //   vbrdcst(VtoCmsg_minsum_0, 0, MASKREAD_OFF, mZc * nLayers);
+      //   vsle(minBuf, VtoCmsg_abs_1, MASKREAD_OFF, MASKWRITE_ON, mZc * nLayers);
+      //   minBuf = vxor(minBuf, minBuf, MASKREAD_ON, mZc * nLayers);
+      //   minBuf = vsadd(VtoCmsg_abs_1, minBuf, MASKREAD_ON, mZc * nLayers);
+
+      //   vsle(minBuf, VtoCmsg_abs_2, MASKREAD_OFF, MASKWRITE_ON, mZc * nLayers);
+      //   minBuf = vxor(minBuf, minBuf, MASKREAD_ON, mZc * nLayers);
+      //   minBuf = vsadd(VtoCmsg_abs_2, minBuf, MASKREAD_ON, mZc * nLayers);
+
+      //   vsle(minBuf, VtoCmsg_abs_3, MASKREAD_OFF, MASKWRITE_ON, mZc * nLayers);
+      //   minBuf = vxor(minBuf, minBuf, MASKREAD_ON, mZc * nLayers);
+      //   minBuf = vsadd(VtoCmsg_abs_3, minBuf, MASKREAD_ON, mZc * nLayers);
+
+      //   vsle(minBuf, VtoCmsg_abs_4, MASKREAD_OFF, MASKWRITE_ON, mZc * nLayers);
+      //   minBuf = vxor(minBuf, minBuf, MASKREAD_ON, mZc * nLayers);
+      //   minBuf = vsadd(VtoCmsg_abs_4, minBuf, MASKREAD_ON, mZc * nLayers);
+
+      //   vsle(minBuf, VtoCmsg_abs_5, MASKREAD_OFF, MASKWRITE_ON, mZc * nLayers);
+      //   minBuf = vxor(minBuf, minBuf, MASKREAD_ON, mZc * nLayers);
+      //   minBuf = vsadd(VtoCmsg_abs_5, minBuf, MASKREAD_ON, mZc * nLayers);
+
+      //   vsle(minBuf, VtoCmsg_abs_6, MASKREAD_OFF, MASKWRITE_ON, mZc * nLayers);
+      //   minBuf = vxor(minBuf, minBuf, MASKREAD_ON, mZc * nLayers);
+      //   minBuf = vsadd(VtoCmsg_abs_6, minBuf, MASKREAD_ON, mZc * nLayers);
+
+      //   vsle(minBuf, VtoCmsg_abs_7, MASKREAD_OFF, MASKWRITE_ON, mZc * nLayers);
+      //   minBuf = vxor(minBuf, minBuf, MASKREAD_ON, mZc * nLayers);
+      //   minBuf = vsadd(VtoCmsg_abs_7, minBuf, MASKREAD_ON, mZc * nLayers);
+
+      //   vsgt(minBuf, ALPHA + 1, MASKREAD_OFF, MASKWRITE_ON, mZc * nLayers);
+      //   minBuf = vxor(minBuf, minBuf, MASKREAD_ON, mZc * nLayers);
+      //   vsle(minBuf, ALPHA, MASKREAD_OFF, MASKWRITE_ON, mZc * nLayers);
+      //   vbrdcst(cons_i8, -1 * ALPHA, MASKREAD_OFF, mZc * nLayers);
+      //   minBuf = vsadd(cons_i8, minBuf, MASKREAD_ON, mZc * nLayers);
+
+      //   vsgt(VtoCmsg_0, 0, MASKREAD_OFF, MASKWRITE_ON, mZc * nLayers);
+      //   vbrdcst(cons_i8, 0xFF, MASKREAD_OFF, mZc * nLayers);
+      //   parity_0 = vxor(cons_i8, parity_0, MASKREAD_ON, mZc * nLayers);
+      //   parity_0 = vxor(parity_0, parity, MASKREAD_OFF, mZc * nLayers);
+      //   parity_0 = vmul(parity_0, 2, MASKREAD_OFF, mZc * nLayers);
+      //   parity_0 = vsadd(parity_0, 1, MASKREAD_OFF, mZc * nLayers);
+
+      //   VtoCmsg_minsum_0 = vxor(VtoCmsg_minsum_0, minBuf, MASKREAD_OFF, mZc * nLayers);
+      //   VtoCmsg_minsum_0 = vsra(VtoCmsg_minsum_0, 1, MASKREAD_OFF, mZc * nLayers);
+      //   VtoCmsg_minsum_0 = vmul(VtoCmsg_minsum_0, parity_0, MASKREAD_OFF, mZc * nLayers);
+
+      //   vbrdcst(minBuf, INF, MASKREAD_OFF, mZc * nLayers);
+      //   vbrdcst(parity_0, 0, MASKREAD_OFF, mZc * nLayers);
+      //   vbrdcst(VtoCmsg_minsum_1, 0, MASKREAD_OFF, mZc * nLayers);
+      //   vsle(minBuf, VtoCmsg_abs_0, MASKREAD_OFF, MASKWRITE_ON, mZc * nLayers);
+      //   minBuf = vxor(minBuf, minBuf, MASKREAD_ON, mZc * nLayers);
+      //   minBuf = vsadd(VtoCmsg_abs_0, minBuf, MASKREAD_ON, mZc * nLayers);
+
+      //   vsle(minBuf, VtoCmsg_abs_2, MASKREAD_OFF, MASKWRITE_ON, mZc * nLayers);
+      //   minBuf = vxor(minBuf, minBuf, MASKREAD_ON, mZc * nLayers);
+      //   minBuf = vsadd(VtoCmsg_abs_2, minBuf, MASKREAD_ON, mZc * nLayers);
+
+      //   vsle(minBuf, VtoCmsg_abs_3, MASKREAD_OFF, MASKWRITE_ON, mZc * nLayers);
+      //   minBuf = vxor(minBuf, minBuf, MASKREAD_ON, mZc * nLayers);
+      //   minBuf = vsadd(VtoCmsg_abs_3, minBuf, MASKREAD_ON, mZc * nLayers);
+
+      //   vsle(minBuf, VtoCmsg_abs_4, MASKREAD_OFF, MASKWRITE_ON, mZc * nLayers);
+      //   minBuf = vxor(minBuf, minBuf, MASKREAD_ON, mZc * nLayers);
+      //   minBuf = vsadd(VtoCmsg_abs_4, minBuf, MASKREAD_ON, mZc * nLayers);
+
+      //   vsle(minBuf, VtoCmsg_abs_5, MASKREAD_OFF, MASKWRITE_ON, mZc * nLayers);
+      //   minBuf = vxor(minBuf, minBuf, MASKREAD_ON, mZc * nLayers);
+      //   minBuf = vsadd(VtoCmsg_abs_5, minBuf, MASKREAD_ON, mZc * nLayers);
+
+      //   vsle(minBuf, VtoCmsg_abs_6, MASKREAD_OFF, MASKWRITE_ON, mZc * nLayers);
+      //   minBuf = vxor(minBuf, minBuf, MASKREAD_ON, mZc * nLayers);
+      //   minBuf = vsadd(VtoCmsg_abs_6, minBuf, MASKREAD_ON, mZc * nLayers);
+
+      //   vsle(minBuf, VtoCmsg_abs_7, MASKREAD_OFF, MASKWRITE_ON, mZc * nLayers);
+      //   minBuf = vxor(minBuf, minBuf, MASKREAD_ON, mZc * nLayers);
+      //   minBuf = vsadd(VtoCmsg_abs_7, minBuf, MASKREAD_ON, mZc * nLayers);
+
+      //   vsgt(minBuf, ALPHA + 1, MASKREAD_OFF, MASKWRITE_ON, mZc * nLayers);
+      //   minBuf = vxor(minBuf, minBuf, MASKREAD_ON, mZc * nLayers);
+      //   vsle(minBuf, ALPHA, MASKREAD_OFF, MASKWRITE_ON, mZc * nLayers);
+      //   vbrdcst(cons_i8, -1 * ALPHA, MASKREAD_OFF, mZc * nLayers);
+      //   minBuf = vsadd(cons_i8, minBuf, MASKREAD_ON, mZc * nLayers);
+
+      //   vsgt(VtoCmsg_1, 0, MASKREAD_OFF, MASKWRITE_ON, mZc * nLayers);
+      //   vbrdcst(cons_i8, 0xFF, MASKREAD_OFF, mZc * nLayers);
+      //   parity_0 = vxor(cons_i8, parity_0, MASKREAD_ON, mZc * nLayers);
+      //   parity_0 = vxor(parity_0, parity, MASKREAD_OFF, mZc * nLayers);
+      //   parity_0 = vmul(parity_0, 2, MASKREAD_OFF, mZc * nLayers);
+      //   parity_0 = vsadd(parity_0, 1, MASKREAD_OFF, mZc * nLayers);
+
+      //   VtoCmsg_minsum_1 = vxor(VtoCmsg_minsum_1, minBuf, MASKREAD_OFF, mZc * nLayers);
+      //   VtoCmsg_minsum_1 = vsra(VtoCmsg_minsum_1, 1, MASKREAD_OFF, mZc * nLayers);
+      //   VtoCmsg_minsum_1 = vmul(VtoCmsg_minsum_1, parity_0, MASKREAD_OFF, mZc * nLayers);
+
+      //   vbrdcst(minBuf, INF, MASKREAD_OFF, mZc * nLayers);
+      //   vbrdcst(parity_0, 0, MASKREAD_OFF, mZc * nLayers);
+      //   vbrdcst(VtoCmsg_minsum_2, 0, MASKREAD_OFF, mZc * nLayers);
+      //   vsle(minBuf, VtoCmsg_abs_0, MASKREAD_OFF, MASKWRITE_ON, mZc * nLayers);
+      //   minBuf = vxor(minBuf, minBuf, MASKREAD_ON, mZc * nLayers);
+      //   minBuf = vsadd(VtoCmsg_abs_0, minBuf, MASKREAD_ON, mZc * nLayers);
+
+      //   vsle(minBuf, VtoCmsg_abs_1, MASKREAD_OFF, MASKWRITE_ON, mZc * nLayers);
+      //   minBuf = vxor(minBuf, minBuf, MASKREAD_ON, mZc * nLayers);
+      //   minBuf = vsadd(VtoCmsg_abs_1, minBuf, MASKREAD_ON, mZc * nLayers);
+
+      //   vsle(minBuf, VtoCmsg_abs_3, MASKREAD_OFF, MASKWRITE_ON, mZc * nLayers);
+      //   minBuf = vxor(minBuf, minBuf, MASKREAD_ON, mZc * nLayers);
+      //   minBuf = vsadd(VtoCmsg_abs_3, minBuf, MASKREAD_ON, mZc * nLayers);
+
+      //   vsle(minBuf, VtoCmsg_abs_4, MASKREAD_OFF, MASKWRITE_ON, mZc * nLayers);
+      //   minBuf = vxor(minBuf, minBuf, MASKREAD_ON, mZc * nLayers);
+      //   minBuf = vsadd(VtoCmsg_abs_4, minBuf, MASKREAD_ON, mZc * nLayers);
+
+      //   vsle(minBuf, VtoCmsg_abs_5, MASKREAD_OFF, MASKWRITE_ON, mZc * nLayers);
+      //   minBuf = vxor(minBuf, minBuf, MASKREAD_ON, mZc * nLayers);
+      //   minBuf = vsadd(VtoCmsg_abs_5, minBuf, MASKREAD_ON, mZc * nLayers);
+
+      //   vsle(minBuf, VtoCmsg_abs_6, MASKREAD_OFF, MASKWRITE_ON, mZc * nLayers);
+      //   minBuf = vxor(minBuf, minBuf, MASKREAD_ON, mZc * nLayers);
+      //   minBuf = vsadd(VtoCmsg_abs_6, minBuf, MASKREAD_ON, mZc * nLayers);
+
+      //   vsle(minBuf, VtoCmsg_abs_7, MASKREAD_OFF, MASKWRITE_ON, mZc * nLayers);
+      //   minBuf = vxor(minBuf, minBuf, MASKREAD_ON, mZc * nLayers);
+      //   minBuf = vsadd(VtoCmsg_abs_7, minBuf, MASKREAD_ON, mZc * nLayers);
+
+      //   vsgt(minBuf, ALPHA + 1, MASKREAD_OFF, MASKWRITE_ON, mZc * nLayers);
+      //   minBuf = vxor(minBuf, minBuf, MASKREAD_ON, mZc * nLayers);
+      //   vsle(minBuf, ALPHA, MASKREAD_OFF, MASKWRITE_ON, mZc * nLayers);
+      //   vbrdcst(cons_i8, -1 * ALPHA, MASKREAD_OFF, mZc * nLayers);
+      //   minBuf = vsadd(cons_i8, minBuf, MASKREAD_ON, mZc * nLayers);
+
+      //   vsgt(VtoCmsg_2, 0, MASKREAD_OFF, MASKWRITE_ON, mZc * nLayers);
+      //   vbrdcst(cons_i8, 0xFF, MASKREAD_OFF, mZc * nLayers);
+      //   parity_0 = vxor(cons_i8, parity_0, MASKREAD_ON, mZc * nLayers);
+      //   parity_0 = vxor(parity_0, parity, MASKREAD_OFF, mZc * nLayers);
+      //   parity_0 = vmul(parity_0, 2, MASKREAD_OFF, mZc * nLayers);
+      //   parity_0 = vsadd(parity_0, 1, MASKREAD_OFF, mZc * nLayers);
+
+      //   VtoCmsg_minsum_2 = vxor(VtoCmsg_minsum_2, minBuf, MASKREAD_OFF, mZc * nLayers);
+      //   VtoCmsg_minsum_2 = vsra(VtoCmsg_minsum_2, 1, MASKREAD_OFF, mZc * nLayers);
+      //   VtoCmsg_minsum_2 = vmul(VtoCmsg_minsum_2, parity_0, MASKREAD_OFF, mZc * nLayers);
+
+      //   vbrdcst(minBuf, INF, MASKREAD_OFF, mZc * nLayers);
+      //   vbrdcst(parity_0, 0, MASKREAD_OFF, mZc * nLayers);
+      //   vbrdcst(VtoCmsg_minsum_3, 0, MASKREAD_OFF, mZc * nLayers);
+      //   vsle(minBuf, VtoCmsg_abs_0, MASKREAD_OFF, MASKWRITE_ON, mZc * nLayers);
+      //   minBuf = vxor(minBuf, minBuf, MASKREAD_ON, mZc * nLayers);
+      //   minBuf = vsadd(VtoCmsg_abs_0, minBuf, MASKREAD_ON, mZc * nLayers);
+
+      //   vsle(minBuf, VtoCmsg_abs_1, MASKREAD_OFF, MASKWRITE_ON, mZc * nLayers);
+      //   minBuf = vxor(minBuf, minBuf, MASKREAD_ON, mZc * nLayers);
+      //   minBuf = vsadd(VtoCmsg_abs_1, minBuf, MASKREAD_ON, mZc * nLayers);
+
+      //   vsle(minBuf, VtoCmsg_abs_2, MASKREAD_OFF, MASKWRITE_ON, mZc * nLayers);
+      //   minBuf = vxor(minBuf, minBuf, MASKREAD_ON, mZc * nLayers);
+      //   minBuf = vsadd(VtoCmsg_abs_2, minBuf, MASKREAD_ON, mZc * nLayers);
+
+      //   vsle(minBuf, VtoCmsg_abs_4, MASKREAD_OFF, MASKWRITE_ON, mZc * nLayers);
+      //   minBuf = vxor(minBuf, minBuf, MASKREAD_ON, mZc * nLayers);
+      //   minBuf = vsadd(VtoCmsg_abs_4, minBuf, MASKREAD_ON, mZc * nLayers);
+
+      //   vsle(minBuf, VtoCmsg_abs_5, MASKREAD_OFF, MASKWRITE_ON, mZc * nLayers);
+      //   minBuf = vxor(minBuf, minBuf, MASKREAD_ON, mZc * nLayers);
+      //   minBuf = vsadd(VtoCmsg_abs_5, minBuf, MASKREAD_ON, mZc * nLayers);
+
+      //   vsle(minBuf, VtoCmsg_abs_6, MASKREAD_OFF, MASKWRITE_ON, mZc * nLayers);
+      //   minBuf = vxor(minBuf, minBuf, MASKREAD_ON, mZc * nLayers);
+      //   minBuf = vsadd(VtoCmsg_abs_6, minBuf, MASKREAD_ON, mZc * nLayers);
+
+      //   vsle(minBuf, VtoCmsg_abs_7, MASKREAD_OFF, MASKWRITE_ON, mZc * nLayers);
+      //   minBuf = vxor(minBuf, minBuf, MASKREAD_ON, mZc * nLayers);
+      //   minBuf = vsadd(VtoCmsg_abs_7, minBuf, MASKREAD_ON, mZc * nLayers);
+
+      //   vsgt(minBuf, ALPHA + 1, MASKREAD_OFF, MASKWRITE_ON, mZc * nLayers);
+      //   minBuf = vxor(minBuf, minBuf, MASKREAD_ON, mZc * nLayers);
+      //   vsle(minBuf, ALPHA, MASKREAD_OFF, MASKWRITE_ON, mZc * nLayers);
+      //   vbrdcst(cons_i8, -1 * ALPHA, MASKREAD_OFF, mZc * nLayers);
+      //   minBuf = vsadd(cons_i8, minBuf, MASKREAD_ON, mZc * nLayers);
+
+      //   vsgt(VtoCmsg_3, 0, MASKREAD_OFF, MASKWRITE_ON, mZc * nLayers);
+      //   vbrdcst(cons_i8, 0xFF, MASKREAD_OFF, mZc * nLayers);
+      //   parity_0 = vxor(cons_i8, parity_0, MASKREAD_ON, mZc * nLayers);
+      //   parity_0 = vxor(parity_0, parity, MASKREAD_OFF, mZc * nLayers);
+      //   parity_0 = vmul(parity_0, 2, MASKREAD_OFF, mZc * nLayers);
+      //   parity_0 = vsadd(parity_0, 1, MASKREAD_OFF, mZc * nLayers);
+
+      //   VtoCmsg_minsum_3 = vxor(VtoCmsg_minsum_3, minBuf, MASKREAD_OFF, mZc * nLayers);
+      //   VtoCmsg_minsum_3 = vsra(VtoCmsg_minsum_3, 1, MASKREAD_OFF, mZc * nLayers);
+      //   VtoCmsg_minsum_3 = vmul(VtoCmsg_minsum_3, parity_0, MASKREAD_OFF, mZc * nLayers);
+
+      //   vbrdcst(minBuf, INF, MASKREAD_OFF, mZc * nLayers);
+      //   vbrdcst(parity_0, 0, MASKREAD_OFF, mZc * nLayers);
+      //   vbrdcst(VtoCmsg_minsum_4, 0, MASKREAD_OFF, mZc * nLayers);
+      //   vsle(minBuf, VtoCmsg_abs_0, MASKREAD_OFF, MASKWRITE_ON, mZc * nLayers);
+      //   minBuf = vxor(minBuf, minBuf, MASKREAD_ON, mZc * nLayers);
+      //   minBuf = vsadd(VtoCmsg_abs_0, minBuf, MASKREAD_ON, mZc * nLayers);
+
+      //   vsle(minBuf, VtoCmsg_abs_1, MASKREAD_OFF, MASKWRITE_ON, mZc * nLayers);
+      //   minBuf = vxor(minBuf, minBuf, MASKREAD_ON, mZc * nLayers);
+      //   minBuf = vsadd(VtoCmsg_abs_1, minBuf, MASKREAD_ON, mZc * nLayers);
+
+      //   vsle(minBuf, VtoCmsg_abs_2, MASKREAD_OFF, MASKWRITE_ON, mZc * nLayers);
+      //   minBuf = vxor(minBuf, minBuf, MASKREAD_ON, mZc * nLayers);
+      //   minBuf = vsadd(VtoCmsg_abs_2, minBuf, MASKREAD_ON, mZc * nLayers);
+
+      //   vsle(minBuf, VtoCmsg_abs_3, MASKREAD_OFF, MASKWRITE_ON, mZc * nLayers);
+      //   minBuf = vxor(minBuf, minBuf, MASKREAD_ON, mZc * nLayers);
+      //   minBuf = vsadd(VtoCmsg_abs_3, minBuf, MASKREAD_ON, mZc * nLayers);
+
+      //   vsle(minBuf, VtoCmsg_abs_5, MASKREAD_OFF, MASKWRITE_ON, mZc * nLayers);
+      //   minBuf = vxor(minBuf, minBuf, MASKREAD_ON, mZc * nLayers);
+      //   minBuf = vsadd(VtoCmsg_abs_5, minBuf, MASKREAD_ON, mZc * nLayers);
+
+      //   vsle(minBuf, VtoCmsg_abs_6, MASKREAD_OFF, MASKWRITE_ON, mZc * nLayers);
+      //   minBuf = vxor(minBuf, minBuf, MASKREAD_ON, mZc * nLayers);
+      //   minBuf = vsadd(VtoCmsg_abs_6, minBuf, MASKREAD_ON, mZc * nLayers);
+
+      //   vsle(minBuf, VtoCmsg_abs_7, MASKREAD_OFF, MASKWRITE_ON, mZc * nLayers);
+      //   minBuf = vxor(minBuf, minBuf, MASKREAD_ON, mZc * nLayers);
+      //   minBuf = vsadd(VtoCmsg_abs_7, minBuf, MASKREAD_ON, mZc * nLayers);
+
+      //   vsgt(minBuf, ALPHA + 1, MASKREAD_OFF, MASKWRITE_ON, mZc * nLayers);
+      //   minBuf = vxor(minBuf, minBuf, MASKREAD_ON, mZc * nLayers);
+      //   vsle(minBuf, ALPHA, MASKREAD_OFF, MASKWRITE_ON, mZc * nLayers);
+      //   vbrdcst(cons_i8, -1 * ALPHA, MASKREAD_OFF, mZc * nLayers);
+      //   minBuf = vsadd(cons_i8, minBuf, MASKREAD_ON, mZc * nLayers);
+
+      //   vsgt(VtoCmsg_4, 0, MASKREAD_OFF, MASKWRITE_ON, mZc * nLayers);
+      //   vbrdcst(cons_i8, 0xFF, MASKREAD_OFF, mZc * nLayers);
+      //   parity_0 = vxor(cons_i8, parity_0, MASKREAD_ON, mZc * nLayers);
+      //   parity_0 = vxor(parity_0, parity, MASKREAD_OFF, mZc * nLayers);
+      //   parity_0 = vmul(parity_0, 2, MASKREAD_OFF, mZc * nLayers);
+      //   parity_0 = vsadd(parity_0, 1, MASKREAD_OFF, mZc * nLayers);
+
+      //   VtoCmsg_minsum_4 = vxor(VtoCmsg_minsum_4, minBuf, MASKREAD_OFF, mZc * nLayers);
+      //   VtoCmsg_minsum_4 = vsra(VtoCmsg_minsum_4, 1, MASKREAD_OFF, mZc * nLayers);
+      //   VtoCmsg_minsum_4 = vmul(VtoCmsg_minsum_4, parity_0, MASKREAD_OFF, mZc * nLayers);
+
+      //   vbrdcst(minBuf, INF, MASKREAD_OFF, mZc * nLayers);
+      //   vbrdcst(parity_0, 0, MASKREAD_OFF, mZc * nLayers);
+      //   vbrdcst(VtoCmsg_minsum_5, 0, MASKREAD_OFF, mZc * nLayers);
+      //   vsle(minBuf, VtoCmsg_abs_0, MASKREAD_OFF, MASKWRITE_ON, mZc * nLayers);
+      //   minBuf = vxor(minBuf, minBuf, MASKREAD_ON, mZc * nLayers);
+      //   minBuf = vsadd(VtoCmsg_abs_0, minBuf, MASKREAD_ON, mZc * nLayers);
+
+      //   vsle(minBuf, VtoCmsg_abs_1, MASKREAD_OFF, MASKWRITE_ON, mZc * nLayers);
+      //   minBuf = vxor(minBuf, minBuf, MASKREAD_ON, mZc * nLayers);
+      //   minBuf = vsadd(VtoCmsg_abs_1, minBuf, MASKREAD_ON, mZc * nLayers);
+
+      //   vsle(minBuf, VtoCmsg_abs_2, MASKREAD_OFF, MASKWRITE_ON, mZc * nLayers);
+      //   minBuf = vxor(minBuf, minBuf, MASKREAD_ON, mZc * nLayers);
+      //   minBuf = vsadd(VtoCmsg_abs_2, minBuf, MASKREAD_ON, mZc * nLayers);
+
+      //   vsle(minBuf, VtoCmsg_abs_3, MASKREAD_OFF, MASKWRITE_ON, mZc * nLayers);
+      //   minBuf = vxor(minBuf, minBuf, MASKREAD_ON, mZc * nLayers);
+      //   minBuf = vsadd(VtoCmsg_abs_3, minBuf, MASKREAD_ON, mZc * nLayers);
+
+      //   vsle(minBuf, VtoCmsg_abs_4, MASKREAD_OFF, MASKWRITE_ON, mZc * nLayers);
+      //   minBuf = vxor(minBuf, minBuf, MASKREAD_ON, mZc * nLayers);
+      //   minBuf = vsadd(VtoCmsg_abs_4, minBuf, MASKREAD_ON, mZc * nLayers);
+
+      //   vsle(minBuf, VtoCmsg_abs_6, MASKREAD_OFF, MASKWRITE_ON, mZc * nLayers);
+      //   minBuf = vxor(minBuf, minBuf, MASKREAD_ON, mZc * nLayers);
+      //   minBuf = vsadd(VtoCmsg_abs_6, minBuf, MASKREAD_ON, mZc * nLayers);
+
+      //   vsle(minBuf, VtoCmsg_abs_7, MASKREAD_OFF, MASKWRITE_ON, mZc * nLayers);
+      //   minBuf = vxor(minBuf, minBuf, MASKREAD_ON, mZc * nLayers);
+      //   minBuf = vsadd(VtoCmsg_abs_7, minBuf, MASKREAD_ON, mZc * nLayers);
+
+      //   vsgt(minBuf, ALPHA + 1, MASKREAD_OFF, MASKWRITE_ON, mZc * nLayers);
+      //   minBuf = vxor(minBuf, minBuf, MASKREAD_ON, mZc * nLayers);
+      //   vsle(minBuf, ALPHA, MASKREAD_OFF, MASKWRITE_ON, mZc * nLayers);
+      //   vbrdcst(cons_i8, -1 * ALPHA, MASKREAD_OFF, mZc * nLayers);
+      //   minBuf = vsadd(cons_i8, minBuf, MASKREAD_ON, mZc * nLayers);
+
+      //   vsgt(VtoCmsg_5, 0, MASKREAD_OFF, MASKWRITE_ON, mZc * nLayers);
+      //   vbrdcst(cons_i8, 0xFF, MASKREAD_OFF, mZc * nLayers);
+      //   parity_0 = vxor(cons_i8, parity_0, MASKREAD_ON, mZc * nLayers);
+      //   parity_0 = vxor(parity_0, parity, MASKREAD_OFF, mZc * nLayers);
+      //   parity_0 = vmul(parity_0, 2, MASKREAD_OFF, mZc * nLayers);
+      //   parity_0 = vsadd(parity_0, 1, MASKREAD_OFF, mZc * nLayers);
+
+      //   VtoCmsg_minsum_5 = vxor(VtoCmsg_minsum_5, minBuf, MASKREAD_OFF, mZc * nLayers);
+      //   VtoCmsg_minsum_5 = vsra(VtoCmsg_minsum_5, 1, MASKREAD_OFF, mZc * nLayers);
+      //   VtoCmsg_minsum_5 = vmul(VtoCmsg_minsum_5, parity_0, MASKREAD_OFF, mZc * nLayers);
+
+      //   vbrdcst(minBuf, INF, MASKREAD_OFF, mZc * nLayers);
+      //   vbrdcst(parity_0, 0, MASKREAD_OFF, mZc * nLayers);
+      //   vbrdcst(VtoCmsg_minsum_6, 0, MASKREAD_OFF, mZc * nLayers);
+      //   vsle(minBuf, VtoCmsg_abs_0, MASKREAD_OFF, MASKWRITE_ON, mZc * nLayers);
+      //   minBuf = vxor(minBuf, minBuf, MASKREAD_ON, mZc * nLayers);
+      //   minBuf = vsadd(VtoCmsg_abs_0, minBuf, MASKREAD_ON, mZc * nLayers);
+
+      //   vsle(minBuf, VtoCmsg_abs_1, MASKREAD_OFF, MASKWRITE_ON, mZc * nLayers);
+      //   minBuf = vxor(minBuf, minBuf, MASKREAD_ON, mZc * nLayers);
+      //   minBuf = vsadd(VtoCmsg_abs_1, minBuf, MASKREAD_ON, mZc * nLayers);
+
+      //   vsle(minBuf, VtoCmsg_abs_2, MASKREAD_OFF, MASKWRITE_ON, mZc * nLayers);
+      //   minBuf = vxor(minBuf, minBuf, MASKREAD_ON, mZc * nLayers);
+      //   minBuf = vsadd(VtoCmsg_abs_2, minBuf, MASKREAD_ON, mZc * nLayers);
+
+      //   vsle(minBuf, VtoCmsg_abs_3, MASKREAD_OFF, MASKWRITE_ON, mZc * nLayers);
+      //   minBuf = vxor(minBuf, minBuf, MASKREAD_ON, mZc * nLayers);
+      //   minBuf = vsadd(VtoCmsg_abs_3, minBuf, MASKREAD_ON, mZc * nLayers);
+
+      //   vsle(minBuf, VtoCmsg_abs_4, MASKREAD_OFF, MASKWRITE_ON, mZc * nLayers);
+      //   minBuf = vxor(minBuf, minBuf, MASKREAD_ON, mZc * nLayers);
+      //   minBuf = vsadd(VtoCmsg_abs_4, minBuf, MASKREAD_ON, mZc * nLayers);
+
+      //   vsle(minBuf, VtoCmsg_abs_5, MASKREAD_OFF, MASKWRITE_ON, mZc * nLayers);
+      //   minBuf = vxor(minBuf, minBuf, MASKREAD_ON, mZc * nLayers);
+      //   minBuf = vsadd(VtoCmsg_abs_5, minBuf, MASKREAD_ON, mZc * nLayers);
+
+      //   vsle(minBuf, VtoCmsg_abs_7, MASKREAD_OFF, MASKWRITE_ON, mZc * nLayers);
+      //   minBuf = vxor(minBuf, minBuf, MASKREAD_ON, mZc * nLayers);
+      //   minBuf = vsadd(VtoCmsg_abs_7, minBuf, MASKREAD_ON, mZc * nLayers);
+
+      //   vsgt(minBuf, ALPHA + 1, MASKREAD_OFF, MASKWRITE_ON, mZc * nLayers);
+      //   minBuf = vxor(minBuf, minBuf, MASKREAD_ON, mZc * nLayers);
+      //   vsle(minBuf, ALPHA, MASKREAD_OFF, MASKWRITE_ON, mZc * nLayers);
+      //   vbrdcst(cons_i8, -1 * ALPHA, MASKREAD_OFF, mZc * nLayers);
+      //   minBuf = vsadd(cons_i8, minBuf, MASKREAD_ON, mZc * nLayers);
+
+      //   vsgt(VtoCmsg_6, 0, MASKREAD_OFF, MASKWRITE_ON, mZc * nLayers);
+      //   vbrdcst(cons_i8, 0xFF, MASKREAD_OFF, mZc * nLayers);
+      //   parity_0 = vxor(cons_i8, parity_0, MASKREAD_ON, mZc * nLayers);
+      //   parity_0 = vxor(parity_0, parity, MASKREAD_OFF, mZc * nLayers);
+      //   parity_0 = vmul(parity_0, 2, MASKREAD_OFF, mZc * nLayers);
+      //   parity_0 = vsadd(parity_0, 1, MASKREAD_OFF, mZc * nLayers);
+
+      //   VtoCmsg_minsum_6 = vxor(VtoCmsg_minsum_6, minBuf, MASKREAD_OFF, mZc * nLayers);
+      //   VtoCmsg_minsum_6 = vsra(VtoCmsg_minsum_6, 1, MASKREAD_OFF, mZc * nLayers);
+      //   VtoCmsg_minsum_6 = vmul(VtoCmsg_minsum_6, parity_0, MASKREAD_OFF, mZc * nLayers);
+
+      //   vbrdcst(minBuf, INF, MASKREAD_OFF, mZc * nLayers);
+      //   vbrdcst(parity_0, 0, MASKREAD_OFF, mZc * nLayers);
+      //   vbrdcst(VtoCmsg_minsum_7, 0, MASKREAD_OFF, mZc * nLayers);
+      //   vsle(minBuf, VtoCmsg_abs_0, MASKREAD_OFF, MASKWRITE_ON, mZc * nLayers);
+      //   minBuf = vxor(minBuf, minBuf, MASKREAD_ON, mZc * nLayers);
+      //   minBuf = vsadd(VtoCmsg_abs_0, minBuf, MASKREAD_ON, mZc * nLayers);
+
+      //   vsle(minBuf, VtoCmsg_abs_1, MASKREAD_OFF, MASKWRITE_ON, mZc * nLayers);
+      //   minBuf = vxor(minBuf, minBuf, MASKREAD_ON, mZc * nLayers);
+      //   minBuf = vsadd(VtoCmsg_abs_1, minBuf, MASKREAD_ON, mZc * nLayers);
+
+      //   vsle(minBuf, VtoCmsg_abs_2, MASKREAD_OFF, MASKWRITE_ON, mZc * nLayers);
+      //   minBuf = vxor(minBuf, minBuf, MASKREAD_ON, mZc * nLayers);
+      //   minBuf = vsadd(VtoCmsg_abs_2, minBuf, MASKREAD_ON, mZc * nLayers);
+
+      //   vsle(minBuf, VtoCmsg_abs_3, MASKREAD_OFF, MASKWRITE_ON, mZc * nLayers);
+      //   minBuf = vxor(minBuf, minBuf, MASKREAD_ON, mZc * nLayers);
+      //   minBuf = vsadd(VtoCmsg_abs_3, minBuf, MASKREAD_ON, mZc * nLayers);
+
+      //   vsle(minBuf, VtoCmsg_abs_4, MASKREAD_OFF, MASKWRITE_ON, mZc * nLayers);
+      //   minBuf = vxor(minBuf, minBuf, MASKREAD_ON, mZc * nLayers);
+      //   minBuf = vsadd(VtoCmsg_abs_4, minBuf, MASKREAD_ON, mZc * nLayers);
+
+      //   vsle(minBuf, VtoCmsg_abs_5, MASKREAD_OFF, MASKWRITE_ON, mZc * nLayers);
+      //   minBuf = vxor(minBuf, minBuf, MASKREAD_ON, mZc * nLayers);
+      //   minBuf = vsadd(VtoCmsg_abs_5, minBuf, MASKREAD_ON, mZc * nLayers);
+
+      //   vsle(minBuf, VtoCmsg_abs_6, MASKREAD_OFF, MASKWRITE_ON, mZc * nLayers);
+      //   minBuf = vxor(minBuf, minBuf, MASKREAD_ON, mZc * nLayers);
+      //   minBuf = vsadd(VtoCmsg_abs_6, minBuf, MASKREAD_ON, mZc * nLayers);
+
+      //   vsgt(minBuf, ALPHA + 1, MASKREAD_OFF, MASKWRITE_ON, mZc * nLayers);
+      //   minBuf = vxor(minBuf, minBuf, MASKREAD_ON, mZc * nLayers);
+      //   vsle(minBuf, ALPHA, MASKREAD_OFF, MASKWRITE_ON, mZc * nLayers);
+      //   vbrdcst(cons_i8, -1 * ALPHA, MASKREAD_OFF, mZc * nLayers);
+      //   minBuf = vsadd(cons_i8, minBuf, MASKREAD_ON, mZc * nLayers);
+
+      //   vsgt(VtoCmsg_7, 0, MASKREAD_OFF, MASKWRITE_ON, mZc * nLayers);
+      //   vbrdcst(cons_i8, 0xFF, MASKREAD_OFF, mZc * nLayers);
+      //   parity_0 = vxor(cons_i8, parity_0, MASKREAD_ON, mZc * nLayers);
+      //   parity_0 = vxor(parity_0, parity, MASKREAD_OFF, mZc * nLayers);
+      //   parity_0 = vmul(parity_0, 2, MASKREAD_OFF, mZc * nLayers);
+      //   parity_0 = vsadd(parity_0, 1, MASKREAD_OFF, mZc * nLayers);
+
+      //   VtoCmsg_minsum_7 = vxor(VtoCmsg_minsum_7, minBuf, MASKREAD_OFF, mZc * nLayers);
+      //   VtoCmsg_minsum_7 = vsra(VtoCmsg_minsum_7, 1, MASKREAD_OFF, mZc * nLayers);
+      //   VtoCmsg_minsum_7 = vmul(VtoCmsg_minsum_7, parity_0, MASKREAD_OFF, mZc * nLayers);
+
+      //   for (int iLayer = 0; iLayer < nLayers; ++iLayer) {
+      //     edgeStart   = BGlayer_2[LayerEdgesCnts_Layers_BG2[iLayerEdgesCnt * 21 + iLayer + 1] * 2 + 0];
+      //     edgeEnd     = BGlayer_2[LayerEdgesCnts_Layers_BG2[iLayerEdgesCnt * 21 + iLayer + 1] * 2 + 1];
+      //     nLayerEdges = edgeEnd - edgeStart;
+
+      //     iEdges = 0;
+      //     vbrdcst(CtoVmsg, 0, MASKREAD_OFF, mN);
+      //     edgeIdx  = edgeStart + iEdges;
+      //     vNodeIdx = vNodesIdx_BG2[edgeIdx];
+      //     nShifts  = nShifts_BG2[edgeIdx];
+      //     vrange(index, mZc);
+      //     index = vsadd(index, 0 - nShifts, MASKREAD_OFF, mZc);
+      //     index = vsadd(index, (nShifts == 0) ? 0 : mZc, MASKREAD_OFF, (nShifts == 0) ? 10 : nShifts);
+      //     index = vsadd(index, mZc * iLayer, MASKREAD_OFF, mZc);
+      //     vshuffle(Buffer, index, VtoCmsg_minsum_0, SHUFFLE_GATHER, mZc);
+
+      //     vrange(index, mZc);
+      //     index = vsadd(index, mZc * vNodeIdx, MASKREAD_OFF, mZc);
+      //     vshuffle(CtoVmsg, index, Buffer, SHUFFLE_SCATTER, mZc);
+      //     iEdges++;
+      //     edgeIdx  = edgeStart + iEdges;
+      //     vNodeIdx = vNodesIdx_BG2[edgeIdx];
+      //     nShifts  = nShifts_BG2[edgeIdx];
+      //     vrange(index, mZc);
+      //     index = vsadd(index, 0 - nShifts, MASKREAD_OFF, mZc);
+      //     index = vsadd(index, (nShifts == 0) ? 0 : mZc, MASKREAD_OFF, (nShifts == 0) ? 10 : nShifts);
+      //     index = vsadd(index, mZc * iLayer, MASKREAD_OFF, mZc);
+      //     vshuffle(Buffer, index, VtoCmsg_minsum_1, SHUFFLE_GATHER, mZc);
+
+      //     vrange(index, mZc);
+      //     index = vsadd(index, mZc * vNodeIdx, MASKREAD_OFF, mZc);
+      //     vshuffle(CtoVmsg, index, Buffer, SHUFFLE_SCATTER, mZc);
+      //     iEdges++;
+      //     edgeIdx  = edgeStart + iEdges;
+      //     vNodeIdx = vNodesIdx_BG2[edgeIdx];
+      //     nShifts  = nShifts_BG2[edgeIdx];
+      //     vrange(index, mZc);
+      //     index = vsadd(index, 0 - nShifts, MASKREAD_OFF, mZc);
+      //     index = vsadd(index, (nShifts == 0) ? 0 : mZc, MASKREAD_OFF, (nShifts == 0) ? 10 : nShifts);
+      //     index = vsadd(index, mZc * iLayer, MASKREAD_OFF, mZc);
+      //     vshuffle(Buffer, index, VtoCmsg_minsum_2, SHUFFLE_GATHER, mZc);
+
+      //     vrange(index, mZc);
+      //     index = vsadd(index, mZc * vNodeIdx, MASKREAD_OFF, mZc);
+      //     vshuffle(CtoVmsg, index, Buffer, SHUFFLE_SCATTER, mZc);
+      //     iEdges++;
+      //     edgeIdx  = edgeStart + iEdges;
+      //     vNodeIdx = vNodesIdx_BG2[edgeIdx];
+      //     nShifts  = nShifts_BG2[edgeIdx];
+      //     vrange(index, mZc);
+      //     index = vsadd(index, 0 - nShifts, MASKREAD_OFF, mZc);
+      //     index = vsadd(index, (nShifts == 0) ? 0 : mZc, MASKREAD_OFF, (nShifts == 0) ? 10 : nShifts);
+      //     index = vsadd(index, mZc * iLayer, MASKREAD_OFF, mZc);
+      //     vshuffle(Buffer, index, VtoCmsg_minsum_3, SHUFFLE_GATHER, mZc);
+
+      //     vrange(index, mZc);
+      //     index = vsadd(index, mZc * vNodeIdx, MASKREAD_OFF, mZc);
+      //     vshuffle(CtoVmsg, index, Buffer, SHUFFLE_SCATTER, mZc);
+      //     iEdges++;
+      //     edgeIdx  = edgeStart + iEdges;
+      //     vNodeIdx = vNodesIdx_BG2[edgeIdx];
+      //     nShifts  = nShifts_BG2[edgeIdx];
+      //     vrange(index, mZc);
+      //     index = vsadd(index, 0 - nShifts, MASKREAD_OFF, mZc);
+      //     index = vsadd(index, (nShifts == 0) ? 0 : mZc, MASKREAD_OFF, (nShifts == 0) ? 10 : nShifts);
+      //     index = vsadd(index, mZc * iLayer, MASKREAD_OFF, mZc);
+      //     vshuffle(Buffer, index, VtoCmsg_minsum_4, SHUFFLE_GATHER, mZc);
+
+      //     vrange(index, mZc);
+      //     index = vsadd(index, mZc * vNodeIdx, MASKREAD_OFF, mZc);
+      //     vshuffle(CtoVmsg, index, Buffer, SHUFFLE_SCATTER, mZc);
+      //     iEdges++;
+      //     edgeIdx  = edgeStart + iEdges;
+      //     vNodeIdx = vNodesIdx_BG2[edgeIdx];
+      //     nShifts  = nShifts_BG2[edgeIdx];
+      //     vrange(index, mZc);
+      //     index = vsadd(index, 0 - nShifts, MASKREAD_OFF, mZc);
+      //     index = vsadd(index, (nShifts == 0) ? 0 : mZc, MASKREAD_OFF, (nShifts == 0) ? 10 : nShifts);
+      //     index = vsadd(index, mZc * iLayer, MASKREAD_OFF, mZc);
+      //     vshuffle(Buffer, index, VtoCmsg_minsum_5, SHUFFLE_GATHER, mZc);
+
+      //     vrange(index, mZc);
+      //     index = vsadd(index, mZc * vNodeIdx, MASKREAD_OFF, mZc);
+      //     vshuffle(CtoVmsg, index, Buffer, SHUFFLE_SCATTER, mZc);
+      //     iEdges++;
+      //     edgeIdx  = edgeStart + iEdges;
+      //     vNodeIdx = vNodesIdx_BG2[edgeIdx];
+      //     nShifts  = nShifts_BG2[edgeIdx];
+      //     vrange(index, mZc);
+      //     index = vsadd(index, 0 - nShifts, MASKREAD_OFF, mZc);
+      //     index = vsadd(index, (nShifts == 0) ? 0 : mZc, MASKREAD_OFF, (nShifts == 0) ? 10 : nShifts);
+      //     index = vsadd(index, mZc * iLayer, MASKREAD_OFF, mZc);
+      //     vshuffle(Buffer, index, VtoCmsg_minsum_6, SHUFFLE_GATHER, mZc);
+
+      //     vrange(index, mZc);
+      //     index = vsadd(index, mZc * vNodeIdx, MASKREAD_OFF, mZc);
+      //     vshuffle(CtoVmsg, index, Buffer, SHUFFLE_SCATTER, mZc);
+      //     iEdges++;
+      //     edgeIdx  = edgeStart + iEdges;
+      //     vNodeIdx = vNodesIdx_BG2[edgeIdx];
+      //     nShifts  = nShifts_BG2[edgeIdx];
+      //     vrange(index, mZc);
+      //     index = vsadd(index, 0 - nShifts, MASKREAD_OFF, mZc);
+      //     index = vsadd(index, (nShifts == 0) ? 0 : mZc, MASKREAD_OFF, (nShifts == 0) ? 10 : nShifts);
+      //     index = vsadd(index, mZc * iLayer, MASKREAD_OFF, mZc);
+      //     vshuffle(Buffer, index, VtoCmsg_minsum_7, SHUFFLE_GATHER, mZc);
+
+      //     vrange(index, mZc);
+      //     index = vsadd(index, mZc * vNodeIdx, MASKREAD_OFF, mZc);
+      //     vshuffle(CtoVmsg, index, Buffer, SHUFFLE_SCATTER, mZc);
+      //     iEdges++;
+      //     CtoVmsg0 = vsadd(CtoVmsg0, CtoVmsg, MASKREAD_OFF, mN);
+      //   }
+      // } else if (LayerEdgesCnts_BG2[iLayerEdgesCnt] == 10) {
+      //   for (int iLayer = 0; iLayer < nLayers; ++iLayer) {
+      //     edgeStart   = BGlayer_2[LayerEdgesCnts_Layers_BG2[iLayerEdgesCnt * 21 + iLayer + 1] * 2 + 0];
+      //     edgeEnd     = BGlayer_2[LayerEdgesCnts_Layers_BG2[iLayerEdgesCnt * 21 + iLayer + 1] * 2 + 1];
+      //     nLayerEdges = edgeEnd - edgeStart;
+      //     iEdges      = 0;
+
+      //     edgeIdx  = edgeStart + iEdges;
+      //     vNodeIdx = vNodesIdx_BG2[edgeIdx];
+      //     nShifts  = nShifts_BG2[edgeIdx];
+      //     ss       = mZc - nShifts;
+      //     vrange(index, mZc);
+      //     index = vsadd(index, nShifts - mZc, MASKREAD_OFF, mZc);
+      //     index = vsadd(index, (ss == 0) ? 0 : mZc, MASKREAD_OFF, (ss == 0) ? 10 : ss);
+      //     index = vsadd(index, mZc * vNodeIdx, MASKREAD_OFF, mZc);
+      //     vshuffle(Buffer, index, LLR, SHUFFLE_GATHER, mZc);
+
+      //     vrange(index, mZc);
+      //     index = vsadd(index, mZc * iLayer, MASKREAD_OFF, mZc);
+      //     vshuffle(VtoCmsg_0, index, Buffer, SHUFFLE_SCATTER, mZc);
+      //     iEdges++;
+
+      //     edgeIdx  = edgeStart + iEdges;
+      //     vNodeIdx = vNodesIdx_BG2[edgeIdx];
+      //     nShifts  = nShifts_BG2[edgeIdx];
+      //     ss       = mZc - nShifts;
+      //     vrange(index, mZc);
+      //     index = vsadd(index, nShifts - mZc, MASKREAD_OFF, mZc);
+      //     index = vsadd(index, (ss == 0) ? 0 : mZc, MASKREAD_OFF, (ss == 0) ? 10 : ss);
+      //     index = vsadd(index, mZc * vNodeIdx, MASKREAD_OFF, mZc);
+      //     vshuffle(Buffer, index, LLR, SHUFFLE_GATHER, mZc);
+
+      //     vrange(index, mZc);
+      //     index = vsadd(index, mZc * iLayer, MASKREAD_OFF, mZc);
+      //     vshuffle(VtoCmsg_1, index, Buffer, SHUFFLE_SCATTER, mZc);
+      //     iEdges++;
+
+      //     edgeIdx  = edgeStart + iEdges;
+      //     vNodeIdx = vNodesIdx_BG2[edgeIdx];
+      //     nShifts  = nShifts_BG2[edgeIdx];
+      //     ss       = mZc - nShifts;
+      //     vrange(index, mZc);
+      //     index = vsadd(index, nShifts - mZc, MASKREAD_OFF, mZc);
+      //     index = vsadd(index, (ss == 0) ? 0 : mZc, MASKREAD_OFF, (ss == 0) ? 10 : ss);
+      //     index = vsadd(index, mZc * vNodeIdx, MASKREAD_OFF, mZc);
+      //     vshuffle(Buffer, index, LLR, SHUFFLE_GATHER, mZc);
+
+      //     vrange(index, mZc);
+      //     index = vsadd(index, mZc * iLayer, MASKREAD_OFF, mZc);
+      //     vshuffle(VtoCmsg_2, index, Buffer, SHUFFLE_SCATTER, mZc);
+      //     iEdges++;
+
+      //     edgeIdx  = edgeStart + iEdges;
+      //     vNodeIdx = vNodesIdx_BG2[edgeIdx];
+      //     nShifts  = nShifts_BG2[edgeIdx];
+      //     ss       = mZc - nShifts;
+      //     vrange(index, mZc);
+      //     index = vsadd(index, nShifts - mZc, MASKREAD_OFF, mZc);
+      //     index = vsadd(index, (ss == 0) ? 0 : mZc, MASKREAD_OFF, (ss == 0) ? 10 : ss);
+      //     index = vsadd(index, mZc * vNodeIdx, MASKREAD_OFF, mZc);
+      //     vshuffle(Buffer, index, LLR, SHUFFLE_GATHER, mZc);
+
+      //     vrange(index, mZc);
+      //     index = vsadd(index, mZc * iLayer, MASKREAD_OFF, mZc);
+      //     vshuffle(VtoCmsg_3, index, Buffer, SHUFFLE_SCATTER, mZc);
+      //     iEdges++;
+
+      //     edgeIdx  = edgeStart + iEdges;
+      //     vNodeIdx = vNodesIdx_BG2[edgeIdx];
+      //     nShifts  = nShifts_BG2[edgeIdx];
+      //     ss       = mZc - nShifts;
+      //     vrange(index, mZc);
+      //     index = vsadd(index, nShifts - mZc, MASKREAD_OFF, mZc);
+      //     index = vsadd(index, (ss == 0) ? 0 : mZc, MASKREAD_OFF, (ss == 0) ? 10 : ss);
+      //     index = vsadd(index, mZc * vNodeIdx, MASKREAD_OFF, mZc);
+      //     vshuffle(Buffer, index, LLR, SHUFFLE_GATHER, mZc);
+
+      //     vrange(index, mZc);
+      //     index = vsadd(index, mZc * iLayer, MASKREAD_OFF, mZc);
+      //     vshuffle(VtoCmsg_4, index, Buffer, SHUFFLE_SCATTER, mZc);
+      //     iEdges++;
+
+      //     edgeIdx  = edgeStart + iEdges;
+      //     vNodeIdx = vNodesIdx_BG2[edgeIdx];
+      //     nShifts  = nShifts_BG2[edgeIdx];
+      //     ss       = mZc - nShifts;
+      //     vrange(index, mZc);
+      //     index = vsadd(index, nShifts - mZc, MASKREAD_OFF, mZc);
+      //     index = vsadd(index, (ss == 0) ? 0 : mZc, MASKREAD_OFF, (ss == 0) ? 10 : ss);
+      //     index = vsadd(index, mZc * vNodeIdx, MASKREAD_OFF, mZc);
+      //     vshuffle(Buffer, index, LLR, SHUFFLE_GATHER, mZc);
+
+      //     vrange(index, mZc);
+      //     index = vsadd(index, mZc * iLayer, MASKREAD_OFF, mZc);
+      //     vshuffle(VtoCmsg_5, index, Buffer, SHUFFLE_SCATTER, mZc);
+      //     iEdges++;
+
+      //     edgeIdx  = edgeStart + iEdges;
+      //     vNodeIdx = vNodesIdx_BG2[edgeIdx];
+      //     nShifts  = nShifts_BG2[edgeIdx];
+      //     ss       = mZc - nShifts;
+      //     vrange(index, mZc);
+      //     index = vsadd(index, nShifts - mZc, MASKREAD_OFF, mZc);
+      //     index = vsadd(index, (ss == 0) ? 0 : mZc, MASKREAD_OFF, (ss == 0) ? 10 : ss);
+      //     index = vsadd(index, mZc * vNodeIdx, MASKREAD_OFF, mZc);
+      //     vshuffle(Buffer, index, LLR, SHUFFLE_GATHER, mZc);
+
+      //     vrange(index, mZc);
+      //     index = vsadd(index, mZc * iLayer, MASKREAD_OFF, mZc);
+      //     vshuffle(VtoCmsg_6, index, Buffer, SHUFFLE_SCATTER, mZc);
+      //     iEdges++;
+
+      //     edgeIdx  = edgeStart + iEdges;
+      //     vNodeIdx = vNodesIdx_BG2[edgeIdx];
+      //     nShifts  = nShifts_BG2[edgeIdx];
+      //     ss       = mZc - nShifts;
+      //     vrange(index, mZc);
+      //     index = vsadd(index, nShifts - mZc, MASKREAD_OFF, mZc);
+      //     index = vsadd(index, (ss == 0) ? 0 : mZc, MASKREAD_OFF, (ss == 0) ? 10 : ss);
+      //     index = vsadd(index, mZc * vNodeIdx, MASKREAD_OFF, mZc);
+      //     vshuffle(Buffer, index, LLR, SHUFFLE_GATHER, mZc);
+
+      //     vrange(index, mZc);
+      //     index = vsadd(index, mZc * iLayer, MASKREAD_OFF, mZc);
+      //     vshuffle(VtoCmsg_7, index, Buffer, SHUFFLE_SCATTER, mZc);
+      //     iEdges++;
+
+      //     edgeIdx  = edgeStart + iEdges;
+      //     vNodeIdx = vNodesIdx_BG2[edgeIdx];
+      //     nShifts  = nShifts_BG2[edgeIdx];
+      //     ss       = mZc - nShifts;
+      //     vrange(index, mZc);
+      //     index = vsadd(index, nShifts - mZc, MASKREAD_OFF, mZc);
+      //     index = vsadd(index, (ss == 0) ? 0 : mZc, MASKREAD_OFF, (ss == 0) ? 10 : ss);
+      //     index = vsadd(index, mZc * vNodeIdx, MASKREAD_OFF, mZc);
+      //     vshuffle(Buffer, index, LLR, SHUFFLE_GATHER, mZc);
+
+      //     vrange(index, mZc);
+      //     index = vsadd(index, mZc * iLayer, MASKREAD_OFF, mZc);
+      //     vshuffle(VtoCmsg_8, index, Buffer, SHUFFLE_SCATTER, mZc);
+      //     iEdges++;
+
+      //     edgeIdx  = edgeStart + iEdges;
+      //     vNodeIdx = vNodesIdx_BG2[edgeIdx];
+      //     nShifts  = nShifts_BG2[edgeIdx];
+      //     ss       = mZc - nShifts;
+      //     vrange(index, mZc);
+      //     index = vsadd(index, nShifts - mZc, MASKREAD_OFF, mZc);
+      //     index = vsadd(index, (ss == 0) ? 0 : mZc, MASKREAD_OFF, (ss == 0) ? 10 : ss);
+      //     index = vsadd(index, mZc * vNodeIdx, MASKREAD_OFF, mZc);
+      //     vshuffle(Buffer, index, LLR, SHUFFLE_GATHER, mZc);
+
+      //     vrange(index, mZc);
+      //     index = vsadd(index, mZc * iLayer, MASKREAD_OFF, mZc);
+      //     vshuffle(VtoCmsg_9, index, Buffer, SHUFFLE_SCATTER, mZc);
+      //     iEdges++;
+      //   }
+      //   vbrdcst(parity, 0, MASKREAD_OFF, mZc * nLayers);
+      //   VtoCmsg_abs_0 = vsadd(VtoCmsg_0, 0, MASKREAD_OFF, mZc * nLayers);
+      //   vsgt(VtoCmsg_abs_0, 0, MASKREAD_OFF, MASKWRITE_ON, mZc * nLayers);
+      //   vbrdcst(cons_i8, 0xFF, MASKREAD_OFF, mZc * nLayers);
+      //   parity        = vxor(cons_i8, parity, MASKREAD_ON, mZc * nLayers);
+      //   VtoCmsg_abs_0 = vxor(cons_i8, VtoCmsg_abs_0, MASKREAD_ON, mZc * nLayers);
+      //   vbrdcst(cons_i8, 1, MASKREAD_OFF, mZc * nLayers);
+      //   VtoCmsg_abs_0 = vsadd(cons_i8, VtoCmsg_abs_0, MASKREAD_ON, mZc * nLayers);
+
+      //   VtoCmsg_abs_1 = vsadd(VtoCmsg_1, 0, MASKREAD_OFF, mZc * nLayers);
+      //   vsgt(VtoCmsg_abs_1, 0, MASKREAD_OFF, MASKWRITE_ON, mZc * nLayers);
+      //   vbrdcst(cons_i8, 0xFF, MASKREAD_OFF, mZc * nLayers);
+      //   parity        = vxor(cons_i8, parity, MASKREAD_ON, mZc * nLayers);
+      //   VtoCmsg_abs_1 = vxor(cons_i8, VtoCmsg_abs_1, MASKREAD_ON, mZc * nLayers);
+      //   vbrdcst(cons_i8, 1, MASKREAD_OFF, mZc * nLayers);
+      //   VtoCmsg_abs_1 = vsadd(cons_i8, VtoCmsg_abs_1, MASKREAD_ON, mZc * nLayers);
+
+      //   VtoCmsg_abs_2 = vsadd(VtoCmsg_2, 0, MASKREAD_OFF, mZc * nLayers);
+      //   vsgt(VtoCmsg_abs_2, 0, MASKREAD_OFF, MASKWRITE_ON, mZc * nLayers);
+      //   vbrdcst(cons_i8, 0xFF, MASKREAD_OFF, mZc * nLayers);
+      //   parity        = vxor(cons_i8, parity, MASKREAD_ON, mZc * nLayers);
+      //   VtoCmsg_abs_2 = vxor(cons_i8, VtoCmsg_abs_2, MASKREAD_ON, mZc * nLayers);
+      //   vbrdcst(cons_i8, 1, MASKREAD_OFF, mZc * nLayers);
+      //   VtoCmsg_abs_2 = vsadd(cons_i8, VtoCmsg_abs_2, MASKREAD_ON, mZc * nLayers);
+
+      //   VtoCmsg_abs_3 = vsadd(VtoCmsg_3, 0, MASKREAD_OFF, mZc * nLayers);
+      //   vsgt(VtoCmsg_abs_3, 0, MASKREAD_OFF, MASKWRITE_ON, mZc * nLayers);
+      //   vbrdcst(cons_i8, 0xFF, MASKREAD_OFF, mZc * nLayers);
+      //   parity        = vxor(cons_i8, parity, MASKREAD_ON, mZc * nLayers);
+      //   VtoCmsg_abs_3 = vxor(cons_i8, VtoCmsg_abs_3, MASKREAD_ON, mZc * nLayers);
+      //   vbrdcst(cons_i8, 1, MASKREAD_OFF, mZc * nLayers);
+      //   VtoCmsg_abs_3 = vsadd(cons_i8, VtoCmsg_abs_3, MASKREAD_ON, mZc * nLayers);
+
+      //   VtoCmsg_abs_4 = vsadd(VtoCmsg_4, 0, MASKREAD_OFF, mZc * nLayers);
+      //   vsgt(VtoCmsg_abs_4, 0, MASKREAD_OFF, MASKWRITE_ON, mZc * nLayers);
+      //   vbrdcst(cons_i8, 0xFF, MASKREAD_OFF, mZc * nLayers);
+      //   parity        = vxor(cons_i8, parity, MASKREAD_ON, mZc * nLayers);
+      //   VtoCmsg_abs_4 = vxor(cons_i8, VtoCmsg_abs_4, MASKREAD_ON, mZc * nLayers);
+      //   vbrdcst(cons_i8, 1, MASKREAD_OFF, mZc * nLayers);
+      //   VtoCmsg_abs_4 = vsadd(cons_i8, VtoCmsg_abs_4, MASKREAD_ON, mZc * nLayers);
+
+      //   VtoCmsg_abs_5 = vsadd(VtoCmsg_5, 0, MASKREAD_OFF, mZc * nLayers);
+      //   vsgt(VtoCmsg_abs_5, 0, MASKREAD_OFF, MASKWRITE_ON, mZc * nLayers);
+      //   vbrdcst(cons_i8, 0xFF, MASKREAD_OFF, mZc * nLayers);
+      //   parity        = vxor(cons_i8, parity, MASKREAD_ON, mZc * nLayers);
+      //   VtoCmsg_abs_5 = vxor(cons_i8, VtoCmsg_abs_5, MASKREAD_ON, mZc * nLayers);
+      //   vbrdcst(cons_i8, 1, MASKREAD_OFF, mZc * nLayers);
+      //   VtoCmsg_abs_5 = vsadd(cons_i8, VtoCmsg_abs_5, MASKREAD_ON, mZc * nLayers);
+
+      //   VtoCmsg_abs_6 = vsadd(VtoCmsg_6, 0, MASKREAD_OFF, mZc * nLayers);
+      //   vsgt(VtoCmsg_abs_6, 0, MASKREAD_OFF, MASKWRITE_ON, mZc * nLayers);
+      //   vbrdcst(cons_i8, 0xFF, MASKREAD_OFF, mZc * nLayers);
+      //   parity        = vxor(cons_i8, parity, MASKREAD_ON, mZc * nLayers);
+      //   VtoCmsg_abs_6 = vxor(cons_i8, VtoCmsg_abs_6, MASKREAD_ON, mZc * nLayers);
+      //   vbrdcst(cons_i8, 1, MASKREAD_OFF, mZc * nLayers);
+      //   VtoCmsg_abs_6 = vsadd(cons_i8, VtoCmsg_abs_6, MASKREAD_ON, mZc * nLayers);
+
+      //   VtoCmsg_abs_7 = vsadd(VtoCmsg_7, 0, MASKREAD_OFF, mZc * nLayers);
+      //   vsgt(VtoCmsg_abs_7, 0, MASKREAD_OFF, MASKWRITE_ON, mZc * nLayers);
+      //   vbrdcst(cons_i8, 0xFF, MASKREAD_OFF, mZc * nLayers);
+      //   parity        = vxor(cons_i8, parity, MASKREAD_ON, mZc * nLayers);
+      //   VtoCmsg_abs_7 = vxor(cons_i8, VtoCmsg_abs_7, MASKREAD_ON, mZc * nLayers);
+      //   vbrdcst(cons_i8, 1, MASKREAD_OFF, mZc * nLayers);
+      //   VtoCmsg_abs_7 = vsadd(cons_i8, VtoCmsg_abs_7, MASKREAD_ON, mZc * nLayers);
+
+      //   VtoCmsg_abs_8 = vsadd(VtoCmsg_8, 0, MASKREAD_OFF, mZc * nLayers);
+      //   vsgt(VtoCmsg_abs_8, 0, MASKREAD_OFF, MASKWRITE_ON, mZc * nLayers);
+      //   vbrdcst(cons_i8, 0xFF, MASKREAD_OFF, mZc * nLayers);
+      //   parity        = vxor(cons_i8, parity, MASKREAD_ON, mZc * nLayers);
+      //   VtoCmsg_abs_8 = vxor(cons_i8, VtoCmsg_abs_8, MASKREAD_ON, mZc * nLayers);
+      //   vbrdcst(cons_i8, 1, MASKREAD_OFF, mZc * nLayers);
+      //   VtoCmsg_abs_8 = vsadd(cons_i8, VtoCmsg_abs_8, MASKREAD_ON, mZc * nLayers);
+
+      //   VtoCmsg_abs_9 = vsadd(VtoCmsg_9, 0, MASKREAD_OFF, mZc * nLayers);
+      //   vsgt(VtoCmsg_abs_9, 0, MASKREAD_OFF, MASKWRITE_ON, mZc * nLayers);
+      //   vbrdcst(cons_i8, 0xFF, MASKREAD_OFF, mZc * nLayers);
+      //   parity        = vxor(cons_i8, parity, MASKREAD_ON, mZc * nLayers);
+      //   VtoCmsg_abs_9 = vxor(cons_i8, VtoCmsg_abs_9, MASKREAD_ON, mZc * nLayers);
+      //   vbrdcst(cons_i8, 1, MASKREAD_OFF, mZc * nLayers);
+      //   VtoCmsg_abs_9 = vsadd(cons_i8, VtoCmsg_abs_9, MASKREAD_ON, mZc * nLayers);
+
+      //   vbrdcst(minBuf, INF, MASKREAD_OFF, mZc * nLayers);
+      //   vbrdcst(parity_0, 0, MASKREAD_OFF, mZc * nLayers);
+      //   vbrdcst(VtoCmsg_minsum_0, 0, MASKREAD_OFF, mZc * nLayers);
+      //   vsle(minBuf, VtoCmsg_abs_1, MASKREAD_OFF, MASKWRITE_ON, mZc * nLayers);
+      //   minBuf = vxor(minBuf, minBuf, MASKREAD_ON, mZc * nLayers);
+      //   minBuf = vsadd(VtoCmsg_abs_1, minBuf, MASKREAD_ON, mZc * nLayers);
+
+      //   vsle(minBuf, VtoCmsg_abs_2, MASKREAD_OFF, MASKWRITE_ON, mZc * nLayers);
+      //   minBuf = vxor(minBuf, minBuf, MASKREAD_ON, mZc * nLayers);
+      //   minBuf = vsadd(VtoCmsg_abs_2, minBuf, MASKREAD_ON, mZc * nLayers);
+
+      //   vsle(minBuf, VtoCmsg_abs_3, MASKREAD_OFF, MASKWRITE_ON, mZc * nLayers);
+      //   minBuf = vxor(minBuf, minBuf, MASKREAD_ON, mZc * nLayers);
+      //   minBuf = vsadd(VtoCmsg_abs_3, minBuf, MASKREAD_ON, mZc * nLayers);
+
+      //   vsle(minBuf, VtoCmsg_abs_4, MASKREAD_OFF, MASKWRITE_ON, mZc * nLayers);
+      //   minBuf = vxor(minBuf, minBuf, MASKREAD_ON, mZc * nLayers);
+      //   minBuf = vsadd(VtoCmsg_abs_4, minBuf, MASKREAD_ON, mZc * nLayers);
+
+      //   vsle(minBuf, VtoCmsg_abs_5, MASKREAD_OFF, MASKWRITE_ON, mZc * nLayers);
+      //   minBuf = vxor(minBuf, minBuf, MASKREAD_ON, mZc * nLayers);
+      //   minBuf = vsadd(VtoCmsg_abs_5, minBuf, MASKREAD_ON, mZc * nLayers);
+
+      //   vsle(minBuf, VtoCmsg_abs_6, MASKREAD_OFF, MASKWRITE_ON, mZc * nLayers);
+      //   minBuf = vxor(minBuf, minBuf, MASKREAD_ON, mZc * nLayers);
+      //   minBuf = vsadd(VtoCmsg_abs_6, minBuf, MASKREAD_ON, mZc * nLayers);
+
+      //   vsle(minBuf, VtoCmsg_abs_7, MASKREAD_OFF, MASKWRITE_ON, mZc * nLayers);
+      //   minBuf = vxor(minBuf, minBuf, MASKREAD_ON, mZc * nLayers);
+      //   minBuf = vsadd(VtoCmsg_abs_7, minBuf, MASKREAD_ON, mZc * nLayers);
+
+      //   vsle(minBuf, VtoCmsg_abs_8, MASKREAD_OFF, MASKWRITE_ON, mZc * nLayers);
+      //   minBuf = vxor(minBuf, minBuf, MASKREAD_ON, mZc * nLayers);
+      //   minBuf = vsadd(VtoCmsg_abs_8, minBuf, MASKREAD_ON, mZc * nLayers);
+
+      //   vsle(minBuf, VtoCmsg_abs_9, MASKREAD_OFF, MASKWRITE_ON, mZc * nLayers);
+      //   minBuf = vxor(minBuf, minBuf, MASKREAD_ON, mZc * nLayers);
+      //   minBuf = vsadd(VtoCmsg_abs_9, minBuf, MASKREAD_ON, mZc * nLayers);
+
+      //   vsgt(minBuf, ALPHA + 1, MASKREAD_OFF, MASKWRITE_ON, mZc * nLayers);
+      //   minBuf = vxor(minBuf, minBuf, MASKREAD_ON, mZc * nLayers);
+      //   vsle(minBuf, ALPHA, MASKREAD_OFF, MASKWRITE_ON, mZc * nLayers);
+      //   vbrdcst(cons_i8, -1 * ALPHA, MASKREAD_OFF, mZc * nLayers);
+      //   minBuf = vsadd(cons_i8, minBuf, MASKREAD_ON, mZc * nLayers);
+
+      //   vsgt(VtoCmsg_0, 0, MASKREAD_OFF, MASKWRITE_ON, mZc * nLayers);
+      //   vbrdcst(cons_i8, 0xFF, MASKREAD_OFF, mZc * nLayers);
+      //   parity_0 = vxor(cons_i8, parity_0, MASKREAD_ON, mZc * nLayers);
+      //   parity_0 = vxor(parity_0, parity, MASKREAD_OFF, mZc * nLayers);
+      //   parity_0 = vmul(parity_0, 2, MASKREAD_OFF, mZc * nLayers);
+      //   parity_0 = vsadd(parity_0, 1, MASKREAD_OFF, mZc * nLayers);
+
+      //   VtoCmsg_minsum_0 = vxor(VtoCmsg_minsum_0, minBuf, MASKREAD_OFF, mZc * nLayers);
+      //   VtoCmsg_minsum_0 = vsra(VtoCmsg_minsum_0, 1, MASKREAD_OFF, mZc * nLayers);
+      //   VtoCmsg_minsum_0 = vmul(VtoCmsg_minsum_0, parity_0, MASKREAD_OFF, mZc * nLayers);
+
+      //   vbrdcst(minBuf, INF, MASKREAD_OFF, mZc * nLayers);
+      //   vbrdcst(parity_0, 0, MASKREAD_OFF, mZc * nLayers);
+      //   vbrdcst(VtoCmsg_minsum_1, 0, MASKREAD_OFF, mZc * nLayers);
+      //   vsle(minBuf, VtoCmsg_abs_0, MASKREAD_OFF, MASKWRITE_ON, mZc * nLayers);
+      //   minBuf = vxor(minBuf, minBuf, MASKREAD_ON, mZc * nLayers);
+      //   minBuf = vsadd(VtoCmsg_abs_0, minBuf, MASKREAD_ON, mZc * nLayers);
+
+      //   vsle(minBuf, VtoCmsg_abs_2, MASKREAD_OFF, MASKWRITE_ON, mZc * nLayers);
+      //   minBuf = vxor(minBuf, minBuf, MASKREAD_ON, mZc * nLayers);
+      //   minBuf = vsadd(VtoCmsg_abs_2, minBuf, MASKREAD_ON, mZc * nLayers);
+
+      //   vsle(minBuf, VtoCmsg_abs_3, MASKREAD_OFF, MASKWRITE_ON, mZc * nLayers);
+      //   minBuf = vxor(minBuf, minBuf, MASKREAD_ON, mZc * nLayers);
+      //   minBuf = vsadd(VtoCmsg_abs_3, minBuf, MASKREAD_ON, mZc * nLayers);
+
+      //   vsle(minBuf, VtoCmsg_abs_4, MASKREAD_OFF, MASKWRITE_ON, mZc * nLayers);
+      //   minBuf = vxor(minBuf, minBuf, MASKREAD_ON, mZc * nLayers);
+      //   minBuf = vsadd(VtoCmsg_abs_4, minBuf, MASKREAD_ON, mZc * nLayers);
+
+      //   vsle(minBuf, VtoCmsg_abs_5, MASKREAD_OFF, MASKWRITE_ON, mZc * nLayers);
+      //   minBuf = vxor(minBuf, minBuf, MASKREAD_ON, mZc * nLayers);
+      //   minBuf = vsadd(VtoCmsg_abs_5, minBuf, MASKREAD_ON, mZc * nLayers);
+
+      //   vsle(minBuf, VtoCmsg_abs_6, MASKREAD_OFF, MASKWRITE_ON, mZc * nLayers);
+      //   minBuf = vxor(minBuf, minBuf, MASKREAD_ON, mZc * nLayers);
+      //   minBuf = vsadd(VtoCmsg_abs_6, minBuf, MASKREAD_ON, mZc * nLayers);
+
+      //   vsle(minBuf, VtoCmsg_abs_7, MASKREAD_OFF, MASKWRITE_ON, mZc * nLayers);
+      //   minBuf = vxor(minBuf, minBuf, MASKREAD_ON, mZc * nLayers);
+      //   minBuf = vsadd(VtoCmsg_abs_7, minBuf, MASKREAD_ON, mZc * nLayers);
+
+      //   vsle(minBuf, VtoCmsg_abs_8, MASKREAD_OFF, MASKWRITE_ON, mZc * nLayers);
+      //   minBuf = vxor(minBuf, minBuf, MASKREAD_ON, mZc * nLayers);
+      //   minBuf = vsadd(VtoCmsg_abs_8, minBuf, MASKREAD_ON, mZc * nLayers);
+
+      //   vsle(minBuf, VtoCmsg_abs_9, MASKREAD_OFF, MASKWRITE_ON, mZc * nLayers);
+      //   minBuf = vxor(minBuf, minBuf, MASKREAD_ON, mZc * nLayers);
+      //   minBuf = vsadd(VtoCmsg_abs_9, minBuf, MASKREAD_ON, mZc * nLayers);
+
+      //   vsgt(minBuf, ALPHA + 1, MASKREAD_OFF, MASKWRITE_ON, mZc * nLayers);
+      //   minBuf = vxor(minBuf, minBuf, MASKREAD_ON, mZc * nLayers);
+      //   vsle(minBuf, ALPHA, MASKREAD_OFF, MASKWRITE_ON, mZc * nLayers);
+      //   vbrdcst(cons_i8, -1 * ALPHA, MASKREAD_OFF, mZc * nLayers);
+      //   minBuf = vsadd(cons_i8, minBuf, MASKREAD_ON, mZc * nLayers);
+
+      //   vsgt(VtoCmsg_1, 0, MASKREAD_OFF, MASKWRITE_ON, mZc * nLayers);
+      //   vbrdcst(cons_i8, 0xFF, MASKREAD_OFF, mZc * nLayers);
+      //   parity_0 = vxor(cons_i8, parity_0, MASKREAD_ON, mZc * nLayers);
+      //   parity_0 = vxor(parity_0, parity, MASKREAD_OFF, mZc * nLayers);
+      //   parity_0 = vmul(parity_0, 2, MASKREAD_OFF, mZc * nLayers);
+      //   parity_0 = vsadd(parity_0, 1, MASKREAD_OFF, mZc * nLayers);
+
+      //   VtoCmsg_minsum_1 = vxor(VtoCmsg_minsum_1, minBuf, MASKREAD_OFF, mZc * nLayers);
+      //   VtoCmsg_minsum_1 = vsra(VtoCmsg_minsum_1, 1, MASKREAD_OFF, mZc * nLayers);
+      //   VtoCmsg_minsum_1 = vmul(VtoCmsg_minsum_1, parity_0, MASKREAD_OFF, mZc * nLayers);
+
+      //   vbrdcst(minBuf, INF, MASKREAD_OFF, mZc * nLayers);
+      //   vbrdcst(parity_0, 0, MASKREAD_OFF, mZc * nLayers);
+      //   vbrdcst(VtoCmsg_minsum_2, 0, MASKREAD_OFF, mZc * nLayers);
+      //   vsle(minBuf, VtoCmsg_abs_0, MASKREAD_OFF, MASKWRITE_ON, mZc * nLayers);
+      //   minBuf = vxor(minBuf, minBuf, MASKREAD_ON, mZc * nLayers);
+      //   minBuf = vsadd(VtoCmsg_abs_0, minBuf, MASKREAD_ON, mZc * nLayers);
+
+      //   vsle(minBuf, VtoCmsg_abs_1, MASKREAD_OFF, MASKWRITE_ON, mZc * nLayers);
+      //   minBuf = vxor(minBuf, minBuf, MASKREAD_ON, mZc * nLayers);
+      //   minBuf = vsadd(VtoCmsg_abs_1, minBuf, MASKREAD_ON, mZc * nLayers);
+
+      //   vsle(minBuf, VtoCmsg_abs_3, MASKREAD_OFF, MASKWRITE_ON, mZc * nLayers);
+      //   minBuf = vxor(minBuf, minBuf, MASKREAD_ON, mZc * nLayers);
+      //   minBuf = vsadd(VtoCmsg_abs_3, minBuf, MASKREAD_ON, mZc * nLayers);
+
+      //   vsle(minBuf, VtoCmsg_abs_4, MASKREAD_OFF, MASKWRITE_ON, mZc * nLayers);
+      //   minBuf = vxor(minBuf, minBuf, MASKREAD_ON, mZc * nLayers);
+      //   minBuf = vsadd(VtoCmsg_abs_4, minBuf, MASKREAD_ON, mZc * nLayers);
+
+      //   vsle(minBuf, VtoCmsg_abs_5, MASKREAD_OFF, MASKWRITE_ON, mZc * nLayers);
+      //   minBuf = vxor(minBuf, minBuf, MASKREAD_ON, mZc * nLayers);
+      //   minBuf = vsadd(VtoCmsg_abs_5, minBuf, MASKREAD_ON, mZc * nLayers);
+
+      //   vsle(minBuf, VtoCmsg_abs_6, MASKREAD_OFF, MASKWRITE_ON, mZc * nLayers);
+      //   minBuf = vxor(minBuf, minBuf, MASKREAD_ON, mZc * nLayers);
+      //   minBuf = vsadd(VtoCmsg_abs_6, minBuf, MASKREAD_ON, mZc * nLayers);
+
+      //   vsle(minBuf, VtoCmsg_abs_7, MASKREAD_OFF, MASKWRITE_ON, mZc * nLayers);
+      //   minBuf = vxor(minBuf, minBuf, MASKREAD_ON, mZc * nLayers);
+      //   minBuf = vsadd(VtoCmsg_abs_7, minBuf, MASKREAD_ON, mZc * nLayers);
+
+      //   vsle(minBuf, VtoCmsg_abs_8, MASKREAD_OFF, MASKWRITE_ON, mZc * nLayers);
+      //   minBuf = vxor(minBuf, minBuf, MASKREAD_ON, mZc * nLayers);
+      //   minBuf = vsadd(VtoCmsg_abs_8, minBuf, MASKREAD_ON, mZc * nLayers);
+
+      //   vsle(minBuf, VtoCmsg_abs_9, MASKREAD_OFF, MASKWRITE_ON, mZc * nLayers);
+      //   minBuf = vxor(minBuf, minBuf, MASKREAD_ON, mZc * nLayers);
+      //   minBuf = vsadd(VtoCmsg_abs_9, minBuf, MASKREAD_ON, mZc * nLayers);
+
+      //   vsgt(minBuf, ALPHA + 1, MASKREAD_OFF, MASKWRITE_ON, mZc * nLayers);
+      //   minBuf = vxor(minBuf, minBuf, MASKREAD_ON, mZc * nLayers);
+      //   vsle(minBuf, ALPHA, MASKREAD_OFF, MASKWRITE_ON, mZc * nLayers);
+      //   vbrdcst(cons_i8, -1 * ALPHA, MASKREAD_OFF, mZc * nLayers);
+      //   minBuf = vsadd(cons_i8, minBuf, MASKREAD_ON, mZc * nLayers);
+
+      //   vsgt(VtoCmsg_2, 0, MASKREAD_OFF, MASKWRITE_ON, mZc * nLayers);
+      //   vbrdcst(cons_i8, 0xFF, MASKREAD_OFF, mZc * nLayers);
+      //   parity_0 = vxor(cons_i8, parity_0, MASKREAD_ON, mZc * nLayers);
+      //   parity_0 = vxor(parity_0, parity, MASKREAD_OFF, mZc * nLayers);
+      //   parity_0 = vmul(parity_0, 2, MASKREAD_OFF, mZc * nLayers);
+      //   parity_0 = vsadd(parity_0, 1, MASKREAD_OFF, mZc * nLayers);
+
+      //   VtoCmsg_minsum_2 = vxor(VtoCmsg_minsum_2, minBuf, MASKREAD_OFF, mZc * nLayers);
+      //   VtoCmsg_minsum_2 = vsra(VtoCmsg_minsum_2, 1, MASKREAD_OFF, mZc * nLayers);
+      //   VtoCmsg_minsum_2 = vmul(VtoCmsg_minsum_2, parity_0, MASKREAD_OFF, mZc * nLayers);
+
+      //   vbrdcst(minBuf, INF, MASKREAD_OFF, mZc * nLayers);
+      //   vbrdcst(parity_0, 0, MASKREAD_OFF, mZc * nLayers);
+      //   vbrdcst(VtoCmsg_minsum_3, 0, MASKREAD_OFF, mZc * nLayers);
+      //   vsle(minBuf, VtoCmsg_abs_0, MASKREAD_OFF, MASKWRITE_ON, mZc * nLayers);
+      //   minBuf = vxor(minBuf, minBuf, MASKREAD_ON, mZc * nLayers);
+      //   minBuf = vsadd(VtoCmsg_abs_0, minBuf, MASKREAD_ON, mZc * nLayers);
+
+      //   vsle(minBuf, VtoCmsg_abs_1, MASKREAD_OFF, MASKWRITE_ON, mZc * nLayers);
+      //   minBuf = vxor(minBuf, minBuf, MASKREAD_ON, mZc * nLayers);
+      //   minBuf = vsadd(VtoCmsg_abs_1, minBuf, MASKREAD_ON, mZc * nLayers);
+
+      //   vsle(minBuf, VtoCmsg_abs_2, MASKREAD_OFF, MASKWRITE_ON, mZc * nLayers);
+      //   minBuf = vxor(minBuf, minBuf, MASKREAD_ON, mZc * nLayers);
+      //   minBuf = vsadd(VtoCmsg_abs_2, minBuf, MASKREAD_ON, mZc * nLayers);
+
+      //   vsle(minBuf, VtoCmsg_abs_4, MASKREAD_OFF, MASKWRITE_ON, mZc * nLayers);
+      //   minBuf = vxor(minBuf, minBuf, MASKREAD_ON, mZc * nLayers);
+      //   minBuf = vsadd(VtoCmsg_abs_4, minBuf, MASKREAD_ON, mZc * nLayers);
+
+      //   vsle(minBuf, VtoCmsg_abs_5, MASKREAD_OFF, MASKWRITE_ON, mZc * nLayers);
+      //   minBuf = vxor(minBuf, minBuf, MASKREAD_ON, mZc * nLayers);
+      //   minBuf = vsadd(VtoCmsg_abs_5, minBuf, MASKREAD_ON, mZc * nLayers);
+
+      //   vsle(minBuf, VtoCmsg_abs_6, MASKREAD_OFF, MASKWRITE_ON, mZc * nLayers);
+      //   minBuf = vxor(minBuf, minBuf, MASKREAD_ON, mZc * nLayers);
+      //   minBuf = vsadd(VtoCmsg_abs_6, minBuf, MASKREAD_ON, mZc * nLayers);
+
+      //   vsle(minBuf, VtoCmsg_abs_7, MASKREAD_OFF, MASKWRITE_ON, mZc * nLayers);
+      //   minBuf = vxor(minBuf, minBuf, MASKREAD_ON, mZc * nLayers);
+      //   minBuf = vsadd(VtoCmsg_abs_7, minBuf, MASKREAD_ON, mZc * nLayers);
+
+      //   vsle(minBuf, VtoCmsg_abs_8, MASKREAD_OFF, MASKWRITE_ON, mZc * nLayers);
+      //   minBuf = vxor(minBuf, minBuf, MASKREAD_ON, mZc * nLayers);
+      //   minBuf = vsadd(VtoCmsg_abs_8, minBuf, MASKREAD_ON, mZc * nLayers);
+
+      //   vsle(minBuf, VtoCmsg_abs_9, MASKREAD_OFF, MASKWRITE_ON, mZc * nLayers);
+      //   minBuf = vxor(minBuf, minBuf, MASKREAD_ON, mZc * nLayers);
+      //   minBuf = vsadd(VtoCmsg_abs_9, minBuf, MASKREAD_ON, mZc * nLayers);
+
+      //   vsgt(minBuf, ALPHA + 1, MASKREAD_OFF, MASKWRITE_ON, mZc * nLayers);
+      //   minBuf = vxor(minBuf, minBuf, MASKREAD_ON, mZc * nLayers);
+      //   vsle(minBuf, ALPHA, MASKREAD_OFF, MASKWRITE_ON, mZc * nLayers);
+      //   vbrdcst(cons_i8, -1 * ALPHA, MASKREAD_OFF, mZc * nLayers);
+      //   minBuf = vsadd(cons_i8, minBuf, MASKREAD_ON, mZc * nLayers);
+
+      //   vsgt(VtoCmsg_3, 0, MASKREAD_OFF, MASKWRITE_ON, mZc * nLayers);
+      //   vbrdcst(cons_i8, 0xFF, MASKREAD_OFF, mZc * nLayers);
+      //   parity_0 = vxor(cons_i8, parity_0, MASKREAD_ON, mZc * nLayers);
+      //   parity_0 = vxor(parity_0, parity, MASKREAD_OFF, mZc * nLayers);
+      //   parity_0 = vmul(parity_0, 2, MASKREAD_OFF, mZc * nLayers);
+      //   parity_0 = vsadd(parity_0, 1, MASKREAD_OFF, mZc * nLayers);
+
+      //   VtoCmsg_minsum_3 = vxor(VtoCmsg_minsum_3, minBuf, MASKREAD_OFF, mZc * nLayers);
+      //   VtoCmsg_minsum_3 = vsra(VtoCmsg_minsum_3, 1, MASKREAD_OFF, mZc * nLayers);
+      //   VtoCmsg_minsum_3 = vmul(VtoCmsg_minsum_3, parity_0, MASKREAD_OFF, mZc * nLayers);
+
+      //   vbrdcst(minBuf, INF, MASKREAD_OFF, mZc * nLayers);
+      //   vbrdcst(parity_0, 0, MASKREAD_OFF, mZc * nLayers);
+      //   vbrdcst(VtoCmsg_minsum_4, 0, MASKREAD_OFF, mZc * nLayers);
+      //   vsle(minBuf, VtoCmsg_abs_0, MASKREAD_OFF, MASKWRITE_ON, mZc * nLayers);
+      //   minBuf = vxor(minBuf, minBuf, MASKREAD_ON, mZc * nLayers);
+      //   minBuf = vsadd(VtoCmsg_abs_0, minBuf, MASKREAD_ON, mZc * nLayers);
+
+      //   vsle(minBuf, VtoCmsg_abs_1, MASKREAD_OFF, MASKWRITE_ON, mZc * nLayers);
+      //   minBuf = vxor(minBuf, minBuf, MASKREAD_ON, mZc * nLayers);
+      //   minBuf = vsadd(VtoCmsg_abs_1, minBuf, MASKREAD_ON, mZc * nLayers);
+
+      //   vsle(minBuf, VtoCmsg_abs_2, MASKREAD_OFF, MASKWRITE_ON, mZc * nLayers);
+      //   minBuf = vxor(minBuf, minBuf, MASKREAD_ON, mZc * nLayers);
+      //   minBuf = vsadd(VtoCmsg_abs_2, minBuf, MASKREAD_ON, mZc * nLayers);
+
+      //   vsle(minBuf, VtoCmsg_abs_3, MASKREAD_OFF, MASKWRITE_ON, mZc * nLayers);
+      //   minBuf = vxor(minBuf, minBuf, MASKREAD_ON, mZc * nLayers);
+      //   minBuf = vsadd(VtoCmsg_abs_3, minBuf, MASKREAD_ON, mZc * nLayers);
+
+      //   vsle(minBuf, VtoCmsg_abs_5, MASKREAD_OFF, MASKWRITE_ON, mZc * nLayers);
+      //   minBuf = vxor(minBuf, minBuf, MASKREAD_ON, mZc * nLayers);
+      //   minBuf = vsadd(VtoCmsg_abs_5, minBuf, MASKREAD_ON, mZc * nLayers);
+
+      //   vsle(minBuf, VtoCmsg_abs_6, MASKREAD_OFF, MASKWRITE_ON, mZc * nLayers);
+      //   minBuf = vxor(minBuf, minBuf, MASKREAD_ON, mZc * nLayers);
+      //   minBuf = vsadd(VtoCmsg_abs_6, minBuf, MASKREAD_ON, mZc * nLayers);
+
+      //   vsle(minBuf, VtoCmsg_abs_7, MASKREAD_OFF, MASKWRITE_ON, mZc * nLayers);
+      //   minBuf = vxor(minBuf, minBuf, MASKREAD_ON, mZc * nLayers);
+      //   minBuf = vsadd(VtoCmsg_abs_7, minBuf, MASKREAD_ON, mZc * nLayers);
+
+      //   vsle(minBuf, VtoCmsg_abs_8, MASKREAD_OFF, MASKWRITE_ON, mZc * nLayers);
+      //   minBuf = vxor(minBuf, minBuf, MASKREAD_ON, mZc * nLayers);
+      //   minBuf = vsadd(VtoCmsg_abs_8, minBuf, MASKREAD_ON, mZc * nLayers);
+
+      //   vsle(minBuf, VtoCmsg_abs_9, MASKREAD_OFF, MASKWRITE_ON, mZc * nLayers);
+      //   minBuf = vxor(minBuf, minBuf, MASKREAD_ON, mZc * nLayers);
+      //   minBuf = vsadd(VtoCmsg_abs_9, minBuf, MASKREAD_ON, mZc * nLayers);
+
+      //   vsgt(minBuf, ALPHA + 1, MASKREAD_OFF, MASKWRITE_ON, mZc * nLayers);
+      //   minBuf = vxor(minBuf, minBuf, MASKREAD_ON, mZc * nLayers);
+      //   vsle(minBuf, ALPHA, MASKREAD_OFF, MASKWRITE_ON, mZc * nLayers);
+      //   vbrdcst(cons_i8, -1 * ALPHA, MASKREAD_OFF, mZc * nLayers);
+      //   minBuf = vsadd(cons_i8, minBuf, MASKREAD_ON, mZc * nLayers);
+
+      //   vsgt(VtoCmsg_4, 0, MASKREAD_OFF, MASKWRITE_ON, mZc * nLayers);
+      //   vbrdcst(cons_i8, 0xFF, MASKREAD_OFF, mZc * nLayers);
+      //   parity_0 = vxor(cons_i8, parity_0, MASKREAD_ON, mZc * nLayers);
+      //   parity_0 = vxor(parity_0, parity, MASKREAD_OFF, mZc * nLayers);
+      //   parity_0 = vmul(parity_0, 2, MASKREAD_OFF, mZc * nLayers);
+      //   parity_0 = vsadd(parity_0, 1, MASKREAD_OFF, mZc * nLayers);
+
+      //   VtoCmsg_minsum_4 = vxor(VtoCmsg_minsum_4, minBuf, MASKREAD_OFF, mZc * nLayers);
+      //   VtoCmsg_minsum_4 = vsra(VtoCmsg_minsum_4, 1, MASKREAD_OFF, mZc * nLayers);
+      //   VtoCmsg_minsum_4 = vmul(VtoCmsg_minsum_4, parity_0, MASKREAD_OFF, mZc * nLayers);
+
+      //   vbrdcst(minBuf, INF, MASKREAD_OFF, mZc * nLayers);
+      //   vbrdcst(parity_0, 0, MASKREAD_OFF, mZc * nLayers);
+      //   vbrdcst(VtoCmsg_minsum_5, 0, MASKREAD_OFF, mZc * nLayers);
+      //   vsle(minBuf, VtoCmsg_abs_0, MASKREAD_OFF, MASKWRITE_ON, mZc * nLayers);
+      //   minBuf = vxor(minBuf, minBuf, MASKREAD_ON, mZc * nLayers);
+      //   minBuf = vsadd(VtoCmsg_abs_0, minBuf, MASKREAD_ON, mZc * nLayers);
+
+      //   vsle(minBuf, VtoCmsg_abs_1, MASKREAD_OFF, MASKWRITE_ON, mZc * nLayers);
+      //   minBuf = vxor(minBuf, minBuf, MASKREAD_ON, mZc * nLayers);
+      //   minBuf = vsadd(VtoCmsg_abs_1, minBuf, MASKREAD_ON, mZc * nLayers);
+
+      //   vsle(minBuf, VtoCmsg_abs_2, MASKREAD_OFF, MASKWRITE_ON, mZc * nLayers);
+      //   minBuf = vxor(minBuf, minBuf, MASKREAD_ON, mZc * nLayers);
+      //   minBuf = vsadd(VtoCmsg_abs_2, minBuf, MASKREAD_ON, mZc * nLayers);
+
+      //   vsle(minBuf, VtoCmsg_abs_3, MASKREAD_OFF, MASKWRITE_ON, mZc * nLayers);
+      //   minBuf = vxor(minBuf, minBuf, MASKREAD_ON, mZc * nLayers);
+      //   minBuf = vsadd(VtoCmsg_abs_3, minBuf, MASKREAD_ON, mZc * nLayers);
+
+      //   vsle(minBuf, VtoCmsg_abs_4, MASKREAD_OFF, MASKWRITE_ON, mZc * nLayers);
+      //   minBuf = vxor(minBuf, minBuf, MASKREAD_ON, mZc * nLayers);
+      //   minBuf = vsadd(VtoCmsg_abs_4, minBuf, MASKREAD_ON, mZc * nLayers);
+
+      //   vsle(minBuf, VtoCmsg_abs_6, MASKREAD_OFF, MASKWRITE_ON, mZc * nLayers);
+      //   minBuf = vxor(minBuf, minBuf, MASKREAD_ON, mZc * nLayers);
+      //   minBuf = vsadd(VtoCmsg_abs_6, minBuf, MASKREAD_ON, mZc * nLayers);
+
+      //   vsle(minBuf, VtoCmsg_abs_7, MASKREAD_OFF, MASKWRITE_ON, mZc * nLayers);
+      //   minBuf = vxor(minBuf, minBuf, MASKREAD_ON, mZc * nLayers);
+      //   minBuf = vsadd(VtoCmsg_abs_7, minBuf, MASKREAD_ON, mZc * nLayers);
+
+      //   vsle(minBuf, VtoCmsg_abs_8, MASKREAD_OFF, MASKWRITE_ON, mZc * nLayers);
+      //   minBuf = vxor(minBuf, minBuf, MASKREAD_ON, mZc * nLayers);
+      //   minBuf = vsadd(VtoCmsg_abs_8, minBuf, MASKREAD_ON, mZc * nLayers);
+
+      //   vsle(minBuf, VtoCmsg_abs_9, MASKREAD_OFF, MASKWRITE_ON, mZc * nLayers);
+      //   minBuf = vxor(minBuf, minBuf, MASKREAD_ON, mZc * nLayers);
+      //   minBuf = vsadd(VtoCmsg_abs_9, minBuf, MASKREAD_ON, mZc * nLayers);
+
+      //   vsgt(minBuf, ALPHA + 1, MASKREAD_OFF, MASKWRITE_ON, mZc * nLayers);
+      //   minBuf = vxor(minBuf, minBuf, MASKREAD_ON, mZc * nLayers);
+      //   vsle(minBuf, ALPHA, MASKREAD_OFF, MASKWRITE_ON, mZc * nLayers);
+      //   vbrdcst(cons_i8, -1 * ALPHA, MASKREAD_OFF, mZc * nLayers);
+      //   minBuf = vsadd(cons_i8, minBuf, MASKREAD_ON, mZc * nLayers);
+
+      //   vsgt(VtoCmsg_5, 0, MASKREAD_OFF, MASKWRITE_ON, mZc * nLayers);
+      //   vbrdcst(cons_i8, 0xFF, MASKREAD_OFF, mZc * nLayers);
+      //   parity_0 = vxor(cons_i8, parity_0, MASKREAD_ON, mZc * nLayers);
+      //   parity_0 = vxor(parity_0, parity, MASKREAD_OFF, mZc * nLayers);
+      //   parity_0 = vmul(parity_0, 2, MASKREAD_OFF, mZc * nLayers);
+      //   parity_0 = vsadd(parity_0, 1, MASKREAD_OFF, mZc * nLayers);
+
+      //   VtoCmsg_minsum_5 = vxor(VtoCmsg_minsum_5, minBuf, MASKREAD_OFF, mZc * nLayers);
+      //   VtoCmsg_minsum_5 = vsra(VtoCmsg_minsum_5, 1, MASKREAD_OFF, mZc * nLayers);
+      //   VtoCmsg_minsum_5 = vmul(VtoCmsg_minsum_5, parity_0, MASKREAD_OFF, mZc * nLayers);
+
+      //   vbrdcst(minBuf, INF, MASKREAD_OFF, mZc * nLayers);
+      //   vbrdcst(parity_0, 0, MASKREAD_OFF, mZc * nLayers);
+      //   vbrdcst(VtoCmsg_minsum_6, 0, MASKREAD_OFF, mZc * nLayers);
+      //   vsle(minBuf, VtoCmsg_abs_0, MASKREAD_OFF, MASKWRITE_ON, mZc * nLayers);
+      //   minBuf = vxor(minBuf, minBuf, MASKREAD_ON, mZc * nLayers);
+      //   minBuf = vsadd(VtoCmsg_abs_0, minBuf, MASKREAD_ON, mZc * nLayers);
+
+      //   vsle(minBuf, VtoCmsg_abs_1, MASKREAD_OFF, MASKWRITE_ON, mZc * nLayers);
+      //   minBuf = vxor(minBuf, minBuf, MASKREAD_ON, mZc * nLayers);
+      //   minBuf = vsadd(VtoCmsg_abs_1, minBuf, MASKREAD_ON, mZc * nLayers);
+
+      //   vsle(minBuf, VtoCmsg_abs_2, MASKREAD_OFF, MASKWRITE_ON, mZc * nLayers);
+      //   minBuf = vxor(minBuf, minBuf, MASKREAD_ON, mZc * nLayers);
+      //   minBuf = vsadd(VtoCmsg_abs_2, minBuf, MASKREAD_ON, mZc * nLayers);
+
+      //   vsle(minBuf, VtoCmsg_abs_3, MASKREAD_OFF, MASKWRITE_ON, mZc * nLayers);
+      //   minBuf = vxor(minBuf, minBuf, MASKREAD_ON, mZc * nLayers);
+      //   minBuf = vsadd(VtoCmsg_abs_3, minBuf, MASKREAD_ON, mZc * nLayers);
+
+      //   vsle(minBuf, VtoCmsg_abs_4, MASKREAD_OFF, MASKWRITE_ON, mZc * nLayers);
+      //   minBuf = vxor(minBuf, minBuf, MASKREAD_ON, mZc * nLayers);
+      //   minBuf = vsadd(VtoCmsg_abs_4, minBuf, MASKREAD_ON, mZc * nLayers);
+
+      //   vsle(minBuf, VtoCmsg_abs_5, MASKREAD_OFF, MASKWRITE_ON, mZc * nLayers);
+      //   minBuf = vxor(minBuf, minBuf, MASKREAD_ON, mZc * nLayers);
+      //   minBuf = vsadd(VtoCmsg_abs_5, minBuf, MASKREAD_ON, mZc * nLayers);
+
+      //   vsle(minBuf, VtoCmsg_abs_7, MASKREAD_OFF, MASKWRITE_ON, mZc * nLayers);
+      //   minBuf = vxor(minBuf, minBuf, MASKREAD_ON, mZc * nLayers);
+      //   minBuf = vsadd(VtoCmsg_abs_7, minBuf, MASKREAD_ON, mZc * nLayers);
+
+      //   vsle(minBuf, VtoCmsg_abs_8, MASKREAD_OFF, MASKWRITE_ON, mZc * nLayers);
+      //   minBuf = vxor(minBuf, minBuf, MASKREAD_ON, mZc * nLayers);
+      //   minBuf = vsadd(VtoCmsg_abs_8, minBuf, MASKREAD_ON, mZc * nLayers);
+
+      //   vsle(minBuf, VtoCmsg_abs_9, MASKREAD_OFF, MASKWRITE_ON, mZc * nLayers);
+      //   minBuf = vxor(minBuf, minBuf, MASKREAD_ON, mZc * nLayers);
+      //   minBuf = vsadd(VtoCmsg_abs_9, minBuf, MASKREAD_ON, mZc * nLayers);
+
+      //   vsgt(minBuf, ALPHA + 1, MASKREAD_OFF, MASKWRITE_ON, mZc * nLayers);
+      //   minBuf = vxor(minBuf, minBuf, MASKREAD_ON, mZc * nLayers);
+      //   vsle(minBuf, ALPHA, MASKREAD_OFF, MASKWRITE_ON, mZc * nLayers);
+      //   vbrdcst(cons_i8, -1 * ALPHA, MASKREAD_OFF, mZc * nLayers);
+      //   minBuf = vsadd(cons_i8, minBuf, MASKREAD_ON, mZc * nLayers);
+
+      //   vsgt(VtoCmsg_6, 0, MASKREAD_OFF, MASKWRITE_ON, mZc * nLayers);
+      //   vbrdcst(cons_i8, 0xFF, MASKREAD_OFF, mZc * nLayers);
+      //   parity_0 = vxor(cons_i8, parity_0, MASKREAD_ON, mZc * nLayers);
+      //   parity_0 = vxor(parity_0, parity, MASKREAD_OFF, mZc * nLayers);
+      //   parity_0 = vmul(parity_0, 2, MASKREAD_OFF, mZc * nLayers);
+      //   parity_0 = vsadd(parity_0, 1, MASKREAD_OFF, mZc * nLayers);
+
+      //   VtoCmsg_minsum_6 = vxor(VtoCmsg_minsum_6, minBuf, MASKREAD_OFF, mZc * nLayers);
+      //   VtoCmsg_minsum_6 = vsra(VtoCmsg_minsum_6, 1, MASKREAD_OFF, mZc * nLayers);
+      //   VtoCmsg_minsum_6 = vmul(VtoCmsg_minsum_6, parity_0, MASKREAD_OFF, mZc * nLayers);
+
+      //   vbrdcst(minBuf, INF, MASKREAD_OFF, mZc * nLayers);
+      //   vbrdcst(parity_0, 0, MASKREAD_OFF, mZc * nLayers);
+      //   vbrdcst(VtoCmsg_minsum_7, 0, MASKREAD_OFF, mZc * nLayers);
+      //   vsle(minBuf, VtoCmsg_abs_0, MASKREAD_OFF, MASKWRITE_ON, mZc * nLayers);
+      //   minBuf = vxor(minBuf, minBuf, MASKREAD_ON, mZc * nLayers);
+      //   minBuf = vsadd(VtoCmsg_abs_0, minBuf, MASKREAD_ON, mZc * nLayers);
+
+      //   vsle(minBuf, VtoCmsg_abs_1, MASKREAD_OFF, MASKWRITE_ON, mZc * nLayers);
+      //   minBuf = vxor(minBuf, minBuf, MASKREAD_ON, mZc * nLayers);
+      //   minBuf = vsadd(VtoCmsg_abs_1, minBuf, MASKREAD_ON, mZc * nLayers);
+
+      //   vsle(minBuf, VtoCmsg_abs_2, MASKREAD_OFF, MASKWRITE_ON, mZc * nLayers);
+      //   minBuf = vxor(minBuf, minBuf, MASKREAD_ON, mZc * nLayers);
+      //   minBuf = vsadd(VtoCmsg_abs_2, minBuf, MASKREAD_ON, mZc * nLayers);
+
+      //   vsle(minBuf, VtoCmsg_abs_3, MASKREAD_OFF, MASKWRITE_ON, mZc * nLayers);
+      //   minBuf = vxor(minBuf, minBuf, MASKREAD_ON, mZc * nLayers);
+      //   minBuf = vsadd(VtoCmsg_abs_3, minBuf, MASKREAD_ON, mZc * nLayers);
+
+      //   vsle(minBuf, VtoCmsg_abs_4, MASKREAD_OFF, MASKWRITE_ON, mZc * nLayers);
+      //   minBuf = vxor(minBuf, minBuf, MASKREAD_ON, mZc * nLayers);
+      //   minBuf = vsadd(VtoCmsg_abs_4, minBuf, MASKREAD_ON, mZc * nLayers);
+
+      //   vsle(minBuf, VtoCmsg_abs_5, MASKREAD_OFF, MASKWRITE_ON, mZc * nLayers);
+      //   minBuf = vxor(minBuf, minBuf, MASKREAD_ON, mZc * nLayers);
+      //   minBuf = vsadd(VtoCmsg_abs_5, minBuf, MASKREAD_ON, mZc * nLayers);
+
+      //   vsle(minBuf, VtoCmsg_abs_6, MASKREAD_OFF, MASKWRITE_ON, mZc * nLayers);
+      //   minBuf = vxor(minBuf, minBuf, MASKREAD_ON, mZc * nLayers);
+      //   minBuf = vsadd(VtoCmsg_abs_6, minBuf, MASKREAD_ON, mZc * nLayers);
+
+      //   vsle(minBuf, VtoCmsg_abs_8, MASKREAD_OFF, MASKWRITE_ON, mZc * nLayers);
+      //   minBuf = vxor(minBuf, minBuf, MASKREAD_ON, mZc * nLayers);
+      //   minBuf = vsadd(VtoCmsg_abs_8, minBuf, MASKREAD_ON, mZc * nLayers);
+
+      //   vsle(minBuf, VtoCmsg_abs_9, MASKREAD_OFF, MASKWRITE_ON, mZc * nLayers);
+      //   minBuf = vxor(minBuf, minBuf, MASKREAD_ON, mZc * nLayers);
+      //   minBuf = vsadd(VtoCmsg_abs_9, minBuf, MASKREAD_ON, mZc * nLayers);
+
+      //   vsgt(minBuf, ALPHA + 1, MASKREAD_OFF, MASKWRITE_ON, mZc * nLayers);
+      //   minBuf = vxor(minBuf, minBuf, MASKREAD_ON, mZc * nLayers);
+      //   vsle(minBuf, ALPHA, MASKREAD_OFF, MASKWRITE_ON, mZc * nLayers);
+      //   vbrdcst(cons_i8, -1 * ALPHA, MASKREAD_OFF, mZc * nLayers);
+      //   minBuf = vsadd(cons_i8, minBuf, MASKREAD_ON, mZc * nLayers);
+
+      //   vsgt(VtoCmsg_7, 0, MASKREAD_OFF, MASKWRITE_ON, mZc * nLayers);
+      //   vbrdcst(cons_i8, 0xFF, MASKREAD_OFF, mZc * nLayers);
+      //   parity_0 = vxor(cons_i8, parity_0, MASKREAD_ON, mZc * nLayers);
+      //   parity_0 = vxor(parity_0, parity, MASKREAD_OFF, mZc * nLayers);
+      //   parity_0 = vmul(parity_0, 2, MASKREAD_OFF, mZc * nLayers);
+      //   parity_0 = vsadd(parity_0, 1, MASKREAD_OFF, mZc * nLayers);
+
+      //   VtoCmsg_minsum_7 = vxor(VtoCmsg_minsum_7, minBuf, MASKREAD_OFF, mZc * nLayers);
+      //   VtoCmsg_minsum_7 = vsra(VtoCmsg_minsum_7, 1, MASKREAD_OFF, mZc * nLayers);
+      //   VtoCmsg_minsum_7 = vmul(VtoCmsg_minsum_7, parity_0, MASKREAD_OFF, mZc * nLayers);
+
+      //   vbrdcst(minBuf, INF, MASKREAD_OFF, mZc * nLayers);
+      //   vbrdcst(parity_0, 0, MASKREAD_OFF, mZc * nLayers);
+      //   vbrdcst(VtoCmsg_minsum_8, 0, MASKREAD_OFF, mZc * nLayers);
+      //   vsle(minBuf, VtoCmsg_abs_0, MASKREAD_OFF, MASKWRITE_ON, mZc * nLayers);
+      //   minBuf = vxor(minBuf, minBuf, MASKREAD_ON, mZc * nLayers);
+      //   minBuf = vsadd(VtoCmsg_abs_0, minBuf, MASKREAD_ON, mZc * nLayers);
+
+      //   vsle(minBuf, VtoCmsg_abs_1, MASKREAD_OFF, MASKWRITE_ON, mZc * nLayers);
+      //   minBuf = vxor(minBuf, minBuf, MASKREAD_ON, mZc * nLayers);
+      //   minBuf = vsadd(VtoCmsg_abs_1, minBuf, MASKREAD_ON, mZc * nLayers);
+
+      //   vsle(minBuf, VtoCmsg_abs_2, MASKREAD_OFF, MASKWRITE_ON, mZc * nLayers);
+      //   minBuf = vxor(minBuf, minBuf, MASKREAD_ON, mZc * nLayers);
+      //   minBuf = vsadd(VtoCmsg_abs_2, minBuf, MASKREAD_ON, mZc * nLayers);
+
+      //   vsle(minBuf, VtoCmsg_abs_3, MASKREAD_OFF, MASKWRITE_ON, mZc * nLayers);
+      //   minBuf = vxor(minBuf, minBuf, MASKREAD_ON, mZc * nLayers);
+      //   minBuf = vsadd(VtoCmsg_abs_3, minBuf, MASKREAD_ON, mZc * nLayers);
+
+      //   vsle(minBuf, VtoCmsg_abs_4, MASKREAD_OFF, MASKWRITE_ON, mZc * nLayers);
+      //   minBuf = vxor(minBuf, minBuf, MASKREAD_ON, mZc * nLayers);
+      //   minBuf = vsadd(VtoCmsg_abs_4, minBuf, MASKREAD_ON, mZc * nLayers);
+
+      //   vsle(minBuf, VtoCmsg_abs_5, MASKREAD_OFF, MASKWRITE_ON, mZc * nLayers);
+      //   minBuf = vxor(minBuf, minBuf, MASKREAD_ON, mZc * nLayers);
+      //   minBuf = vsadd(VtoCmsg_abs_5, minBuf, MASKREAD_ON, mZc * nLayers);
+
+      //   vsle(minBuf, VtoCmsg_abs_6, MASKREAD_OFF, MASKWRITE_ON, mZc * nLayers);
+      //   minBuf = vxor(minBuf, minBuf, MASKREAD_ON, mZc * nLayers);
+      //   minBuf = vsadd(VtoCmsg_abs_6, minBuf, MASKREAD_ON, mZc * nLayers);
+
+      //   vsle(minBuf, VtoCmsg_abs_7, MASKREAD_OFF, MASKWRITE_ON, mZc * nLayers);
+      //   minBuf = vxor(minBuf, minBuf, MASKREAD_ON, mZc * nLayers);
+      //   minBuf = vsadd(VtoCmsg_abs_7, minBuf, MASKREAD_ON, mZc * nLayers);
+
+      //   vsle(minBuf, VtoCmsg_abs_9, MASKREAD_OFF, MASKWRITE_ON, mZc * nLayers);
+      //   minBuf = vxor(minBuf, minBuf, MASKREAD_ON, mZc * nLayers);
+      //   minBuf = vsadd(VtoCmsg_abs_9, minBuf, MASKREAD_ON, mZc * nLayers);
+
+      //   vsgt(minBuf, ALPHA + 1, MASKREAD_OFF, MASKWRITE_ON, mZc * nLayers);
+      //   minBuf = vxor(minBuf, minBuf, MASKREAD_ON, mZc * nLayers);
+      //   vsle(minBuf, ALPHA, MASKREAD_OFF, MASKWRITE_ON, mZc * nLayers);
+      //   vbrdcst(cons_i8, -1 * ALPHA, MASKREAD_OFF, mZc * nLayers);
+      //   minBuf = vsadd(cons_i8, minBuf, MASKREAD_ON, mZc * nLayers);
+
+      //   vsgt(VtoCmsg_8, 0, MASKREAD_OFF, MASKWRITE_ON, mZc * nLayers);
+      //   vbrdcst(cons_i8, 0xFF, MASKREAD_OFF, mZc * nLayers);
+      //   parity_0 = vxor(cons_i8, parity_0, MASKREAD_ON, mZc * nLayers);
+      //   parity_0 = vxor(parity_0, parity, MASKREAD_OFF, mZc * nLayers);
+      //   parity_0 = vmul(parity_0, 2, MASKREAD_OFF, mZc * nLayers);
+      //   parity_0 = vsadd(parity_0, 1, MASKREAD_OFF, mZc * nLayers);
+
+      //   VtoCmsg_minsum_8 = vxor(VtoCmsg_minsum_8, minBuf, MASKREAD_OFF, mZc * nLayers);
+      //   VtoCmsg_minsum_8 = vsra(VtoCmsg_minsum_8, 1, MASKREAD_OFF, mZc * nLayers);
+      //   VtoCmsg_minsum_8 = vmul(VtoCmsg_minsum_8, parity_0, MASKREAD_OFF, mZc * nLayers);
+
+      //   vbrdcst(minBuf, INF, MASKREAD_OFF, mZc * nLayers);
+      //   vbrdcst(parity_0, 0, MASKREAD_OFF, mZc * nLayers);
+      //   vbrdcst(VtoCmsg_minsum_9, 0, MASKREAD_OFF, mZc * nLayers);
+      //   vsle(minBuf, VtoCmsg_abs_0, MASKREAD_OFF, MASKWRITE_ON, mZc * nLayers);
+      //   minBuf = vxor(minBuf, minBuf, MASKREAD_ON, mZc * nLayers);
+      //   minBuf = vsadd(VtoCmsg_abs_0, minBuf, MASKREAD_ON, mZc * nLayers);
+
+      //   vsle(minBuf, VtoCmsg_abs_1, MASKREAD_OFF, MASKWRITE_ON, mZc * nLayers);
+      //   minBuf = vxor(minBuf, minBuf, MASKREAD_ON, mZc * nLayers);
+      //   minBuf = vsadd(VtoCmsg_abs_1, minBuf, MASKREAD_ON, mZc * nLayers);
+
+      //   vsle(minBuf, VtoCmsg_abs_2, MASKREAD_OFF, MASKWRITE_ON, mZc * nLayers);
+      //   minBuf = vxor(minBuf, minBuf, MASKREAD_ON, mZc * nLayers);
+      //   minBuf = vsadd(VtoCmsg_abs_2, minBuf, MASKREAD_ON, mZc * nLayers);
+
+      //   vsle(minBuf, VtoCmsg_abs_3, MASKREAD_OFF, MASKWRITE_ON, mZc * nLayers);
+      //   minBuf = vxor(minBuf, minBuf, MASKREAD_ON, mZc * nLayers);
+      //   minBuf = vsadd(VtoCmsg_abs_3, minBuf, MASKREAD_ON, mZc * nLayers);
+
+      //   vsle(minBuf, VtoCmsg_abs_4, MASKREAD_OFF, MASKWRITE_ON, mZc * nLayers);
+      //   minBuf = vxor(minBuf, minBuf, MASKREAD_ON, mZc * nLayers);
+      //   minBuf = vsadd(VtoCmsg_abs_4, minBuf, MASKREAD_ON, mZc * nLayers);
+
+      //   vsle(minBuf, VtoCmsg_abs_5, MASKREAD_OFF, MASKWRITE_ON, mZc * nLayers);
+      //   minBuf = vxor(minBuf, minBuf, MASKREAD_ON, mZc * nLayers);
+      //   minBuf = vsadd(VtoCmsg_abs_5, minBuf, MASKREAD_ON, mZc * nLayers);
+
+      //   vsle(minBuf, VtoCmsg_abs_6, MASKREAD_OFF, MASKWRITE_ON, mZc * nLayers);
+      //   minBuf = vxor(minBuf, minBuf, MASKREAD_ON, mZc * nLayers);
+      //   minBuf = vsadd(VtoCmsg_abs_6, minBuf, MASKREAD_ON, mZc * nLayers);
+
+      //   vsle(minBuf, VtoCmsg_abs_7, MASKREAD_OFF, MASKWRITE_ON, mZc * nLayers);
+      //   minBuf = vxor(minBuf, minBuf, MASKREAD_ON, mZc * nLayers);
+      //   minBuf = vsadd(VtoCmsg_abs_7, minBuf, MASKREAD_ON, mZc * nLayers);
+
+      //   vsle(minBuf, VtoCmsg_abs_8, MASKREAD_OFF, MASKWRITE_ON, mZc * nLayers);
+      //   minBuf = vxor(minBuf, minBuf, MASKREAD_ON, mZc * nLayers);
+      //   minBuf = vsadd(VtoCmsg_abs_8, minBuf, MASKREAD_ON, mZc * nLayers);
+
+      //   vsgt(minBuf, ALPHA + 1, MASKREAD_OFF, MASKWRITE_ON, mZc * nLayers);
+      //   minBuf = vxor(minBuf, minBuf, MASKREAD_ON, mZc * nLayers);
+      //   vsle(minBuf, ALPHA, MASKREAD_OFF, MASKWRITE_ON, mZc * nLayers);
+      //   vbrdcst(cons_i8, -1 * ALPHA, MASKREAD_OFF, mZc * nLayers);
+      //   minBuf = vsadd(cons_i8, minBuf, MASKREAD_ON, mZc * nLayers);
+
+      //   vsgt(VtoCmsg_9, 0, MASKREAD_OFF, MASKWRITE_ON, mZc * nLayers);
+      //   vbrdcst(cons_i8, 0xFF, MASKREAD_OFF, mZc * nLayers);
+      //   parity_0 = vxor(cons_i8, parity_0, MASKREAD_ON, mZc * nLayers);
+      //   parity_0 = vxor(parity_0, parity, MASKREAD_OFF, mZc * nLayers);
+      //   parity_0 = vmul(parity_0, 2, MASKREAD_OFF, mZc * nLayers);
+      //   parity_0 = vsadd(parity_0, 1, MASKREAD_OFF, mZc * nLayers);
+
+      //   VtoCmsg_minsum_9 = vxor(VtoCmsg_minsum_9, minBuf, MASKREAD_OFF, mZc * nLayers);
+      //   VtoCmsg_minsum_9 = vsra(VtoCmsg_minsum_9, 1, MASKREAD_OFF, mZc * nLayers);
+      //   VtoCmsg_minsum_9 = vmul(VtoCmsg_minsum_9, parity_0, MASKREAD_OFF, mZc * nLayers);
+
+      //   for (int iLayer = 0; iLayer < nLayers; ++iLayer) {
+      //     edgeStart   = BGlayer_2[LayerEdgesCnts_Layers_BG2[iLayerEdgesCnt * 21 + iLayer + 1] * 2 + 0];
+      //     edgeEnd     = BGlayer_2[LayerEdgesCnts_Layers_BG2[iLayerEdgesCnt * 21 + iLayer + 1] * 2 + 1];
+      //     nLayerEdges = edgeEnd - edgeStart;
+
+      //     iEdges = 0;
+      //     vbrdcst(CtoVmsg, 0, MASKREAD_OFF, mN);
+      //     edgeIdx  = edgeStart + iEdges;
+      //     vNodeIdx = vNodesIdx_BG2[edgeIdx];
+      //     nShifts  = nShifts_BG2[edgeIdx];
+      //     vrange(index, mZc);
+      //     index = vsadd(index, 0 - nShifts, MASKREAD_OFF, mZc);
+      //     index = vsadd(index, (nShifts == 0) ? 0 : mZc, MASKREAD_OFF, (nShifts == 0) ? 10 : nShifts);
+      //     index = vsadd(index, mZc * iLayer, MASKREAD_OFF, mZc);
+      //     vshuffle(Buffer, index, VtoCmsg_minsum_0, SHUFFLE_GATHER, mZc);
+
+      //     vrange(index, mZc);
+      //     index = vsadd(index, mZc * vNodeIdx, MASKREAD_OFF, mZc);
+      //     vshuffle(CtoVmsg, index, Buffer, SHUFFLE_SCATTER, mZc);
+      //     iEdges++;
+      //     edgeIdx  = edgeStart + iEdges;
+      //     vNodeIdx = vNodesIdx_BG2[edgeIdx];
+      //     nShifts  = nShifts_BG2[edgeIdx];
+      //     vrange(index, mZc);
+      //     index = vsadd(index, 0 - nShifts, MASKREAD_OFF, mZc);
+      //     index = vsadd(index, (nShifts == 0) ? 0 : mZc, MASKREAD_OFF, (nShifts == 0) ? 10 : nShifts);
+      //     index = vsadd(index, mZc * iLayer, MASKREAD_OFF, mZc);
+      //     vshuffle(Buffer, index, VtoCmsg_minsum_1, SHUFFLE_GATHER, mZc);
+
+      //     vrange(index, mZc);
+      //     index = vsadd(index, mZc * vNodeIdx, MASKREAD_OFF, mZc);
+      //     vshuffle(CtoVmsg, index, Buffer, SHUFFLE_SCATTER, mZc);
+      //     iEdges++;
+      //     edgeIdx  = edgeStart + iEdges;
+      //     vNodeIdx = vNodesIdx_BG2[edgeIdx];
+      //     nShifts  = nShifts_BG2[edgeIdx];
+      //     vrange(index, mZc);
+      //     index = vsadd(index, 0 - nShifts, MASKREAD_OFF, mZc);
+      //     index = vsadd(index, (nShifts == 0) ? 0 : mZc, MASKREAD_OFF, (nShifts == 0) ? 10 : nShifts);
+      //     index = vsadd(index, mZc * iLayer, MASKREAD_OFF, mZc);
+      //     vshuffle(Buffer, index, VtoCmsg_minsum_2, SHUFFLE_GATHER, mZc);
+
+      //     vrange(index, mZc);
+      //     index = vsadd(index, mZc * vNodeIdx, MASKREAD_OFF, mZc);
+      //     vshuffle(CtoVmsg, index, Buffer, SHUFFLE_SCATTER, mZc);
+      //     iEdges++;
+      //     edgeIdx  = edgeStart + iEdges;
+      //     vNodeIdx = vNodesIdx_BG2[edgeIdx];
+      //     nShifts  = nShifts_BG2[edgeIdx];
+      //     vrange(index, mZc);
+      //     index = vsadd(index, 0 - nShifts, MASKREAD_OFF, mZc);
+      //     index = vsadd(index, (nShifts == 0) ? 0 : mZc, MASKREAD_OFF, (nShifts == 0) ? 10 : nShifts);
+      //     index = vsadd(index, mZc * iLayer, MASKREAD_OFF, mZc);
+      //     vshuffle(Buffer, index, VtoCmsg_minsum_3, SHUFFLE_GATHER, mZc);
+
+      //     vrange(index, mZc);
+      //     index = vsadd(index, mZc * vNodeIdx, MASKREAD_OFF, mZc);
+      //     vshuffle(CtoVmsg, index, Buffer, SHUFFLE_SCATTER, mZc);
+      //     iEdges++;
+      //     edgeIdx  = edgeStart + iEdges;
+      //     vNodeIdx = vNodesIdx_BG2[edgeIdx];
+      //     nShifts  = nShifts_BG2[edgeIdx];
+      //     vrange(index, mZc);
+      //     index = vsadd(index, 0 - nShifts, MASKREAD_OFF, mZc);
+      //     index = vsadd(index, (nShifts == 0) ? 0 : mZc, MASKREAD_OFF, (nShifts == 0) ? 10 : nShifts);
+      //     index = vsadd(index, mZc * iLayer, MASKREAD_OFF, mZc);
+      //     vshuffle(Buffer, index, VtoCmsg_minsum_4, SHUFFLE_GATHER, mZc);
+
+      //     vrange(index, mZc);
+      //     index = vsadd(index, mZc * vNodeIdx, MASKREAD_OFF, mZc);
+      //     vshuffle(CtoVmsg, index, Buffer, SHUFFLE_SCATTER, mZc);
+      //     iEdges++;
+      //     edgeIdx  = edgeStart + iEdges;
+      //     vNodeIdx = vNodesIdx_BG2[edgeIdx];
+      //     nShifts  = nShifts_BG2[edgeIdx];
+      //     vrange(index, mZc);
+      //     index = vsadd(index, 0 - nShifts, MASKREAD_OFF, mZc);
+      //     index = vsadd(index, (nShifts == 0) ? 0 : mZc, MASKREAD_OFF, (nShifts == 0) ? 10 : nShifts);
+      //     index = vsadd(index, mZc * iLayer, MASKREAD_OFF, mZc);
+      //     vshuffle(Buffer, index, VtoCmsg_minsum_5, SHUFFLE_GATHER, mZc);
+
+      //     vrange(index, mZc);
+      //     index = vsadd(index, mZc * vNodeIdx, MASKREAD_OFF, mZc);
+      //     vshuffle(CtoVmsg, index, Buffer, SHUFFLE_SCATTER, mZc);
+      //     iEdges++;
+      //     edgeIdx  = edgeStart + iEdges;
+      //     vNodeIdx = vNodesIdx_BG2[edgeIdx];
+      //     nShifts  = nShifts_BG2[edgeIdx];
+      //     vrange(index, mZc);
+      //     index = vsadd(index, 0 - nShifts, MASKREAD_OFF, mZc);
+      //     index = vsadd(index, (nShifts == 0) ? 0 : mZc, MASKREAD_OFF, (nShifts == 0) ? 10 : nShifts);
+      //     index = vsadd(index, mZc * iLayer, MASKREAD_OFF, mZc);
+      //     vshuffle(Buffer, index, VtoCmsg_minsum_6, SHUFFLE_GATHER, mZc);
+
+      //     vrange(index, mZc);
+      //     index = vsadd(index, mZc * vNodeIdx, MASKREAD_OFF, mZc);
+      //     vshuffle(CtoVmsg, index, Buffer, SHUFFLE_SCATTER, mZc);
+      //     iEdges++;
+      //     edgeIdx  = edgeStart + iEdges;
+      //     vNodeIdx = vNodesIdx_BG2[edgeIdx];
+      //     nShifts  = nShifts_BG2[edgeIdx];
+      //     vrange(index, mZc);
+      //     index = vsadd(index, 0 - nShifts, MASKREAD_OFF, mZc);
+      //     index = vsadd(index, (nShifts == 0) ? 0 : mZc, MASKREAD_OFF, (nShifts == 0) ? 10 : nShifts);
+      //     index = vsadd(index, mZc * iLayer, MASKREAD_OFF, mZc);
+      //     vshuffle(Buffer, index, VtoCmsg_minsum_7, SHUFFLE_GATHER, mZc);
+
+      //     vrange(index, mZc);
+      //     index = vsadd(index, mZc * vNodeIdx, MASKREAD_OFF, mZc);
+      //     vshuffle(CtoVmsg, index, Buffer, SHUFFLE_SCATTER, mZc);
+      //     iEdges++;
+      //     edgeIdx  = edgeStart + iEdges;
+      //     vNodeIdx = vNodesIdx_BG2[edgeIdx];
+      //     nShifts  = nShifts_BG2[edgeIdx];
+      //     vrange(index, mZc);
+      //     index = vsadd(index, 0 - nShifts, MASKREAD_OFF, mZc);
+      //     index = vsadd(index, (nShifts == 0) ? 0 : mZc, MASKREAD_OFF, (nShifts == 0) ? 10 : nShifts);
+      //     index = vsadd(index, mZc * iLayer, MASKREAD_OFF, mZc);
+      //     vshuffle(Buffer, index, VtoCmsg_minsum_8, SHUFFLE_GATHER, mZc);
+
+      //     vrange(index, mZc);
+      //     index = vsadd(index, mZc * vNodeIdx, MASKREAD_OFF, mZc);
+      //     vshuffle(CtoVmsg, index, Buffer, SHUFFLE_SCATTER, mZc);
+      //     iEdges++;
+      //     edgeIdx  = edgeStart + iEdges;
+      //     vNodeIdx = vNodesIdx_BG2[edgeIdx];
+      //     nShifts  = nShifts_BG2[edgeIdx];
+      //     vrange(index, mZc);
+      //     index = vsadd(index, 0 - nShifts, MASKREAD_OFF, mZc);
+      //     index = vsadd(index, (nShifts == 0) ? 0 : mZc, MASKREAD_OFF, (nShifts == 0) ? 10 : nShifts);
+      //     index = vsadd(index, mZc * iLayer, MASKREAD_OFF, mZc);
+      //     vshuffle(Buffer, index, VtoCmsg_minsum_9, SHUFFLE_GATHER, mZc);
+
+      //     vrange(index, mZc);
+      //     index = vsadd(index, mZc * vNodeIdx, MASKREAD_OFF, mZc);
+      //     vshuffle(CtoVmsg, index, Buffer, SHUFFLE_SCATTER, mZc);
+      //     iEdges++;
+      //     CtoVmsg0 = vsadd(CtoVmsg0, CtoVmsg, MASKREAD_OFF, mN);
+      //   }
+      // }
+    }
+
+    LLR = vsadd(LLR, CtoVmsg0, MASKREAD_OFF, mN);
+  }
+
+  vsle(LLR, 0, MASKREAD_OFF, MASKWRITE_ON, mN);
+
+  vsle(LLR, 0, MASKREAD_OFF, MASKWRITE_ON, mN);
+  vbrdcst(LLR, 1, MASKREAD_OFF, mN);
+  vbrdcst(LLR, 0, MASKREAD_ON, mN);
+
+  __v5000i16 transIdx;
+  vclaim(transIdx);
+  vrange(transIdx, mK - mF);
+  __v10000i8 LLR0;
+  vclaim(LLR0);
+  vshuffle(LLR0, transIdx, LLR, SHUFFLE_GATHER, mK - mF);
+  return LLR0;
+}
+
+typedef struct {
+  uint16_t vNodesIdx_BG1[316];
+  uint16_t nShifts_BG1[316];
+
+  uint16_t vNodesIdx_BG2[197];
+  uint16_t nShifts_BG2[197];
+} __attribute__((aligned(64))) struct_LDPC_Table;
+
+int Task_nrPDSCHDecoder_BG2(__v10000i8 pdschbits_BG1, __v10000i8 LLR, int_struct in_mK, int_struct in_mZc,
+                            int_struct in_mF, int_struct in_mN, int_struct in_mBGn, struct_LDPC_Table ldpcTable) {
+
+  int mK  = in_mK.data;
+  int mZc = in_mZc.data;
+  int mF  = in_mF.data;
+  int mN  = in_mN.data;
+  // int Ncb  = in_Ncb.data;
+  int mBGn = in_mBGn.data;
+  for (int i = 0; i < 316; ++i) {
+    vNodesIdx_BG1[i] = ldpcTable.vNodesIdx_BG1[i];
+    nShifts_BG1[i]   = ldpcTable.nShifts_BG1[i];
+  }
+  for (int i = 0; i < 197; ++i) {
+    vNodesIdx_BG2[i] = ldpcTable.vNodesIdx_BG2[i];
+    nShifts_BG2[i]   = ldpcTable.nShifts_BG2[i];
+  }
+
+  // printf("mk=%d\n", &mK);
+  // printf("mZc=%d\n", &mZc);
+  // printf("mF=%d\n", &mF);
+  // printf("mN=%d\n", &mN);
+  // printf("k0=%d\n", &k0);
+  // printf("Ncb=%d\n", &Ncb);
+  // printf("Qm=%d\n", &Qm);
+  // printf("E=%d\n", &E);
+  // printf("mBGn=%d\n", &mBGn);
+  // for (int i = 0; i < 197; ++i) {
+  //   printf("vNodesIdx_BG2[%d]:", &i);
+  //   printf("%hd\n", &vNodesIdx_BG2[i]);
+  //   printf("nShifts_BG2[%d]:", &i);
+  //   printf("%hd\n", &nShifts_BG2[i]);
+  // }
+
+  // __v10000i8 recover;
+  // vclaim(recover);
+  // recover = cbsRateRecoverLDPC(msg, mK, mZc, mF, k0, Ncb, Qm, E);
+  // VENUS_PRINTVEC_CHAR(recover, Ncb);
+
+  // ldpc decode
+  // __v10000i8  LLR;
+  __v10000i8 decoded;
+  // __v5000i16 index;
+  // vclaim(LLR);
+  vclaim(decoded);
+  // vclaim(index);
+
+  // recover = vsadd(recover, 0, MASKREAD_OFF, Ncb);
+
+  // vbrdcst(LLR, 0, MASKREAD_OFF, 2 * mZc);
+  // vrange(index, Ncb);
+  // index = vsadd(index, 2 * mZc, MASKREAD_OFF, Ncb);
+  // vshuffle(LLR, index, recover, SHUFFLE_SCATTER, Ncb);
+
+  // printf("mBGn:%hd\n", &mBGn);
+  printf("mk:%hd\n", &mK);
+  printf("mF:%hd\n", &mF);
+  vbrdcst(decoded, 0, MASKREAD_OFF, 10000);
+  if (mBGn == 2) {
+    decoded = nrLDPCDecoder_BG2(mBGn, mZc, mN, mF, mK, LLR);
+    decoded = vsadd(decoded, pdschbits_BG1, MASKREAD_OFF, mK - mF);
+    short_struct pdschbits_length;
+    pdschbits_length.data = mK - mF;
+
+    // vreturn(decoded, sizeof(decoded), &pdschbits_length, sizeof(pdschbits_length));
+    vreturn(decoded, 4096, &pdschbits_length, sizeof(pdschbits_length));
+  } else {
+    // pdschbits_BG1 = vsadd(pdschbits_BG1, 0, MASKREAD_OFF, mK - mF);
+    // decoded       = vsadd(decoded, 0, MASKREAD_OFF, mK - mF);
+    // decoded       = vsadd(decoded, pdschbits_BG1, MASKREAD_OFF, mK - mF);
+    // VENUS_PRINT_CHAR(decoded, 100);
+
+    // VENUS_PRINT_CHAR(decoded, mN);
+    short_struct pdschbits_length;
+    pdschbits_length.data = mK - mF;
+
+    // vreturn(decoded, sizeof(decoded), &pdschbits_length, sizeof(pdschbits_length));
+    vreturn(decoded, 4096, &pdschbits_length, sizeof(pdschbits_length));
+  }
+}

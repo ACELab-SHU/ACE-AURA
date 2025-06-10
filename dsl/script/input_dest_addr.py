@@ -3,7 +3,7 @@ import re
 import json
 import sys
 
-def update_json_with_dest_address(task_json_path, venus_test_path, task_out_json_path, lane_num, VenusInputStructAddr):
+def update_json_with_dest_address(dag_path, task_json_path, venus_test_path, task_out_json_path, lane_num, VenusInputStructAddr):
     with open(task_json_path, 'r') as file:
         data = json.load(file)
 
@@ -25,9 +25,11 @@ def update_json_with_dest_address(task_json_path, venus_test_path, task_out_json
         scalar_i = 0
         scalar_index = 0
         vns_delimit_count = 0
+        final_vector_index = 0
         num_params = len(data[function_name]['input'])
         last_bound_variable = None
-
+        all_index = 0
+        
         for variable_info in data[function_name]['input'].values():
             variable_info['updated'] = False
 
@@ -54,6 +56,8 @@ def update_json_with_dest_address(task_json_path, venus_test_path, task_out_json
                     if match:
                         vns_bind_registers = int(match.group(1))
                         dest_address = hex(vns_bind_registers * lane_num * 8 + VENUS_VRFADDR)
+                        print(f"vns{vns_bind_registers}---{dest_address}:dest_address")
+                        print(f"line:{line}")
 
                     vector_index = index
                     for variable_name, variable_info in data[function_name]['input'].items():
@@ -66,22 +70,20 @@ def update_json_with_dest_address(task_json_path, venus_test_path, task_out_json
                         if variable_info['num'] != 1 and variable_info['num'] != '1' and variable_info['index'] == vector_index:
                             variable_info['dest_address'] = dest_address
                             variable_info['updated'] = True
-
+                            print(f"vector_index:{vector_index}")
+                            print(f"variable_info:{variable_info}")
+                            print(f"variable_name:{variable_name}")
+                            
                             scalar_i = 0
+                            all_index = all_index + 1
                             break
+                        
                     in_vns_delimit = False
                     continue
 
-                # elif 'vns_scalar_bind' in line:
-                #     variable_name = line.split()[1]
-                #     if variable_name == last_bound_variable:
-                #         continue
-
-                #     last_bound_variable = variable_name
-
         for variable_name, variable_info in data[function_name]['input'].items():
             if variable_info['updated'] == False and (variable_info['num'] == 1 or variable_info['num'] == '1'):
-                with open('../variable/map/all_data.json', 'r') as all_data_file:
+                with open(os.path.join(dag_path, "all_data.json"), 'r') as all_data_file:
                     all_data = json.load(all_data_file)
                 print(f"variable_name:{variable_name}")
                 print(f"variable_info:{variable_info}")
@@ -98,7 +100,16 @@ def update_json_with_dest_address(task_json_path, venus_test_path, task_out_json
                 variable_info['dest_address'] = dest_address
                 variable_info['updated'] = True
                 scalar_index = scalar_index + 1
+                all_index = all_index + 1
                   
+        with open("../venus_test/task_input_num.json", "r") as file:
+            dsl_data = json.load(file)
+
+        expected_input_num = dsl_data[actual_function_name]
+        final_vector_index = all_index
+        if(expected_input_num != final_vector_index):
+            raise ValueError(f"Input number for task '{actual_function_name}' is {final_vector_index}, expected {expected_input_num}")
+        all_index = 0
 
         for variable_info in data[function_name]['input'].values():
             if variable_info['updated'] == False:
@@ -119,7 +130,7 @@ def process_dag_folders(task_base_path, venus_test_base_path, lane_num, VenusInp
             task_json_path = os.path.join(dag_path, "task_input_output.json")
             venus_test_path = os.path.join(venus_test_base_path)
             task_out_json_path = os.path.join(dag_path, "task_input_dest_addr.json")
-            update_json_with_dest_address(task_json_path, venus_test_path, task_out_json_path, lane_num, VenusInputStructAddr)
+            update_json_with_dest_address(dag_path, task_json_path, venus_test_path, task_out_json_path, lane_num, VenusInputStructAddr)
 
 if __name__ == "__main__":
     if len(sys.argv) != 3:

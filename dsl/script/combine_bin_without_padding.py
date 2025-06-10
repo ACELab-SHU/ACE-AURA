@@ -2,7 +2,7 @@ import json
 import os
 import sys
 
-def combine_binaries_and_update_json(output_bin, task_json, output_json, venus_test_path, variable_path, VenusInputStructAddr):
+def combine_binaries_and_update_json(output_bin, dag_name, task_json, output_json, venus_test_path, variable_path, VenusInputStructAddr):
     with open(output_bin, 'wb') as output_bin_file:
         with open(task_json, 'r+') as task_info_file:
             task_info = json.load(task_info_file)
@@ -66,7 +66,7 @@ def combine_binaries_and_update_json(output_bin, task_json, output_json, venus_t
 
 
                 else:
-                    variable_bin_path = os.path.join(variable_path, 'variable.bin')
+                    variable_bin_path = os.path.join('./IJ', dag_name, 'variable.bin')
                     with open(variable_bin_path, 'rb') as input_bin_file:
                         data = input_bin_file.read()
                         
@@ -109,7 +109,7 @@ def process_dag_folders(base_path, venus_test_base_path, variable_base_path, out
             output_json_path = os.path.join(dag_path, 'combined_task_without_padding.json')
             venus_test_path = os.path.join(venus_test_base_path)
             variable_path = os.path.join(variable_base_path)
-            combine_binaries_and_update_json(output_bin_path, task_json_path, output_json_path, venus_test_path, variable_path, VenusInputStructAddr)
+            combine_binaries_and_update_json(output_bin_path, dag_name, task_json_path, output_json_path, venus_test_path, variable_path, VenusInputStructAddr)
 
 if __name__ == "__main__":
     if len(sys.argv) != 2:

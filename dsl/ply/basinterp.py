@@ -248,6 +248,7 @@ class BasicInterpreter:
         # output=""
         loaded_mapping_global = {}
         loaded_mapping_para = {}
+        loaded_mapping_dag_input = {}
         loaded_mapping_return = {} 
         loaded_mapping_dfe = {} 
         loaded_mapping_task = {}       
@@ -525,8 +526,8 @@ class BasicInterpreter:
                             file.write(c_code)
                         filename = "./variable/map/parameter.json"
                         filename_all = "./variable/map/all_data.json"
-                        loaded_mapping_para[var] = {"type": "0b01", "index": input_index,"length":length}
-                        loaded_mapping[var] = {"type": "0b01", "index": input_index,"length":length}
+                        loaded_mapping_para[var] = {"type": "0b01", "index": input_index,"length":length,"datatype": datatype}
+                        loaded_mapping[var] = {"type": "0b01", "index": input_index,"length":length,"datatype": datatype}
                         with open(filename, "w") as json_file:
                             json.dump(loaded_mapping_para, json_file, indent=4)
                         with open(filename_all, "w") as json_file_all:
@@ -541,8 +542,8 @@ class BasicInterpreter:
                             file.write(c_code)
                         filename = "./variable/map/dfedata.json"
                         filename_all = "./variable/map/all_data.json"
-                        loaded_mapping_dfe[var] = {"type": "0b10", "index": input_index,"length":length}
-                        loaded_mapping[var] = {"type": "0b10", "index": input_index,"length":length}
+                        loaded_mapping_dfe[var] = {"type": "0b10", "index": input_index,"length":length,"datatype": datatype}
+                        loaded_mapping[var] = {"type": "0b10", "index": input_index,"length":length,"datatype": datatype}
                         with open(filename, "w") as json_file:
                             json.dump(loaded_mapping_dfe, json_file, indent=4)
                         with open(filename_all, "w") as json_file_all:
@@ -558,10 +559,10 @@ class BasicInterpreter:
                             file.write(c_code)
                         filename = "./variable/map/dag_input.json"
                         filename_all = "./variable/map/all_data.json"
-                        loaded_mapping_dfe[var] = {"type": "0b10", "index": input_index,"length":length}
-                        loaded_mapping[var] = {"type": "0b10", "index": input_index,"length":length}
+                        loaded_mapping_dag_input[var] = {"type": "0b10", "index": input_index,"length":length,"datatype": datatype}
+                        loaded_mapping[var] = {"type": "0b10", "index": input_index,"length":length,"datatype": datatype}
                         with open(filename, "w") as json_file:
-                            json.dump(loaded_mapping_dfe, json_file, indent=4)
+                            json.dump(loaded_mapping_dag_input, json_file, indent=4)
                         with open(filename_all, "w") as json_file_all:
                             json.dump(loaded_mapping, json_file_all,  indent=4)
 

@@ -65,8 +65,9 @@ main_target:
 	python3 ./ply/basic.py $(TARGET_DAG).bas > debug.txt
 	
 run_variable:
-	
-	$(MAKE) -C ./variable all
+	$(MAKE) -C ./variable dag_variable_pass
+	$(MAKE) -C ./variable asm
+	$(MAKE) -C ./variable link_all
 	$(MAKE) -C ./venus_test map_task
 	$(MAKE) -C ./venus_test single_task_test
 	python3 ./script/combine_bin_without_padding.py $(VenusInputStructAddr)

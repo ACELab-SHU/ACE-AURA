@@ -55,6 +55,16 @@
             "detail": "编译器: \"usr/bin/g++\""
         },
         {
+            "type": "shell",
+            "label": "生成Emulator",
+            "command": "make",
+            "args": ["Emulator"],
+            "options":{
+                "cwd":"${workspaceFolder}"
+            },
+            "problemMatcher":[],
+        },
+        {
             "label": "make all and build",
             "dependsOrder": "sequence",
             "dependsOn": [

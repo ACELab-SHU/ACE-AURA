@@ -61,14 +61,14 @@ VENUS_INLINE uint32_t nrTBS(uint32_t modulation, uint32_t nlayers, uint32_t nPRB
   float    nInfo     = tbScaling * nRE * tcr * modulation * nlayers;
   int      nInfo_int = nInfo * 1000;
   if (nInfo <= 3824.0) {
-    float n          = max(3.0, floor(log2(nInfo)) - 6);
+    float n          = max(3.0, floor_log2(nInfo) - 6);
     int   n_int      = n * 1000;
-    float ndInfo     = max(24.0, pow(2, n) * floor(nInfo / pow(2, n)));
+    float ndInfo     = max(24.0, (1 << (int)n) * floor(nInfo / (1 << (int)n)));
     int   ndInfo_int = ndInfo * 1000;
     return getTBSFromTable((uint32_t)ndInfo);
   } else {
-    float    n      = floor(log2(nInfo - 24)) - 5;
-    float    ndInfo = max(3840.0, pow(2, n) * round((nInfo - 24) / pow(2, n)));
+    float    n      = floor_log2(nInfo - 24) - 5;
+    float    ndInfo = max(3840.0, (1 << (int)n) * round((nInfo - 24) / (1 << (int)n)));
     uint32_t c;
     if (tcr <= 0.25)
       c = (uint32_t)(ceil((nInfo + 24) / 3816));

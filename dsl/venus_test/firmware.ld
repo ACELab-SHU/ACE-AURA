@@ -4,8 +4,8 @@ ENTRY( _start )
 
 MEMORY
 {
-	rom   (x!raiw) : ORIGIN = 0x00000000, LENGTH = 128k
-	ram   (rw!xai) : ORIGIN = 0x00020000, LENGTH = 1M
+	rom   (x!raiw) : ORIGIN = 0x00000000, LENGTH = 32k
+	ram   (rw!xai) : ORIGIN = 0x00020000, LENGTH = 16k
 }
 
 SECTIONS

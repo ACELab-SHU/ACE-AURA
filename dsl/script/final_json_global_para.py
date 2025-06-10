@@ -43,13 +43,13 @@ def process_dag_files(map_folder_path, heft_base_path, final_base_path):
             os.makedirs(final_dag_path, exist_ok=True)
             
             final_json_path = os.path.join(final_dag_path, "final_all_input.json")
-            var_json_path = os.path.join(map_folder_path, "all_data.json")
+            var_json_path = os.path.join(map_folder_path, dag_base, "all_data.json")
 
             heft_json_path = os.path.join(heft_base_path, f"{dag_base}.json")
             combined_json_path = os.path.join(final_dag_path, "combined_task_without_padding.json")
             fill(final_json_path, var_json_path, heft_json_path, combined_json_path)
 
-map_folder_path = "./variable/map"
+map_folder_path = "./IJ"
 heft_base_path = "./heft_new/DAG"
 final_base_path = "./IJ"
 process_dag_files(map_folder_path, heft_base_path, final_base_path)

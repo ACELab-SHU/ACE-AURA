@@ -4467,17 +4467,22 @@ short fft1024_shift_vec[10] = {1, 0, 0, 1, 0, 1, 0, 1, 1, 0};
 
 // 输入定点化的点数，实现定点乘法的输出
 VENUS_INLINE __v4096i8 MUL4096_8_FIXED(__v4096i8 a, __v4096i8 b, int fix_point, int length) {
-  __v4096i8 high8;
-  __v4096i8 low8;
   __v4096i8 result;
-  short     high_shift = 8 - fix_point;
-
-  low8   = vmul(a, b, MASKREAD_OFF, length);
-  high8  = vmulh(a, b, MASKREAD_OFF, length);
-  low8   = vsrl(low8, fix_point, MASKREAD_OFF, length);
-  high8  = vsll(high8, high_shift, MASKREAD_OFF, length);
-  result = vor(low8, high8, MASKREAD_OFF, length);
+  vsetshamt(fix_point);
+  result = vmul(a, b, MASKREAD_OFF, length);
+  vsetshamt(0);
   return result;
+  // __v4096i8 high8;
+  // __v4096i8 low8;
+  // __v4096i8 result;
+  // short     high_shift = 8 - fix_point;
+
+  // low8   = vmul(a, b, MASKREAD_OFF, length);
+  // high8  = vmulh(a, b, MASKREAD_OFF, length);
+  // low8   = vsrl(low8, fix_point, MASKREAD_OFF, length);
+  // high8  = vsll(high8, high_shift, MASKREAD_OFF, length);
+  // result = vor(low8, high8, MASKREAD_OFF, length);
+  // return result;
 };
 
 typedef struct {
@@ -4507,1223 +4512,1243 @@ int Task_nrOFDMDemodulation(__v4096i8 vin_real, __v4096i8 vin_imag, short_struct
   short    nrb        = in_nrb.data;
   short    csetNRB    = in_csetNRB.data;
 
-  // input complex data(读入测试数据for test)
-  // __v4096i8 vin_real;
-  // __v4096i8 vin_imag;
-  // vclaim(vin_real);
-  // vclaim(vin_imag);
-  // vbarrier();
-  // VSPM_OPEN();
-  // int vin_real_addr = vaddr(vin_real);
-  // for (int i = 0; i < 2192; i++)
-  // {
-  //     *(volatile unsigned char *)(vin_real_addr + i) = in2192_real[i];
-  // }
-  // int vin_imag_addr = vaddr(vin_imag);
-  // for (int i = 0; i < 2192; i++)
-  // {
-  //     *(volatile unsigned char *)(vin_imag_addr + i) = in2192_imag[i];
-  // }
-  // VSPM_CLOSE();
+  if ((symbol_num <= 13) && (symbol_num >= 0)) {
+    // input complex data(读入测试数据for test)
+    // __v4096i8 vin_real;
+    // __v4096i8 vin_imag;
+    // vclaim(vin_real);
+    // vclaim(vin_imag);
+    // vbarrier();
+    // VSPM_OPEN();
+    // int vin_real_addr = vaddr(vin_real);
+    // for (int i = 0; i < 2192; i++)
+    // {
+    //     *(volatile unsigned char *)(vin_real_addr + i) = in2192_real[i];
+    // }
+    // int vin_imag_addr = vaddr(vin_imag);
+    // for (int i = 0; i < 2192; i++)
+    // {
+    //     *(volatile unsigned char *)(vin_imag_addr + i) = in2192_imag[i];
+    // }
+    // VSPM_CLOSE();
 
-  // 传入的存表数据
-  // __v4096i8 cos_stage0;
-  // __v4096i8 cos_stage1;
-  // __v4096i8 cos_stage2;
-  // __v4096i8 cos_stage3;
-  // __v4096i8 cos_stage4;
-  // __v4096i8 cos_stage5;
-  // __v4096i8 cos_stage6;
-  // __v4096i8 cos_stage7;
-  // __v4096i8 cos_stage8;
-  // __v4096i8 cos_stage9;
-  // __v4096i8 cos_stage10;
+    // 传入的存表数据
+    // __v4096i8 cos_stage0;
+    // __v4096i8 cos_stage1;
+    // __v4096i8 cos_stage2;
+    // __v4096i8 cos_stage3;
+    // __v4096i8 cos_stage4;
+    // __v4096i8 cos_stage5;
+    // __v4096i8 cos_stage6;
+    // __v4096i8 cos_stage7;
+    // __v4096i8 cos_stage8;
+    // __v4096i8 cos_stage9;
+    // __v4096i8 cos_stage10;
 
-  // __v4096i8 sin_stage0;
-  // __v4096i8 sin_stage1;
-  // __v4096i8 sin_stage2;
-  // __v4096i8 sin_stage3;
-  // __v4096i8 sin_stage4;
-  // __v4096i8 sin_stage5;
-  // __v4096i8 sin_stage6;
-  // __v4096i8 sin_stage7;
-  // __v4096i8 sin_stage8;
-  // __v4096i8 sin_stage9;
-  // __v4096i8 sin_stage10;
+    // __v4096i8 sin_stage0;
+    // __v4096i8 sin_stage1;
+    // __v4096i8 sin_stage2;
+    // __v4096i8 sin_stage3;
+    // __v4096i8 sin_stage4;
+    // __v4096i8 sin_stage5;
+    // __v4096i8 sin_stage6;
+    // __v4096i8 sin_stage7;
+    // __v4096i8 sin_stage8;
+    // __v4096i8 sin_stage9;
+    // __v4096i8 sin_stage10;
 
-  // __v2048i16 shuffle_add_stage0;
-  // __v2048i16 shuffle_add_stage1;
-  // __v2048i16 shuffle_add_stage2;
-  // __v2048i16 shuffle_add_stage3;
-  // __v2048i16 shuffle_add_stage4;
-  // __v2048i16 shuffle_add_stage5;
-  // __v2048i16 shuffle_add_stage6;
-  // __v2048i16 shuffle_add_stage7;
-  // __v2048i16 shuffle_add_stage8;
-  // __v2048i16 shuffle_add_stage9;
-  // __v2048i16 shuffle_add_stage10;
+    // __v2048i16 shuffle_add_stage0;
+    // __v2048i16 shuffle_add_stage1;
+    // __v2048i16 shuffle_add_stage2;
+    // __v2048i16 shuffle_add_stage3;
+    // __v2048i16 shuffle_add_stage4;
+    // __v2048i16 shuffle_add_stage5;
+    // __v2048i16 shuffle_add_stage6;
+    // __v2048i16 shuffle_add_stage7;
+    // __v2048i16 shuffle_add_stage8;
+    // __v2048i16 shuffle_add_stage9;
+    // __v2048i16 shuffle_add_stage10;
 
-  // __v2048i16 shuffle_wn_stage0;
-  // __v2048i16 shuffle_wn_stage1;
-  // __v2048i16 shuffle_wn_stage2;
-  // __v2048i16 shuffle_wn_stage3;
-  // __v2048i16 shuffle_wn_stage4;
-  // __v2048i16 shuffle_wn_stage5;
-  // __v2048i16 shuffle_wn_stage6;
-  // __v2048i16 shuffle_wn_stage7;
-  // __v2048i16 shuffle_wn_stage8;
-  // __v2048i16 shuffle_wn_stage9;
-  // __v2048i16 shuffle_wn_stage10;
+    // __v2048i16 shuffle_wn_stage0;
+    // __v2048i16 shuffle_wn_stage1;
+    // __v2048i16 shuffle_wn_stage2;
+    // __v2048i16 shuffle_wn_stage3;
+    // __v2048i16 shuffle_wn_stage4;
+    // __v2048i16 shuffle_wn_stage5;
+    // __v2048i16 shuffle_wn_stage6;
+    // __v2048i16 shuffle_wn_stage7;
+    // __v2048i16 shuffle_wn_stage8;
+    // __v2048i16 shuffle_wn_stage9;
+    // __v2048i16 shuffle_wn_stage10;
 
-  // vclaim(cos_stage0);
-  // vclaim(cos_stage1);
-  // vclaim(cos_stage2);
-  // vclaim(cos_stage3);
-  // vclaim(cos_stage4);
-  // vclaim(cos_stage5);
-  // vclaim(cos_stage6);
-  // vclaim(cos_stage7);
-  // vclaim(cos_stage8);
-  // vclaim(cos_stage9);
-  // vclaim(cos_stage10);
+    // vclaim(cos_stage0);
+    // vclaim(cos_stage1);
+    // vclaim(cos_stage2);
+    // vclaim(cos_stage3);
+    // vclaim(cos_stage4);
+    // vclaim(cos_stage5);
+    // vclaim(cos_stage6);
+    // vclaim(cos_stage7);
+    // vclaim(cos_stage8);
+    // vclaim(cos_stage9);
+    // vclaim(cos_stage10);
 
-  // vclaim(sin_stage0);
-  // vclaim(sin_stage1);
-  // vclaim(sin_stage2);
-  // vclaim(sin_stage3);
-  // vclaim(sin_stage4);
-  // vclaim(sin_stage5);
-  // vclaim(sin_stage6);
-  // vclaim(sin_stage7);
-  // vclaim(sin_stage8);
-  // vclaim(sin_stage9);
-  // vclaim(sin_stage10);
+    // vclaim(sin_stage0);
+    // vclaim(sin_stage1);
+    // vclaim(sin_stage2);
+    // vclaim(sin_stage3);
+    // vclaim(sin_stage4);
+    // vclaim(sin_stage5);
+    // vclaim(sin_stage6);
+    // vclaim(sin_stage7);
+    // vclaim(sin_stage8);
+    // vclaim(sin_stage9);
+    // vclaim(sin_stage10);
 
-  // vclaim(shuffle_add_stage0);
-  // vclaim(shuffle_add_stage1);
-  // vclaim(shuffle_add_stage2);
-  // vclaim(shuffle_add_stage3);
-  // vclaim(shuffle_add_stage4);
-  // vclaim(shuffle_add_stage5);
-  // vclaim(shuffle_add_stage6);
-  // vclaim(shuffle_add_stage7);
-  // vclaim(shuffle_add_stage8);
-  // vclaim(shuffle_add_stage9);
-  // vclaim(shuffle_add_stage10);
+    // vclaim(shuffle_add_stage0);
+    // vclaim(shuffle_add_stage1);
+    // vclaim(shuffle_add_stage2);
+    // vclaim(shuffle_add_stage3);
+    // vclaim(shuffle_add_stage4);
+    // vclaim(shuffle_add_stage5);
+    // vclaim(shuffle_add_stage6);
+    // vclaim(shuffle_add_stage7);
+    // vclaim(shuffle_add_stage8);
+    // vclaim(shuffle_add_stage9);
+    // vclaim(shuffle_add_stage10);
 
-  // vclaim(shuffle_wn_stage0);
-  // vclaim(shuffle_wn_stage1);
-  // vclaim(shuffle_wn_stage2);
-  // vclaim(shuffle_wn_stage3);
-  // vclaim(shuffle_wn_stage4);
-  // vclaim(shuffle_wn_stage5);
-  // vclaim(shuffle_wn_stage6);
-  // vclaim(shuffle_wn_stage7);
-  // vclaim(shuffle_wn_stage8);
-  // vclaim(shuffle_wn_stage9);
-  // vclaim(shuffle_wn_stage10);
+    // vclaim(shuffle_wn_stage0);
+    // vclaim(shuffle_wn_stage1);
+    // vclaim(shuffle_wn_stage2);
+    // vclaim(shuffle_wn_stage3);
+    // vclaim(shuffle_wn_stage4);
+    // vclaim(shuffle_wn_stage5);
+    // vclaim(shuffle_wn_stage6);
+    // vclaim(shuffle_wn_stage7);
+    // vclaim(shuffle_wn_stage8);
+    // vclaim(shuffle_wn_stage9);
+    // vclaim(shuffle_wn_stage10);
 
-  // vbarrier();
-  // VSPM_OPEN();
-  // //  wn
-  // int cos_stage0_addr = vaddr(cos_stage0);
-  // for (int i = 0; i < 1024; i++)
-  // {
-  //     *(volatile unsigned char *)(cos_stage0_addr + i) = cos_vec_1[i];
-  // }
+    // vbarrier();
+    // VSPM_OPEN();
+    // //  wn
+    // int cos_stage0_addr = vaddr(cos_stage0);
+    // for (int i = 0; i < 1024; i++)
+    // {
+    //     *(volatile unsigned char *)(cos_stage0_addr + i) = cos_vec_1[i];
+    // }
 
-  // int cos_stage1_addr = vaddr(cos_stage1);
-  // for (int i = 0; i < 1024; i++)
-  // {
-  //     *(volatile unsigned char *)(cos_stage1_addr + i) = cos_vec_2[i];
-  // }
+    // int cos_stage1_addr = vaddr(cos_stage1);
+    // for (int i = 0; i < 1024; i++)
+    // {
+    //     *(volatile unsigned char *)(cos_stage1_addr + i) = cos_vec_2[i];
+    // }
 
-  // int cos_stage2_addr = vaddr(cos_stage2);
-  // for (int i = 0; i < 1024; i++)
-  // {
-  //     *(volatile unsigned char *)(cos_stage2_addr + i) = cos_vec_3[i];
-  // }
+    // int cos_stage2_addr = vaddr(cos_stage2);
+    // for (int i = 0; i < 1024; i++)
+    // {
+    //     *(volatile unsigned char *)(cos_stage2_addr + i) = cos_vec_3[i];
+    // }
 
-  // int cos_stage3_addr = vaddr(cos_stage3);
-  // for (int i = 0; i < 1024; i++)
-  // {
-  //     *(volatile unsigned char *)(cos_stage3_addr + i) = cos_vec_4[i];
-  // }
+    // int cos_stage3_addr = vaddr(cos_stage3);
+    // for (int i = 0; i < 1024; i++)
+    // {
+    //     *(volatile unsigned char *)(cos_stage3_addr + i) = cos_vec_4[i];
+    // }
 
-  // int cos_stage4_addr = vaddr(cos_stage4);
-  // for (int i = 0; i < 1024; i++)
-  // {
-  //     *(volatile unsigned char *)(cos_stage4_addr + i) = cos_vec_5[i];
-  // }
+    // int cos_stage4_addr = vaddr(cos_stage4);
+    // for (int i = 0; i < 1024; i++)
+    // {
+    //     *(volatile unsigned char *)(cos_stage4_addr + i) = cos_vec_5[i];
+    // }
 
-  // int cos_stage5_addr = vaddr(cos_stage5);
-  // for (int i = 0; i < 1024; i++)
-  // {
-  //     *(volatile unsigned char *)(cos_stage5_addr + i) = cos_vec_6[i];
-  // }
+    // int cos_stage5_addr = vaddr(cos_stage5);
+    // for (int i = 0; i < 1024; i++)
+    // {
+    //     *(volatile unsigned char *)(cos_stage5_addr + i) = cos_vec_6[i];
+    // }
 
-  // int cos_stage6_addr = vaddr(cos_stage6);
-  // for (int i = 0; i < 1024; i++)
-  // {
-  //     *(volatile unsigned char *)(cos_stage6_addr + i) = cos_vec_7[i];
-  // }
+    // int cos_stage6_addr = vaddr(cos_stage6);
+    // for (int i = 0; i < 1024; i++)
+    // {
+    //     *(volatile unsigned char *)(cos_stage6_addr + i) = cos_vec_7[i];
+    // }
 
-  // int cos_stage7_addr = vaddr(cos_stage7);
-  // for (int i = 0; i < 1024; i++)
-  // {
-  //     *(volatile unsigned char *)(cos_stage7_addr + i) = cos_vec_8[i];
-  // }
+    // int cos_stage7_addr = vaddr(cos_stage7);
+    // for (int i = 0; i < 1024; i++)
+    // {
+    //     *(volatile unsigned char *)(cos_stage7_addr + i) = cos_vec_8[i];
+    // }
 
-  // int cos_stage8_addr = vaddr(cos_stage8);
-  // for (int i = 0; i < 1024; i++)
-  // {
-  //     *(volatile unsigned char *)(cos_stage8_addr + i) = cos_vec_9[i];
-  // }
+    // int cos_stage8_addr = vaddr(cos_stage8);
+    // for (int i = 0; i < 1024; i++)
+    // {
+    //     *(volatile unsigned char *)(cos_stage8_addr + i) = cos_vec_9[i];
+    // }
 
-  // int cos_stage9_addr = vaddr(cos_stage9);
-  // for (int i = 0; i < 1024; i++)
-  // {
-  //     *(volatile unsigned char *)(cos_stage9_addr + i) = cos_vec_10[i];
-  // }
+    // int cos_stage9_addr = vaddr(cos_stage9);
+    // for (int i = 0; i < 1024; i++)
+    // {
+    //     *(volatile unsigned char *)(cos_stage9_addr + i) = cos_vec_10[i];
+    // }
 
-  // int cos_stage10_addr = vaddr(cos_stage10);
-  // for (int i = 0; i < 1024; i++)
-  // {
-  //     *(volatile unsigned char *)(cos_stage10_addr + i) = cos_vec_11[i];
-  // }
+    // int cos_stage10_addr = vaddr(cos_stage10);
+    // for (int i = 0; i < 1024; i++)
+    // {
+    //     *(volatile unsigned char *)(cos_stage10_addr + i) = cos_vec_11[i];
+    // }
 
-  // int sin_stage0_addr = vaddr(sin_stage0);
-  // for (int i = 0; i < 1024; i++)
-  // {
-  //     *(volatile unsigned char *)(sin_stage0_addr + i) = sin_vec_1[i];
-  // }
+    // int sin_stage0_addr = vaddr(sin_stage0);
+    // for (int i = 0; i < 1024; i++)
+    // {
+    //     *(volatile unsigned char *)(sin_stage0_addr + i) = sin_vec_1[i];
+    // }
 
-  // int sin_stage1_addr = vaddr(sin_stage1);
-  // for (int i = 0; i < 1024; i++)
-  // {
-  //     *(volatile unsigned char *)(sin_stage1_addr + i) = sin_vec_2[i];
-  // }
+    // int sin_stage1_addr = vaddr(sin_stage1);
+    // for (int i = 0; i < 1024; i++)
+    // {
+    //     *(volatile unsigned char *)(sin_stage1_addr + i) = sin_vec_2[i];
+    // }
 
-  // int sin_stage2_addr = vaddr(sin_stage2);
-  // for (int i = 0; i < 1024; i++)
-  // {
-  //     *(volatile unsigned char *)(sin_stage2_addr + i) = sin_vec_3[i];
-  // }
+    // int sin_stage2_addr = vaddr(sin_stage2);
+    // for (int i = 0; i < 1024; i++)
+    // {
+    //     *(volatile unsigned char *)(sin_stage2_addr + i) = sin_vec_3[i];
+    // }
 
-  // int sin_stage3_addr = vaddr(sin_stage3);
-  // for (int i = 0; i < 1024; i++)
-  // {
-  //     *(volatile unsigned char *)(sin_stage3_addr + i) = sin_vec_4[i];
-  // }
+    // int sin_stage3_addr = vaddr(sin_stage3);
+    // for (int i = 0; i < 1024; i++)
+    // {
+    //     *(volatile unsigned char *)(sin_stage3_addr + i) = sin_vec_4[i];
+    // }
 
-  // int sin_stage4_addr = vaddr(sin_stage4);
-  // for (int i = 0; i < 1024; i++)
-  // {
-  //     *(volatile unsigned char *)(sin_stage4_addr + i) = sin_vec_5[i];
-  // }
+    // int sin_stage4_addr = vaddr(sin_stage4);
+    // for (int i = 0; i < 1024; i++)
+    // {
+    //     *(volatile unsigned char *)(sin_stage4_addr + i) = sin_vec_5[i];
+    // }
 
-  // int sin_stage5_addr = vaddr(sin_stage5);
-  // for (int i = 0; i < 1024; i++)
-  // {
-  //     *(volatile unsigned char *)(sin_stage5_addr + i) = sin_vec_6[i];
-  // }
+    // int sin_stage5_addr = vaddr(sin_stage5);
+    // for (int i = 0; i < 1024; i++)
+    // {
+    //     *(volatile unsigned char *)(sin_stage5_addr + i) = sin_vec_6[i];
+    // }
 
-  // int sin_stage6_addr = vaddr(sin_stage6);
-  // for (int i = 0; i < 1024; i++)
-  // {
-  //     *(volatile unsigned char *)(sin_stage6_addr + i) = sin_vec_7[i];
-  // }
+    // int sin_stage6_addr = vaddr(sin_stage6);
+    // for (int i = 0; i < 1024; i++)
+    // {
+    //     *(volatile unsigned char *)(sin_stage6_addr + i) = sin_vec_7[i];
+    // }
 
-  // int sin_stage7_addr = vaddr(sin_stage7);
-  // for (int i = 0; i < 1024; i++)
-  // {
-  //     *(volatile unsigned char *)(sin_stage7_addr + i) = sin_vec_8[i];
-  // }
+    // int sin_stage7_addr = vaddr(sin_stage7);
+    // for (int i = 0; i < 1024; i++)
+    // {
+    //     *(volatile unsigned char *)(sin_stage7_addr + i) = sin_vec_8[i];
+    // }
 
-  // int sin_stage8_addr = vaddr(sin_stage8);
-  // for (int i = 0; i < 1024; i++)
-  // {
-  //     *(volatile unsigned char *)(sin_stage8_addr + i) = sin_vec_9[i];
-  // }
+    // int sin_stage8_addr = vaddr(sin_stage8);
+    // for (int i = 0; i < 1024; i++)
+    // {
+    //     *(volatile unsigned char *)(sin_stage8_addr + i) = sin_vec_9[i];
+    // }
 
-  // int sin_stage9_addr = vaddr(sin_stage9);
-  // for (int i = 0; i < 1024; i++)
-  // {
-  //     *(volatile unsigned char *)(sin_stage9_addr + i) = sin_vec_10[i];
-  // }
+    // int sin_stage9_addr = vaddr(sin_stage9);
+    // for (int i = 0; i < 1024; i++)
+    // {
+    //     *(volatile unsigned char *)(sin_stage9_addr + i) = sin_vec_10[i];
+    // }
 
-  // int sin_stage10_addr = vaddr(sin_stage10);
-  // for (int i = 0; i < 1024; i++)
-  // {
-  //     *(volatile unsigned char *)(sin_stage10_addr + i) = sin_vec_11[i];
-  // }
+    // int sin_stage10_addr = vaddr(sin_stage10);
+    // for (int i = 0; i < 1024; i++)
+    // {
+    //     *(volatile unsigned char *)(sin_stage10_addr + i) = sin_vec_11[i];
+    // }
 
-  // //  add shuffle
-  // int shuffle_add_stage0_addr = vaddr(shuffle_add_stage0);
-  // for (int i = 0; i < 1024; i++)
-  // {
-  //     *(volatile unsigned short *)(shuffle_add_stage0_addr + (i << 1)) =
-  //     stage0_add_shuffle[i];
-  // }
-  // int shuffle_add_stage1_addr = vaddr(shuffle_add_stage1);
-  // for (int i = 0; i < 1024; i++)
-  // {
-  //     *(volatile unsigned short *)(shuffle_add_stage1_addr + (i << 1)) =
-  //     stage1_add_shuffle[i];
-  // }
-  // int shuffle_add_stage2_addr = vaddr(shuffle_add_stage2);
-  // for (int i = 0; i < 1024; i++)
-  // {
-  //     *(volatile unsigned short *)(shuffle_add_stage2_addr + (i << 1)) =
-  //     stage2_add_shuffle[i];
-  // }
-  // int shuffle_add_stage3_addr = vaddr(shuffle_add_stage3);
-  // for (int i = 0; i < 1024; i++)
-  // {
-  //     *(volatile unsigned short *)(shuffle_add_stage3_addr + (i << 1)) =
-  //     stage3_add_shuffle[i];
-  // }
-  // int shuffle_add_stage4_addr = vaddr(shuffle_add_stage4);
-  // for (int i = 0; i < 1024; i++)
-  // {
-  //     *(volatile unsigned short *)(shuffle_add_stage4_addr + (i << 1)) =
-  //     stage4_add_shuffle[i];
-  // }
-  // int shuffle_add_stage5_addr = vaddr(shuffle_add_stage5);
-  // for (int i = 0; i < 1024; i++)
-  // {
-  //     *(volatile unsigned short *)(shuffle_add_stage5_addr + (i << 1)) =
-  //     stage5_add_shuffle[i];
-  // }
-  // int shuffle_add_stage6_addr = vaddr(shuffle_add_stage6);
-  // for (int i = 0; i < 1024; i++)
-  // {
-  //     *(volatile unsigned short *)(shuffle_add_stage6_addr + (i << 1)) =
-  //     stage6_add_shuffle[i];
-  // }
-  // int shuffle_add_stage7_addr = vaddr(shuffle_add_stage7);
-  // for (int i = 0; i < 1024; i++)
-  // {
-  //     *(volatile unsigned short *)(shuffle_add_stage7_addr + (i << 1)) =
-  //     stage7_add_shuffle[i];
-  // }
-  // int shuffle_add_stage8_addr = vaddr(shuffle_add_stage8);
-  // for (int i = 0; i < 1024; i++)
-  // {
-  //     *(volatile unsigned short *)(shuffle_add_stage8_addr + (i << 1)) =
-  //     stage8_add_shuffle[i];
-  // }
-  // int shuffle_add_stage9_addr = vaddr(shuffle_add_stage9);
-  // for (int i = 0; i < 1024; i++)
-  // {
-  //     *(volatile unsigned short *)(shuffle_add_stage9_addr + (i << 1)) =
-  //     stage9_add_shuffle[i];
-  // }
-  // int shuffle_add_stage10_addr = vaddr(shuffle_add_stage10);
-  // for (int i = 0; i < 1024; i++)
-  // {
-  //     *(volatile unsigned short *)(shuffle_add_stage10_addr + (i << 1)) =
-  //     stage10_add_shuffle[i];
-  // }
+    // //  add shuffle
+    // int shuffle_add_stage0_addr = vaddr(shuffle_add_stage0);
+    // for (int i = 0; i < 1024; i++)
+    // {
+    //     *(volatile unsigned short *)(shuffle_add_stage0_addr + (i << 1)) =
+    //     stage0_add_shuffle[i];
+    // }
+    // int shuffle_add_stage1_addr = vaddr(shuffle_add_stage1);
+    // for (int i = 0; i < 1024; i++)
+    // {
+    //     *(volatile unsigned short *)(shuffle_add_stage1_addr + (i << 1)) =
+    //     stage1_add_shuffle[i];
+    // }
+    // int shuffle_add_stage2_addr = vaddr(shuffle_add_stage2);
+    // for (int i = 0; i < 1024; i++)
+    // {
+    //     *(volatile unsigned short *)(shuffle_add_stage2_addr + (i << 1)) =
+    //     stage2_add_shuffle[i];
+    // }
+    // int shuffle_add_stage3_addr = vaddr(shuffle_add_stage3);
+    // for (int i = 0; i < 1024; i++)
+    // {
+    //     *(volatile unsigned short *)(shuffle_add_stage3_addr + (i << 1)) =
+    //     stage3_add_shuffle[i];
+    // }
+    // int shuffle_add_stage4_addr = vaddr(shuffle_add_stage4);
+    // for (int i = 0; i < 1024; i++)
+    // {
+    //     *(volatile unsigned short *)(shuffle_add_stage4_addr + (i << 1)) =
+    //     stage4_add_shuffle[i];
+    // }
+    // int shuffle_add_stage5_addr = vaddr(shuffle_add_stage5);
+    // for (int i = 0; i < 1024; i++)
+    // {
+    //     *(volatile unsigned short *)(shuffle_add_stage5_addr + (i << 1)) =
+    //     stage5_add_shuffle[i];
+    // }
+    // int shuffle_add_stage6_addr = vaddr(shuffle_add_stage6);
+    // for (int i = 0; i < 1024; i++)
+    // {
+    //     *(volatile unsigned short *)(shuffle_add_stage6_addr + (i << 1)) =
+    //     stage6_add_shuffle[i];
+    // }
+    // int shuffle_add_stage7_addr = vaddr(shuffle_add_stage7);
+    // for (int i = 0; i < 1024; i++)
+    // {
+    //     *(volatile unsigned short *)(shuffle_add_stage7_addr + (i << 1)) =
+    //     stage7_add_shuffle[i];
+    // }
+    // int shuffle_add_stage8_addr = vaddr(shuffle_add_stage8);
+    // for (int i = 0; i < 1024; i++)
+    // {
+    //     *(volatile unsigned short *)(shuffle_add_stage8_addr + (i << 1)) =
+    //     stage8_add_shuffle[i];
+    // }
+    // int shuffle_add_stage9_addr = vaddr(shuffle_add_stage9);
+    // for (int i = 0; i < 1024; i++)
+    // {
+    //     *(volatile unsigned short *)(shuffle_add_stage9_addr + (i << 1)) =
+    //     stage9_add_shuffle[i];
+    // }
+    // int shuffle_add_stage10_addr = vaddr(shuffle_add_stage10);
+    // for (int i = 0; i < 1024; i++)
+    // {
+    //     *(volatile unsigned short *)(shuffle_add_stage10_addr + (i << 1)) =
+    //     stage10_add_shuffle[i];
+    // }
 
-  // //  wn_shuffle
-  // int shuffle_wn_stage0_addr = vaddr(shuffle_wn_stage0);
-  // for (int i = 0; i < 1024; i++)
-  // {
-  //     *(volatile unsigned short *)(shuffle_wn_stage0_addr + (i << 1)) =
-  //     stage0_wn_shuffle[i];
-  // }
-  // int shuffle_wn_stage1_addr = vaddr(shuffle_wn_stage1);
-  // for (int i = 0; i < 1024; i++)
-  // {
-  //     *(volatile unsigned short *)(shuffle_wn_stage1_addr + (i << 1)) =
-  //     stage1_wn_shuffle[i];
-  // }
-  // int shuffle_wn_stage2_addr = vaddr(shuffle_wn_stage2);
-  // for (int i = 0; i < 1024; i++)
-  // {
-  //     *(volatile unsigned short *)(shuffle_wn_stage2_addr + (i << 1)) =
-  //     stage2_wn_shuffle[i];
-  // }
-  // int shuffle_wn_stage3_addr = vaddr(shuffle_wn_stage3);
-  // for (int i = 0; i < 1024; i++)
-  // {
-  //     *(volatile unsigned short *)(shuffle_wn_stage3_addr + (i << 1)) =
-  //     stage3_wn_shuffle[i];
-  // }
-  // int shuffle_wn_stage4_addr = vaddr(shuffle_wn_stage4);
-  // for (int i = 0; i < 1024; i++)
-  // {
-  //     *(volatile unsigned short *)(shuffle_wn_stage4_addr + (i << 1)) =
-  //     stage4_wn_shuffle[i];
-  // }
-  // int shuffle_wn_stage5_addr = vaddr(shuffle_wn_stage5);
-  // for (int i = 0; i < 1024; i++)
-  // {
-  //     *(volatile unsigned short *)(shuffle_wn_stage5_addr + (i << 1)) =
-  //     stage5_wn_shuffle[i];
-  // }
-  // int shuffle_wn_stage6_addr = vaddr(shuffle_wn_stage6);
-  // for (int i = 0; i < 1024; i++)
-  // {
-  //     *(volatile unsigned short *)(shuffle_wn_stage6_addr + (i << 1)) =
-  //     stage6_wn_shuffle[i];
-  // }
-  // int shuffle_wn_stage7_addr = vaddr(shuffle_wn_stage7);
-  // for (int i = 0; i < 1024; i++)
-  // {
-  //     *(volatile unsigned short *)(shuffle_wn_stage7_addr + (i << 1)) =
-  //     stage7_wn_shuffle[i];
-  // }
-  // int shuffle_wn_stage8_addr = vaddr(shuffle_wn_stage8);
-  // for (int i = 0; i < 1024; i++)
-  // {
-  //     *(volatile unsigned short *)(shuffle_wn_stage8_addr + (i << 1)) =
-  //     stage8_wn_shuffle[i];
-  // }
-  // int shuffle_wn_stage9_addr = vaddr(shuffle_wn_stage9);
-  // for (int i = 0; i < 1024; i++)
-  // {
-  //     *(volatile unsigned short *)(shuffle_wn_stage9_addr + (i << 1)) =
-  //     stage9_wn_shuffle[i];
-  // }
-  // int shuffle_wn_stage10_addr = vaddr(shuffle_wn_stage10);
-  // for (int i = 0; i < 1024; i++)
-  // {
-  //     *(volatile unsigned short *)(shuffle_wn_stage10_addr + (i << 1)) =
-  //     stage10_wn_shuffle[i];
-  // }
-  // VSPM_CLOSE();
+    // //  wn_shuffle
+    // int shuffle_wn_stage0_addr = vaddr(shuffle_wn_stage0);
+    // for (int i = 0; i < 1024; i++)
+    // {
+    //     *(volatile unsigned short *)(shuffle_wn_stage0_addr + (i << 1)) =
+    //     stage0_wn_shuffle[i];
+    // }
+    // int shuffle_wn_stage1_addr = vaddr(shuffle_wn_stage1);
+    // for (int i = 0; i < 1024; i++)
+    // {
+    //     *(volatile unsigned short *)(shuffle_wn_stage1_addr + (i << 1)) =
+    //     stage1_wn_shuffle[i];
+    // }
+    // int shuffle_wn_stage2_addr = vaddr(shuffle_wn_stage2);
+    // for (int i = 0; i < 1024; i++)
+    // {
+    //     *(volatile unsigned short *)(shuffle_wn_stage2_addr + (i << 1)) =
+    //     stage2_wn_shuffle[i];
+    // }
+    // int shuffle_wn_stage3_addr = vaddr(shuffle_wn_stage3);
+    // for (int i = 0; i < 1024; i++)
+    // {
+    //     *(volatile unsigned short *)(shuffle_wn_stage3_addr + (i << 1)) =
+    //     stage3_wn_shuffle[i];
+    // }
+    // int shuffle_wn_stage4_addr = vaddr(shuffle_wn_stage4);
+    // for (int i = 0; i < 1024; i++)
+    // {
+    //     *(volatile unsigned short *)(shuffle_wn_stage4_addr + (i << 1)) =
+    //     stage4_wn_shuffle[i];
+    // }
+    // int shuffle_wn_stage5_addr = vaddr(shuffle_wn_stage5);
+    // for (int i = 0; i < 1024; i++)
+    // {
+    //     *(volatile unsigned short *)(shuffle_wn_stage5_addr + (i << 1)) =
+    //     stage5_wn_shuffle[i];
+    // }
+    // int shuffle_wn_stage6_addr = vaddr(shuffle_wn_stage6);
+    // for (int i = 0; i < 1024; i++)
+    // {
+    //     *(volatile unsigned short *)(shuffle_wn_stage6_addr + (i << 1)) =
+    //     stage6_wn_shuffle[i];
+    // }
+    // int shuffle_wn_stage7_addr = vaddr(shuffle_wn_stage7);
+    // for (int i = 0; i < 1024; i++)
+    // {
+    //     *(volatile unsigned short *)(shuffle_wn_stage7_addr + (i << 1)) =
+    //     stage7_wn_shuffle[i];
+    // }
+    // int shuffle_wn_stage8_addr = vaddr(shuffle_wn_stage8);
+    // for (int i = 0; i < 1024; i++)
+    // {
+    //     *(volatile unsigned short *)(shuffle_wn_stage8_addr + (i << 1)) =
+    //     stage8_wn_shuffle[i];
+    // }
+    // int shuffle_wn_stage9_addr = vaddr(shuffle_wn_stage9);
+    // for (int i = 0; i < 1024; i++)
+    // {
+    //     *(volatile unsigned short *)(shuffle_wn_stage9_addr + (i << 1)) =
+    //     stage9_wn_shuffle[i];
+    // }
+    // int shuffle_wn_stage10_addr = vaddr(shuffle_wn_stage10);
+    // for (int i = 0; i < 1024; i++)
+    // {
+    //     *(volatile unsigned short *)(shuffle_wn_stage10_addr + (i << 1)) =
+    //     stage10_wn_shuffle[i];
+    // }
+    // VSPM_CLOSE();
 
-  // -----------------------------正式开始计算OFDM解调-------------------------------------
+    // -----------------------------正式开始计算OFDM解调-------------------------------------
 
-  // 默认只支持20M带宽，下面的FFT点数等参数的赋值只适用于20M带宽下
-  int N_FFT         = 0;
-  int cp_length     = 0;
-  int symbol_offset = 0;
+    // 默认只支持20M带宽，下面的FFT点数等参数的赋值只适用于20M带宽下
+    int N_FFT         = 0;
+    int cp_length     = 0;
+    int symbol_offset = 0;
 
-  if (scs == 15) {
-    N_FFT = 2048;
-    if (symbol_num == 0 || symbol_num == 7) {
-      cp_length     = 160;
-      symbol_offset = 80;
-    } else {
-      cp_length     = 144;
-      symbol_offset = 72;
+    if (scs == 15) {
+      N_FFT = 2048;
+      if (symbol_num == 0 || symbol_num == 7) {
+        cp_length     = 160;
+        symbol_offset = 80;
+      } else {
+        cp_length     = 144;
+        symbol_offset = 72;
+      }
+    } else if (scs == 30) {
+      N_FFT = 1024;
+      // BUG
+      // if (symbol_num == 0 || symbol_num == 7) {
+      if (symbol_num == 0) {
+        cp_length     = 88;
+        symbol_offset = 44;
+      } else {
+        cp_length     = 72;
+        symbol_offset = 36;
+      }
     }
-  } else if (scs == 30) {
-    N_FFT = 1024;
-    // BUG
-    // if (symbol_num == 0 || symbol_num == 7) {
-    if (symbol_num == 0) {
-      cp_length     = 88;
-      symbol_offset = 44;
+
+    short subcarrierPerRB = 12;
+    short K               = nrb * subcarrierPerRB;
+    short firstSC         = N_FFT / 2 - K / 2;
+
+    // --------STEP 1 : Remove CP
+
+    __v2048i16 Remove_CP_Index;
+    vrange(Remove_CP_Index, N_FFT);
+    Remove_CP_Index = vsadd(Remove_CP_Index, cp_length, MASKREAD_OFF, N_FFT);
+    __v2048i16 shift_CP;
+    vbrdcst(shift_CP, N_FFT, MASKREAD_OFF, N_FFT);
+    vbrdcst(shift_CP, 0, MASKREAD_OFF, N_FFT - symbol_offset);
+    Remove_CP_Index = vrsub(Remove_CP_Index, shift_CP, MASKREAD_OFF, N_FFT);
+
+    __v4096i8 Data_without_CP_real;
+    __v4096i8 Data_without_CP_imag;
+    vclaim(Data_without_CP_real);
+    vclaim(Data_without_CP_imag);
+    vshuffle(Data_without_CP_real, Remove_CP_Index, vin_real, SHUFFLE_GATHER, N_FFT);
+    vshuffle(Data_without_CP_imag, Remove_CP_Index, vin_imag, SHUFFLE_GATHER, N_FFT);
+
+    //  STEP 1 'END'---------
+
+    //  --------STEP 2 : FFT
+
+    __v4096i8 OFDM_OutReal;
+    __v4096i8 OFDM_OutImag;
+    vclaim(OFDM_OutReal);
+    vclaim(OFDM_OutImag);
+    short stage_init       = 0;
+    short calculate_length = 0;
+    if (N_FFT == 2048) {
+      stage_init       = 0;
+      calculate_length = 1024;
+    } else if (N_FFT == 1024) {
+      stage_init       = 1;
+      calculate_length = 512;
     } else {
-      cp_length     = 72;
-      symbol_offset = 36;
+      // printf("\n\nThe OFDM_Demodulaton Module only support FFT of 1024 or
+      // 2048
+      // "
+      //        "points, now is %hd\n\n",
+      //        &N_FFT);
+      stage_init       = 0;
+      calculate_length = 1024;
     }
-  }
 
-  short subcarrierPerRB = 12;
-  short K               = nrb * subcarrierPerRB;
-  short firstSC         = N_FFT / 2 - K / 2;
+    // 从2048点FFT的Wn中提取1024点的Wn的shuffle_Index
+    __v2048i16 shuffle_for_1024_Wn;
+    vclaim(shuffle_for_1024_Wn);
+    vrange(shuffle_for_1024_Wn, 2048);
+    shuffle_for_1024_Wn = vsll(shuffle_for_1024_Wn, 1, MASKREAD_OFF, 2048);
+    __v4096i8 Wn_cos;
+    vclaim(Wn_cos);
+    __v4096i8 Wn_sin;
+    vclaim(Wn_sin);
 
-  // --------STEP 1 : Remove CP
+    // 向量搬移index
+    __v2048i16 copy_2048; // copy_2048 = [0 1 2 ... 2047]
+    vclaim(copy_2048);
+    vrange(copy_2048, 2048);
+    __v2048i16 move_2048to1024; // move_2048to1024 = [1024 1025 1026 ... 3071]
+    move_2048to1024 = vsadd(copy_2048, 1024, MASKREAD_OFF, 2048);
+    __v2048i16 move_1024to512; // move_1024to512 = [512 513 514 ... 2559]
+    move_1024to512 = vsadd(copy_2048, 512, MASKREAD_OFF, 2048);
 
-  __v2048i16 Remove_CP_Index;
-  vrange(Remove_CP_Index, N_FFT);
-  Remove_CP_Index = vsadd(Remove_CP_Index, cp_length, MASKREAD_OFF, N_FFT);
-  __v2048i16 shift_CP;
-  vbrdcst(shift_CP, N_FFT, MASKREAD_OFF, N_FFT);
-  vbrdcst(shift_CP, 0, MASKREAD_OFF, N_FFT - symbol_offset);
-  Remove_CP_Index = vrsub(Remove_CP_Index, shift_CP, MASKREAD_OFF, N_FFT);
+    //  进行计算的四个向量分别为    Data_without_CP_real（up）
+    //  Data_without_CP_imag（up）    data_real_down data_imag_down
+    __v4096i8 data_real_down;
+    __v4096i8 data_imag_down;
+    vclaim(data_real_down);
+    vclaim(data_imag_down);
 
-  __v4096i8 Data_without_CP_real;
-  __v4096i8 Data_without_CP_imag;
-  vclaim(Data_without_CP_real);
-  vclaim(Data_without_CP_imag);
-  vshuffle(Data_without_CP_real, Remove_CP_Index, vin_real, SHUFFLE_GATHER, N_FFT);
-  vshuffle(Data_without_CP_imag, Remove_CP_Index, vin_imag, SHUFFLE_GATHER, N_FFT);
+    // if (N_FFT == 2048)
+    // {
+    //     vshuffle(data_real_down, move_2048to1024, Data_without_CP_real,
+    //     SHUFFLE_GATHER, calculate_length); vshuffle(data_imag_down,
+    //     move_2048to1024, Data_without_CP_imag, SHUFFLE_GATHER,
+    //     calculate_length);
+    // }
+    // else if (N_FFT == 1024)
+    // {
+    //     vshuffle(data_real_down, move_1024to512, Data_without_CP_real,
+    //     SHUFFLE_GATHER, calculate_length); vshuffle(data_imag_down,
+    //     move_1024to512, Data_without_CP_imag, SHUFFLE_GATHER,
+    //     calculate_length);
+    // }
 
-  //  STEP 1 'END'---------
+    // FFT每一级计算过程中的中间变量
+    __v4096i8 tempAddResult_real;
+    vclaim(tempAddResult_real);
+    __v4096i8 tempAddResult_imag;
+    vclaim(tempAddResult_imag);
+    __v4096i8 tempWnResult_real;
+    vclaim(tempWnResult_real);
+    __v4096i8 tempWnResult_imag;
+    vclaim(tempWnResult_imag);
 
-  //  --------STEP 2 : FFT
+    __v4096i8 a_sub_b_real;
+    vclaim(a_sub_b_real);
+    __v4096i8 a_sub_b_imag;
+    vclaim(a_sub_b_imag);
+    __v4096i8 cos_tempWnResult;
+    __v4096i8 sin_tempWnResult;
+    vclaim(cos_tempWnResult);
+    vclaim(sin_tempWnResult);
 
-  __v4096i8 OFDM_OutReal;
-  __v4096i8 OFDM_OutImag;
-  vclaim(OFDM_OutReal);
-  vclaim(OFDM_OutImag);
-  short stage_init       = 0;
-  short calculate_length = 0;
-  if (N_FFT == 2048) {
-    stage_init       = 0;
-    calculate_length = 1024;
-  } else if (N_FFT == 1024) {
-    stage_init       = 1;
-    calculate_length = 512;
+    if (N_FFT == 2048) {
+      // 蝶形计算
+      // a ------- (a + b)
+      //      |
+      // b ------- (a - b)Wn
+
+      //  Stage 0------------------------------------
+      vshuffle(data_real_down, move_2048to1024, Data_without_CP_real, SHUFFLE_GATHER, calculate_length);
+      vshuffle(data_imag_down, move_2048to1024, Data_without_CP_imag, SHUFFLE_GATHER, calculate_length);
+      //  a + b
+      tempAddResult_real = vsadd(Data_without_CP_real, data_real_down, MASKREAD_OFF, calculate_length);
+      tempAddResult_imag = vsadd(Data_without_CP_imag, data_imag_down, MASKREAD_OFF, calculate_length);
+      tempAddResult_real = vsra(tempAddResult_real, fft_shift_vec[0], MASKREAD_OFF, calculate_length);
+      tempAddResult_imag = vsra(tempAddResult_imag, fft_shift_vec[0], MASKREAD_OFF, calculate_length);
+
+      // (a - b)Wn    (可用复数计算代替)
+      a_sub_b_real = vssub(data_real_down, Data_without_CP_real, MASKREAD_OFF, calculate_length);
+      a_sub_b_imag = vssub(data_imag_down, Data_without_CP_imag, MASKREAD_OFF, calculate_length);
+
+      cos_tempWnResult  = MUL4096_8_FIXED(a_sub_b_real, cos_stage0, fft_fixed_vec[0], calculate_length);
+      sin_tempWnResult  = MUL4096_8_FIXED(a_sub_b_imag, sin_stage0, fft_fixed_vec[0], calculate_length);
+      tempWnResult_real = vssub(sin_tempWnResult, cos_tempWnResult, MASKREAD_OFF, calculate_length);
+
+      cos_tempWnResult  = MUL4096_8_FIXED(a_sub_b_imag, cos_stage0, fft_fixed_vec[0], calculate_length);
+      sin_tempWnResult  = MUL4096_8_FIXED(a_sub_b_real, sin_stage0, fft_fixed_vec[0], calculate_length);
+      tempWnResult_imag = vsadd(cos_tempWnResult, sin_tempWnResult, MASKREAD_OFF, calculate_length);
+
+      tempWnResult_imag = vsadd(tempWnResult_imag, 1, MASKREAD_OFF,
+                                calculate_length); // Function FOR OFFSET
+
+      // 重排序
+      vshuffle(Data_without_CP_real, shuffle_add_stage0, tempAddResult_real, SHUFFLE_SCATTER, calculate_length);
+      vshuffle(Data_without_CP_real, shuffle_wn_stage0, tempWnResult_real, SHUFFLE_SCATTER, calculate_length);
+      vshuffle(Data_without_CP_imag, shuffle_add_stage0, tempAddResult_imag, SHUFFLE_SCATTER, calculate_length);
+      vshuffle(Data_without_CP_imag, shuffle_wn_stage0, tempWnResult_imag, SHUFFLE_SCATTER, calculate_length);
+      //---------------------------------------------
+
+      //  Stage 1------------------------------------
+      vshuffle(data_real_down, move_2048to1024, Data_without_CP_real, SHUFFLE_GATHER, calculate_length);
+      vshuffle(data_imag_down, move_2048to1024, Data_without_CP_imag, SHUFFLE_GATHER, calculate_length);
+      //  a + b
+      tempAddResult_real = vsadd(Data_without_CP_real, data_real_down, MASKREAD_OFF, calculate_length);
+      tempAddResult_imag = vsadd(Data_without_CP_imag, data_imag_down, MASKREAD_OFF, calculate_length);
+      tempAddResult_real = vsra(tempAddResult_real, fft_shift_vec[1], MASKREAD_OFF, calculate_length);
+      tempAddResult_imag = vsra(tempAddResult_imag, fft_shift_vec[1], MASKREAD_OFF, calculate_length);
+
+      // (a - b)Wn    (可用复数计算代替)
+      a_sub_b_real = vssub(data_real_down, Data_without_CP_real, MASKREAD_OFF, calculate_length);
+      a_sub_b_imag = vssub(data_imag_down, Data_without_CP_imag, MASKREAD_OFF, calculate_length);
+
+      cos_tempWnResult  = MUL4096_8_FIXED(a_sub_b_real, cos_stage1, fft_fixed_vec[1], calculate_length);
+      sin_tempWnResult  = MUL4096_8_FIXED(a_sub_b_imag, sin_stage1, fft_fixed_vec[1], calculate_length);
+      tempWnResult_real = vssub(sin_tempWnResult, cos_tempWnResult, MASKREAD_OFF, calculate_length);
+
+      cos_tempWnResult  = MUL4096_8_FIXED(a_sub_b_imag, cos_stage1, fft_fixed_vec[1], calculate_length);
+      sin_tempWnResult  = MUL4096_8_FIXED(a_sub_b_real, sin_stage1, fft_fixed_vec[1], calculate_length);
+      tempWnResult_imag = vsadd(cos_tempWnResult, sin_tempWnResult, MASKREAD_OFF, calculate_length);
+
+      tempWnResult_imag = vsadd(tempWnResult_imag, 1, MASKREAD_OFF,
+                                calculate_length); // Function FOR OFFSET
+
+      // 重排序
+      vshuffle(Data_without_CP_real, shuffle_add_stage1, tempAddResult_real, SHUFFLE_SCATTER, calculate_length);
+      vshuffle(Data_without_CP_real, shuffle_wn_stage1, tempWnResult_real, SHUFFLE_SCATTER, calculate_length);
+      vshuffle(Data_without_CP_imag, shuffle_add_stage1, tempAddResult_imag, SHUFFLE_SCATTER, calculate_length);
+      vshuffle(Data_without_CP_imag, shuffle_wn_stage1, tempWnResult_imag, SHUFFLE_SCATTER, calculate_length);
+      //---------------------------------------------
+
+      //  Stage 2------------------------------------
+      vshuffle(data_real_down, move_2048to1024, Data_without_CP_real, SHUFFLE_GATHER, calculate_length);
+      vshuffle(data_imag_down, move_2048to1024, Data_without_CP_imag, SHUFFLE_GATHER, calculate_length);
+      //  a + b
+      tempAddResult_real = vsadd(Data_without_CP_real, data_real_down, MASKREAD_OFF, calculate_length);
+      tempAddResult_imag = vsadd(Data_without_CP_imag, data_imag_down, MASKREAD_OFF, calculate_length);
+      tempAddResult_real = vsra(tempAddResult_real, fft_shift_vec[2], MASKREAD_OFF, calculate_length);
+      tempAddResult_imag = vsra(tempAddResult_imag, fft_shift_vec[2], MASKREAD_OFF, calculate_length);
+
+      // (a - b)Wn    (可用复数计算代替)
+      a_sub_b_real = vssub(data_real_down, Data_without_CP_real, MASKREAD_OFF, calculate_length);
+      a_sub_b_imag = vssub(data_imag_down, Data_without_CP_imag, MASKREAD_OFF, calculate_length);
+
+      cos_tempWnResult  = MUL4096_8_FIXED(a_sub_b_real, cos_stage2, fft_fixed_vec[2], calculate_length);
+      sin_tempWnResult  = MUL4096_8_FIXED(a_sub_b_imag, sin_stage2, fft_fixed_vec[2], calculate_length);
+      tempWnResult_real = vssub(sin_tempWnResult, cos_tempWnResult, MASKREAD_OFF, calculate_length);
+
+      cos_tempWnResult  = MUL4096_8_FIXED(a_sub_b_imag, cos_stage2, fft_fixed_vec[2], calculate_length);
+      sin_tempWnResult  = MUL4096_8_FIXED(a_sub_b_real, sin_stage2, fft_fixed_vec[2], calculate_length);
+      tempWnResult_imag = vsadd(cos_tempWnResult, sin_tempWnResult, MASKREAD_OFF, calculate_length);
+
+      tempWnResult_imag = vsadd(tempWnResult_imag, 1, MASKREAD_OFF,
+                                calculate_length); // Function FOR OFFSET
+
+      // 重排序
+      vshuffle(Data_without_CP_real, shuffle_add_stage2, tempAddResult_real, SHUFFLE_SCATTER, calculate_length);
+      vshuffle(Data_without_CP_real, shuffle_wn_stage2, tempWnResult_real, SHUFFLE_SCATTER, calculate_length);
+      vshuffle(Data_without_CP_imag, shuffle_add_stage2, tempAddResult_imag, SHUFFLE_SCATTER, calculate_length);
+      vshuffle(Data_without_CP_imag, shuffle_wn_stage2, tempWnResult_imag, SHUFFLE_SCATTER, calculate_length);
+      //---------------------------------------------
+
+      //  Stage 3------------------------------------
+      vshuffle(data_real_down, move_2048to1024, Data_without_CP_real, SHUFFLE_GATHER, calculate_length);
+      vshuffle(data_imag_down, move_2048to1024, Data_without_CP_imag, SHUFFLE_GATHER, calculate_length);
+      //  a + b
+      tempAddResult_real = vsadd(Data_without_CP_real, data_real_down, MASKREAD_OFF, calculate_length);
+      tempAddResult_imag = vsadd(Data_without_CP_imag, data_imag_down, MASKREAD_OFF, calculate_length);
+      tempAddResult_real = vsra(tempAddResult_real, fft_shift_vec[3], MASKREAD_OFF, calculate_length);
+      tempAddResult_imag = vsra(tempAddResult_imag, fft_shift_vec[3], MASKREAD_OFF, calculate_length);
+
+      // (a - b)Wn    (可用复数计算代替)
+      a_sub_b_real = vssub(data_real_down, Data_without_CP_real, MASKREAD_OFF, calculate_length);
+      a_sub_b_imag = vssub(data_imag_down, Data_without_CP_imag, MASKREAD_OFF, calculate_length);
+
+      cos_tempWnResult  = MUL4096_8_FIXED(a_sub_b_real, cos_stage3, fft_fixed_vec[3], calculate_length);
+      sin_tempWnResult  = MUL4096_8_FIXED(a_sub_b_imag, sin_stage3, fft_fixed_vec[3], calculate_length);
+      tempWnResult_real = vssub(sin_tempWnResult, cos_tempWnResult, MASKREAD_OFF, calculate_length);
+
+      cos_tempWnResult  = MUL4096_8_FIXED(a_sub_b_imag, cos_stage3, fft_fixed_vec[3], calculate_length);
+      sin_tempWnResult  = MUL4096_8_FIXED(a_sub_b_real, sin_stage3, fft_fixed_vec[3], calculate_length);
+      tempWnResult_imag = vsadd(cos_tempWnResult, sin_tempWnResult, MASKREAD_OFF, calculate_length);
+
+      tempWnResult_imag = vsadd(tempWnResult_imag, 1, MASKREAD_OFF,
+                                calculate_length); // Function FOR OFFSET
+
+      // 重排序
+      vshuffle(Data_without_CP_real, shuffle_add_stage3, tempAddResult_real, SHUFFLE_SCATTER, calculate_length);
+      vshuffle(Data_without_CP_real, shuffle_wn_stage3, tempWnResult_real, SHUFFLE_SCATTER, calculate_length);
+      vshuffle(Data_without_CP_imag, shuffle_add_stage3, tempAddResult_imag, SHUFFLE_SCATTER, calculate_length);
+      vshuffle(Data_without_CP_imag, shuffle_wn_stage3, tempWnResult_imag, SHUFFLE_SCATTER, calculate_length);
+      //---------------------------------------------
+
+      //  Stage 4------------------------------------
+      vshuffle(data_real_down, move_2048to1024, Data_without_CP_real, SHUFFLE_GATHER, calculate_length);
+      vshuffle(data_imag_down, move_2048to1024, Data_without_CP_imag, SHUFFLE_GATHER, calculate_length);
+      //  a + b
+      tempAddResult_real = vsadd(Data_without_CP_real, data_real_down, MASKREAD_OFF, calculate_length);
+      tempAddResult_imag = vsadd(Data_without_CP_imag, data_imag_down, MASKREAD_OFF, calculate_length);
+      tempAddResult_real = vsra(tempAddResult_real, fft_shift_vec[4], MASKREAD_OFF, calculate_length);
+      tempAddResult_imag = vsra(tempAddResult_imag, fft_shift_vec[4], MASKREAD_OFF, calculate_length);
+
+      // (a - b)Wn    (可用复数计算代替)
+      a_sub_b_real = vssub(data_real_down, Data_without_CP_real, MASKREAD_OFF, calculate_length);
+      a_sub_b_imag = vssub(data_imag_down, Data_without_CP_imag, MASKREAD_OFF, calculate_length);
+
+      cos_tempWnResult  = MUL4096_8_FIXED(a_sub_b_real, cos_stage4, fft_fixed_vec[4], calculate_length);
+      sin_tempWnResult  = MUL4096_8_FIXED(a_sub_b_imag, sin_stage4, fft_fixed_vec[4], calculate_length);
+      tempWnResult_real = vssub(sin_tempWnResult, cos_tempWnResult, MASKREAD_OFF, calculate_length);
+
+      cos_tempWnResult  = MUL4096_8_FIXED(a_sub_b_imag, cos_stage4, fft_fixed_vec[4], calculate_length);
+      sin_tempWnResult  = MUL4096_8_FIXED(a_sub_b_real, sin_stage4, fft_fixed_vec[4], calculate_length);
+      tempWnResult_imag = vsadd(cos_tempWnResult, sin_tempWnResult, MASKREAD_OFF, calculate_length);
+
+      tempWnResult_imag = vsadd(tempWnResult_imag, 1, MASKREAD_OFF,
+                                calculate_length); // Function FOR OFFSET
+
+      // 重排序
+      vshuffle(Data_without_CP_real, shuffle_add_stage4, tempAddResult_real, SHUFFLE_SCATTER, calculate_length);
+      vshuffle(Data_without_CP_real, shuffle_wn_stage4, tempWnResult_real, SHUFFLE_SCATTER, calculate_length);
+      vshuffle(Data_without_CP_imag, shuffle_add_stage4, tempAddResult_imag, SHUFFLE_SCATTER, calculate_length);
+      vshuffle(Data_without_CP_imag, shuffle_wn_stage4, tempWnResult_imag, SHUFFLE_SCATTER, calculate_length);
+      //---------------------------------------------
+
+      //  Stage 5------------------------------------
+      vshuffle(data_real_down, move_2048to1024, Data_without_CP_real, SHUFFLE_GATHER, calculate_length);
+      vshuffle(data_imag_down, move_2048to1024, Data_without_CP_imag, SHUFFLE_GATHER, calculate_length);
+      //  a + b
+      tempAddResult_real = vsadd(Data_without_CP_real, data_real_down, MASKREAD_OFF, calculate_length);
+      tempAddResult_imag = vsadd(Data_without_CP_imag, data_imag_down, MASKREAD_OFF, calculate_length);
+      tempAddResult_real = vsra(tempAddResult_real, fft_shift_vec[5], MASKREAD_OFF, calculate_length);
+      tempAddResult_imag = vsra(tempAddResult_imag, fft_shift_vec[5], MASKREAD_OFF, calculate_length);
+
+      // (a - b)Wn    (可用复数计算代替)
+      a_sub_b_real = vssub(data_real_down, Data_without_CP_real, MASKREAD_OFF, calculate_length);
+      a_sub_b_imag = vssub(data_imag_down, Data_without_CP_imag, MASKREAD_OFF, calculate_length);
+
+      cos_tempWnResult  = MUL4096_8_FIXED(a_sub_b_real, cos_stage5, fft_fixed_vec[5], calculate_length);
+      sin_tempWnResult  = MUL4096_8_FIXED(a_sub_b_imag, sin_stage5, fft_fixed_vec[5], calculate_length);
+      tempWnResult_real = vssub(sin_tempWnResult, cos_tempWnResult, MASKREAD_OFF, calculate_length);
+
+      cos_tempWnResult  = MUL4096_8_FIXED(a_sub_b_imag, cos_stage5, fft_fixed_vec[5], calculate_length);
+      sin_tempWnResult  = MUL4096_8_FIXED(a_sub_b_real, sin_stage5, fft_fixed_vec[5], calculate_length);
+      tempWnResult_imag = vsadd(cos_tempWnResult, sin_tempWnResult, MASKREAD_OFF, calculate_length);
+
+      tempWnResult_imag = vsadd(tempWnResult_imag, 1, MASKREAD_OFF,
+                                calculate_length); // Function FOR OFFSET
+
+      // 重排序
+      vshuffle(Data_without_CP_real, shuffle_add_stage5, tempAddResult_real, SHUFFLE_SCATTER, calculate_length);
+      vshuffle(Data_without_CP_real, shuffle_wn_stage5, tempWnResult_real, SHUFFLE_SCATTER, calculate_length);
+      vshuffle(Data_without_CP_imag, shuffle_add_stage5, tempAddResult_imag, SHUFFLE_SCATTER, calculate_length);
+      vshuffle(Data_without_CP_imag, shuffle_wn_stage5, tempWnResult_imag, SHUFFLE_SCATTER, calculate_length);
+      //---------------------------------------------
+
+      //  Stage 6------------------------------------
+      vshuffle(data_real_down, move_2048to1024, Data_without_CP_real, SHUFFLE_GATHER, calculate_length);
+      vshuffle(data_imag_down, move_2048to1024, Data_without_CP_imag, SHUFFLE_GATHER, calculate_length);
+      //  a + b
+      tempAddResult_real = vsadd(Data_without_CP_real, data_real_down, MASKREAD_OFF, calculate_length);
+      tempAddResult_imag = vsadd(Data_without_CP_imag, data_imag_down, MASKREAD_OFF, calculate_length);
+      tempAddResult_real = vsra(tempAddResult_real, fft_shift_vec[6], MASKREAD_OFF, calculate_length);
+      tempAddResult_imag = vsra(tempAddResult_imag, fft_shift_vec[6], MASKREAD_OFF, calculate_length);
+
+      // (a - b)Wn    (可用复数计算代替)
+      a_sub_b_real = vssub(data_real_down, Data_without_CP_real, MASKREAD_OFF, calculate_length);
+      a_sub_b_imag = vssub(data_imag_down, Data_without_CP_imag, MASKREAD_OFF, calculate_length);
+
+      cos_tempWnResult  = MUL4096_8_FIXED(a_sub_b_real, cos_stage6, fft_fixed_vec[6], calculate_length);
+      sin_tempWnResult  = MUL4096_8_FIXED(a_sub_b_imag, sin_stage6, fft_fixed_vec[6], calculate_length);
+      tempWnResult_real = vssub(sin_tempWnResult, cos_tempWnResult, MASKREAD_OFF, calculate_length);
+
+      cos_tempWnResult  = MUL4096_8_FIXED(a_sub_b_imag, cos_stage6, fft_fixed_vec[6], calculate_length);
+      sin_tempWnResult  = MUL4096_8_FIXED(a_sub_b_real, sin_stage6, fft_fixed_vec[6], calculate_length);
+      tempWnResult_imag = vsadd(cos_tempWnResult, sin_tempWnResult, MASKREAD_OFF, calculate_length);
+
+      tempWnResult_imag = vsadd(tempWnResult_imag, 1, MASKREAD_OFF,
+                                calculate_length); // Function FOR OFFSET
+
+      // 重排序
+      vshuffle(Data_without_CP_real, shuffle_add_stage6, tempAddResult_real, SHUFFLE_SCATTER, calculate_length);
+      vshuffle(Data_without_CP_real, shuffle_wn_stage6, tempWnResult_real, SHUFFLE_SCATTER, calculate_length);
+      vshuffle(Data_without_CP_imag, shuffle_add_stage6, tempAddResult_imag, SHUFFLE_SCATTER, calculate_length);
+      vshuffle(Data_without_CP_imag, shuffle_wn_stage6, tempWnResult_imag, SHUFFLE_SCATTER, calculate_length);
+      //---------------------------------------------
+
+      //  Stage 7------------------------------------
+      vshuffle(data_real_down, move_2048to1024, Data_without_CP_real, SHUFFLE_GATHER, calculate_length);
+      vshuffle(data_imag_down, move_2048to1024, Data_without_CP_imag, SHUFFLE_GATHER, calculate_length);
+      //  a + b
+      tempAddResult_real = vsadd(Data_without_CP_real, data_real_down, MASKREAD_OFF, calculate_length);
+      tempAddResult_imag = vsadd(Data_without_CP_imag, data_imag_down, MASKREAD_OFF, calculate_length);
+      tempAddResult_real = vsra(tempAddResult_real, fft_shift_vec[7], MASKREAD_OFF, calculate_length);
+      tempAddResult_imag = vsra(tempAddResult_imag, fft_shift_vec[7], MASKREAD_OFF, calculate_length);
+
+      // (a - b)Wn    (可用复数计算代替)
+      a_sub_b_real = vssub(data_real_down, Data_without_CP_real, MASKREAD_OFF, calculate_length);
+      a_sub_b_imag = vssub(data_imag_down, Data_without_CP_imag, MASKREAD_OFF, calculate_length);
+
+      cos_tempWnResult  = MUL4096_8_FIXED(a_sub_b_real, cos_stage7, fft_fixed_vec[7], calculate_length);
+      sin_tempWnResult  = MUL4096_8_FIXED(a_sub_b_imag, sin_stage7, fft_fixed_vec[7], calculate_length);
+      tempWnResult_real = vssub(sin_tempWnResult, cos_tempWnResult, MASKREAD_OFF, calculate_length);
+
+      cos_tempWnResult  = MUL4096_8_FIXED(a_sub_b_imag, cos_stage7, fft_fixed_vec[7], calculate_length);
+      sin_tempWnResult  = MUL4096_8_FIXED(a_sub_b_real, sin_stage7, fft_fixed_vec[7], calculate_length);
+      tempWnResult_imag = vsadd(cos_tempWnResult, sin_tempWnResult, MASKREAD_OFF, calculate_length);
+
+      tempWnResult_imag = vsadd(tempWnResult_imag, 1, MASKREAD_OFF,
+                                calculate_length); // Function FOR OFFSET
+
+      // 重排序
+      vshuffle(Data_without_CP_real, shuffle_add_stage7, tempAddResult_real, SHUFFLE_SCATTER, calculate_length);
+      vshuffle(Data_without_CP_real, shuffle_wn_stage7, tempWnResult_real, SHUFFLE_SCATTER, calculate_length);
+      vshuffle(Data_without_CP_imag, shuffle_add_stage7, tempAddResult_imag, SHUFFLE_SCATTER, calculate_length);
+      vshuffle(Data_without_CP_imag, shuffle_wn_stage7, tempWnResult_imag, SHUFFLE_SCATTER, calculate_length);
+      //---------------------------------------------
+
+      //  Stage 8------------------------------------
+      vshuffle(data_real_down, move_2048to1024, Data_without_CP_real, SHUFFLE_GATHER, calculate_length);
+      vshuffle(data_imag_down, move_2048to1024, Data_without_CP_imag, SHUFFLE_GATHER, calculate_length);
+      //  a + b
+      tempAddResult_real = vsadd(Data_without_CP_real, data_real_down, MASKREAD_OFF, calculate_length);
+      tempAddResult_imag = vsadd(Data_without_CP_imag, data_imag_down, MASKREAD_OFF, calculate_length);
+      tempAddResult_real = vsra(tempAddResult_real, fft_shift_vec[8], MASKREAD_OFF, calculate_length);
+      tempAddResult_imag = vsra(tempAddResult_imag, fft_shift_vec[8], MASKREAD_OFF, calculate_length);
+
+      // (a - b)Wn    (可用复数计算代替)
+      a_sub_b_real = vssub(data_real_down, Data_without_CP_real, MASKREAD_OFF, calculate_length);
+      a_sub_b_imag = vssub(data_imag_down, Data_without_CP_imag, MASKREAD_OFF, calculate_length);
+
+      cos_tempWnResult  = MUL4096_8_FIXED(a_sub_b_real, cos_stage8, fft_fixed_vec[8], calculate_length);
+      sin_tempWnResult  = MUL4096_8_FIXED(a_sub_b_imag, sin_stage8, fft_fixed_vec[8], calculate_length);
+      tempWnResult_real = vssub(sin_tempWnResult, cos_tempWnResult, MASKREAD_OFF, calculate_length);
+
+      cos_tempWnResult  = MUL4096_8_FIXED(a_sub_b_imag, cos_stage8, fft_fixed_vec[8], calculate_length);
+      sin_tempWnResult  = MUL4096_8_FIXED(a_sub_b_real, sin_stage8, fft_fixed_vec[8], calculate_length);
+      tempWnResult_imag = vsadd(cos_tempWnResult, sin_tempWnResult, MASKREAD_OFF, calculate_length);
+
+      tempWnResult_imag = vsadd(tempWnResult_imag, 1, MASKREAD_OFF,
+                                calculate_length); // Function FOR OFFSET
+
+      // 重排序
+      vshuffle(Data_without_CP_real, shuffle_add_stage8, tempAddResult_real, SHUFFLE_SCATTER, calculate_length);
+      vshuffle(Data_without_CP_real, shuffle_wn_stage8, tempWnResult_real, SHUFFLE_SCATTER, calculate_length);
+      vshuffle(Data_without_CP_imag, shuffle_add_stage8, tempAddResult_imag, SHUFFLE_SCATTER, calculate_length);
+      vshuffle(Data_without_CP_imag, shuffle_wn_stage8, tempWnResult_imag, SHUFFLE_SCATTER, calculate_length);
+      //---------------------------------------------
+
+      //  Stage 9------------------------------------
+      vshuffle(data_real_down, move_2048to1024, Data_without_CP_real, SHUFFLE_GATHER, calculate_length);
+      vshuffle(data_imag_down, move_2048to1024, Data_without_CP_imag, SHUFFLE_GATHER, calculate_length);
+      //  a + b
+      tempAddResult_real = vsadd(Data_without_CP_real, data_real_down, MASKREAD_OFF, calculate_length);
+      tempAddResult_imag = vsadd(Data_without_CP_imag, data_imag_down, MASKREAD_OFF, calculate_length);
+      tempAddResult_real = vsra(tempAddResult_real, fft_shift_vec[9], MASKREAD_OFF, calculate_length);
+      tempAddResult_imag = vsra(tempAddResult_imag, fft_shift_vec[9], MASKREAD_OFF, calculate_length);
+
+      // (a - b)Wn    (可用复数计算代替)
+      a_sub_b_real = vssub(data_real_down, Data_without_CP_real, MASKREAD_OFF, calculate_length);
+      a_sub_b_imag = vssub(data_imag_down, Data_without_CP_imag, MASKREAD_OFF, calculate_length);
+
+      cos_tempWnResult  = MUL4096_8_FIXED(a_sub_b_real, cos_stage9, fft_fixed_vec[9], calculate_length);
+      sin_tempWnResult  = MUL4096_8_FIXED(a_sub_b_imag, sin_stage9, fft_fixed_vec[9], calculate_length);
+      tempWnResult_real = vssub(sin_tempWnResult, cos_tempWnResult, MASKREAD_OFF, calculate_length);
+
+      cos_tempWnResult  = MUL4096_8_FIXED(a_sub_b_imag, cos_stage9, fft_fixed_vec[9], calculate_length);
+      sin_tempWnResult  = MUL4096_8_FIXED(a_sub_b_real, sin_stage9, fft_fixed_vec[9], calculate_length);
+      tempWnResult_imag = vsadd(cos_tempWnResult, sin_tempWnResult, MASKREAD_OFF, calculate_length);
+
+      tempWnResult_imag = vsadd(tempWnResult_imag, 1, MASKREAD_OFF,
+                                calculate_length); // Function FOR OFFSET
+
+      // 重排序
+      vshuffle(Data_without_CP_real, shuffle_add_stage9, tempAddResult_real, SHUFFLE_SCATTER, calculate_length);
+      vshuffle(Data_without_CP_real, shuffle_wn_stage9, tempWnResult_real, SHUFFLE_SCATTER, calculate_length);
+      vshuffle(Data_without_CP_imag, shuffle_add_stage9, tempAddResult_imag, SHUFFLE_SCATTER, calculate_length);
+      vshuffle(Data_without_CP_imag, shuffle_wn_stage9, tempWnResult_imag, SHUFFLE_SCATTER, calculate_length);
+      //---------------------------------------------
+
+      //  Stage 10------------------------------------
+      vshuffle(data_real_down, move_2048to1024, Data_without_CP_real, SHUFFLE_GATHER, calculate_length);
+      vshuffle(data_imag_down, move_2048to1024, Data_without_CP_imag, SHUFFLE_GATHER, calculate_length);
+      //  a + b
+      tempAddResult_real = vsadd(Data_without_CP_real, data_real_down, MASKREAD_OFF, calculate_length);
+      tempAddResult_imag = vsadd(Data_without_CP_imag, data_imag_down, MASKREAD_OFF, calculate_length);
+      tempAddResult_real = vsra(tempAddResult_real, fft_shift_vec[10], MASKREAD_OFF, calculate_length);
+      tempAddResult_imag = vsra(tempAddResult_imag, fft_shift_vec[10], MASKREAD_OFF, calculate_length);
+
+      // (a - b)Wn    (可用复数计算代替)
+      a_sub_b_real = vssub(data_real_down, Data_without_CP_real, MASKREAD_OFF, calculate_length);
+      a_sub_b_imag = vssub(data_imag_down, Data_without_CP_imag, MASKREAD_OFF, calculate_length);
+
+      cos_tempWnResult  = MUL4096_8_FIXED(a_sub_b_real, cos_stage10, fft_fixed_vec[10], calculate_length);
+      sin_tempWnResult  = MUL4096_8_FIXED(a_sub_b_imag, sin_stage10, fft_fixed_vec[10], calculate_length);
+      tempWnResult_real = vssub(sin_tempWnResult, cos_tempWnResult, MASKREAD_OFF, calculate_length);
+
+      cos_tempWnResult  = MUL4096_8_FIXED(a_sub_b_imag, cos_stage10, fft_fixed_vec[10], calculate_length);
+      sin_tempWnResult  = MUL4096_8_FIXED(a_sub_b_real, sin_stage10, fft_fixed_vec[10], calculate_length);
+      tempWnResult_imag = vsadd(cos_tempWnResult, sin_tempWnResult, MASKREAD_OFF, calculate_length);
+
+      tempWnResult_imag = vsadd(tempWnResult_imag, 1, MASKREAD_OFF,
+                                calculate_length); // Function FOR OFFSET
+
+      // 重排序
+      //  STEP 3: fft shift
+      vshuffle(OFDM_OutReal, shuffle_wn_stage10, tempAddResult_real, SHUFFLE_SCATTER, calculate_length);
+      vshuffle(OFDM_OutReal, shuffle_add_stage10, tempWnResult_real, SHUFFLE_SCATTER, calculate_length);
+      vshuffle(OFDM_OutImag, shuffle_wn_stage10, tempAddResult_imag, SHUFFLE_SCATTER, calculate_length);
+      vshuffle(OFDM_OutImag, shuffle_add_stage10, tempWnResult_imag, SHUFFLE_SCATTER, calculate_length);
+      //  STEP 3 'END'
+      //---------------------------------------------
+    } else if (N_FFT == 1024) {
+      //  Stage 0------------------------------------
+      vshuffle(data_real_down, move_1024to512, Data_without_CP_real, SHUFFLE_GATHER, calculate_length);
+      vshuffle(data_imag_down, move_1024to512, Data_without_CP_imag, SHUFFLE_GATHER, calculate_length);
+      vshuffle(Wn_cos, shuffle_for_1024_Wn, cos_stage1, SHUFFLE_GATHER, calculate_length);
+      vshuffle(Wn_sin, shuffle_for_1024_Wn, sin_stage1, SHUFFLE_GATHER, calculate_length);
+      //  a + b
+      tempAddResult_real = vsadd(Data_without_CP_real, data_real_down, MASKREAD_OFF, calculate_length);
+      tempAddResult_imag = vsadd(Data_without_CP_imag, data_imag_down, MASKREAD_OFF, calculate_length);
+      tempAddResult_real = vsra(tempAddResult_real, fft1024_shift_vec[0], MASKREAD_OFF, calculate_length);
+      tempAddResult_imag = vsra(tempAddResult_imag, fft1024_shift_vec[0], MASKREAD_OFF, calculate_length);
+
+      // (a - b)Wn    (可用复数计算代替)
+      a_sub_b_real = vssub(data_real_down, Data_without_CP_real, MASKREAD_OFF, calculate_length);
+      a_sub_b_imag = vssub(data_imag_down, Data_without_CP_imag, MASKREAD_OFF, calculate_length);
+
+      cos_tempWnResult  = MUL4096_8_FIXED(a_sub_b_real, Wn_cos, fft1024_fixed_vec[0], calculate_length);
+      sin_tempWnResult  = MUL4096_8_FIXED(a_sub_b_imag, Wn_sin, fft1024_fixed_vec[0], calculate_length);
+      tempWnResult_real = vssub(sin_tempWnResult, cos_tempWnResult, MASKREAD_OFF, calculate_length);
+
+      cos_tempWnResult  = MUL4096_8_FIXED(a_sub_b_imag, Wn_cos, fft1024_fixed_vec[0], calculate_length);
+      sin_tempWnResult  = MUL4096_8_FIXED(a_sub_b_real, Wn_sin, fft1024_fixed_vec[0], calculate_length);
+      tempWnResult_imag = vsadd(cos_tempWnResult, sin_tempWnResult, MASKREAD_OFF, calculate_length);
+
+      tempWnResult_imag = vsadd(tempWnResult_imag, 1, MASKREAD_OFF,
+                                calculate_length); // Function FOR OFFSET
+
+      // 重排序
+      vshuffle(Data_without_CP_real, shuffle_add_stage0, tempAddResult_real, SHUFFLE_SCATTER, 1024);
+      vshuffle(Data_without_CP_real, shuffle_wn_stage0, tempWnResult_real, SHUFFLE_SCATTER, 1024);
+      vshuffle(Data_without_CP_imag, shuffle_add_stage0, tempAddResult_imag, SHUFFLE_SCATTER, 1024);
+      vshuffle(Data_without_CP_imag, shuffle_wn_stage0, tempWnResult_imag, SHUFFLE_SCATTER, 1024);
+      //---------------------------------------------
+
+      //  Stage 1------------------------------------
+      vshuffle(data_real_down, move_1024to512, Data_without_CP_real, SHUFFLE_GATHER, calculate_length);
+      vshuffle(data_imag_down, move_1024to512, Data_without_CP_imag, SHUFFLE_GATHER, calculate_length);
+      vshuffle(Wn_cos, shuffle_for_1024_Wn, cos_stage2, SHUFFLE_GATHER, calculate_length);
+      vshuffle(Wn_sin, shuffle_for_1024_Wn, sin_stage2, SHUFFLE_GATHER, calculate_length);
+      //  a + b
+      tempAddResult_real = vsadd(Data_without_CP_real, data_real_down, MASKREAD_OFF, calculate_length);
+      tempAddResult_imag = vsadd(Data_without_CP_imag, data_imag_down, MASKREAD_OFF, calculate_length);
+      tempAddResult_real = vsra(tempAddResult_real, fft1024_shift_vec[1], MASKREAD_OFF, calculate_length);
+      tempAddResult_imag = vsra(tempAddResult_imag, fft1024_shift_vec[1], MASKREAD_OFF, calculate_length);
+
+      // (a - b)Wn    (可用复数计算代替)
+      a_sub_b_real = vssub(data_real_down, Data_without_CP_real, MASKREAD_OFF, calculate_length);
+      a_sub_b_imag = vssub(data_imag_down, Data_without_CP_imag, MASKREAD_OFF, calculate_length);
+
+      cos_tempWnResult  = MUL4096_8_FIXED(a_sub_b_real, Wn_cos, fft1024_fixed_vec[1], calculate_length);
+      sin_tempWnResult  = MUL4096_8_FIXED(a_sub_b_imag, Wn_sin, fft1024_fixed_vec[1], calculate_length);
+      tempWnResult_real = vssub(sin_tempWnResult, cos_tempWnResult, MASKREAD_OFF, calculate_length);
+
+      cos_tempWnResult  = MUL4096_8_FIXED(a_sub_b_imag, Wn_cos, fft1024_fixed_vec[1], calculate_length);
+      sin_tempWnResult  = MUL4096_8_FIXED(a_sub_b_real, Wn_sin, fft1024_fixed_vec[1], calculate_length);
+      tempWnResult_imag = vsadd(cos_tempWnResult, sin_tempWnResult, MASKREAD_OFF, calculate_length);
+
+      tempWnResult_imag = vsadd(tempWnResult_imag, 1, MASKREAD_OFF,
+                                calculate_length); // Function FOR OFFSET
+
+      // 重排序
+      vshuffle(Data_without_CP_real, shuffle_add_stage1, tempAddResult_real, SHUFFLE_SCATTER, 1024);
+      vshuffle(Data_without_CP_real, shuffle_wn_stage1, tempWnResult_real, SHUFFLE_SCATTER, 1024);
+      vshuffle(Data_without_CP_imag, shuffle_add_stage1, tempAddResult_imag, SHUFFLE_SCATTER, 1024);
+      vshuffle(Data_without_CP_imag, shuffle_wn_stage1, tempWnResult_imag, SHUFFLE_SCATTER, 1024);
+      //---------------------------------------------
+
+      //  Stage 2------------------------------------
+      vshuffle(data_real_down, move_1024to512, Data_without_CP_real, SHUFFLE_GATHER, calculate_length);
+      vshuffle(data_imag_down, move_1024to512, Data_without_CP_imag, SHUFFLE_GATHER, calculate_length);
+      vshuffle(Wn_cos, shuffle_for_1024_Wn, cos_stage3, SHUFFLE_GATHER, calculate_length);
+      vshuffle(Wn_sin, shuffle_for_1024_Wn, sin_stage3, SHUFFLE_GATHER, calculate_length);
+      //  a + b
+      tempAddResult_real = vsadd(Data_without_CP_real, data_real_down, MASKREAD_OFF, calculate_length);
+      tempAddResult_imag = vsadd(Data_without_CP_imag, data_imag_down, MASKREAD_OFF, calculate_length);
+      tempAddResult_real = vsra(tempAddResult_real, fft1024_shift_vec[2], MASKREAD_OFF, calculate_length);
+      tempAddResult_imag = vsra(tempAddResult_imag, fft1024_shift_vec[2], MASKREAD_OFF, calculate_length);
+
+      // (a - b)Wn    (可用复数计算代替)
+      a_sub_b_real = vssub(data_real_down, Data_without_CP_real, MASKREAD_OFF, calculate_length);
+      a_sub_b_imag = vssub(data_imag_down, Data_without_CP_imag, MASKREAD_OFF, calculate_length);
+
+      cos_tempWnResult  = MUL4096_8_FIXED(a_sub_b_real, Wn_cos, fft1024_fixed_vec[2], calculate_length);
+      sin_tempWnResult  = MUL4096_8_FIXED(a_sub_b_imag, Wn_sin, fft1024_fixed_vec[2], calculate_length);
+      tempWnResult_real = vssub(sin_tempWnResult, cos_tempWnResult, MASKREAD_OFF, calculate_length);
+
+      cos_tempWnResult  = MUL4096_8_FIXED(a_sub_b_imag, Wn_cos, fft1024_fixed_vec[2], calculate_length);
+      sin_tempWnResult  = MUL4096_8_FIXED(a_sub_b_real, Wn_sin, fft1024_fixed_vec[2], calculate_length);
+      tempWnResult_imag = vsadd(cos_tempWnResult, sin_tempWnResult, MASKREAD_OFF, calculate_length);
+
+      tempWnResult_imag = vsadd(tempWnResult_imag, 1, MASKREAD_OFF,
+                                calculate_length); // Function FOR OFFSET
+
+      // 重排序
+      vshuffle(Data_without_CP_real, shuffle_add_stage2, tempAddResult_real, SHUFFLE_SCATTER, 1024);
+      vshuffle(Data_without_CP_real, shuffle_wn_stage2, tempWnResult_real, SHUFFLE_SCATTER, 1024);
+      vshuffle(Data_without_CP_imag, shuffle_add_stage2, tempAddResult_imag, SHUFFLE_SCATTER, 1024);
+      vshuffle(Data_without_CP_imag, shuffle_wn_stage2, tempWnResult_imag, SHUFFLE_SCATTER, 1024);
+      //---------------------------------------------
+
+      //  Stage 3------------------------------------
+      vshuffle(data_real_down, move_1024to512, Data_without_CP_real, SHUFFLE_GATHER, calculate_length);
+      vshuffle(data_imag_down, move_1024to512, Data_without_CP_imag, SHUFFLE_GATHER, calculate_length);
+      vshuffle(Wn_cos, shuffle_for_1024_Wn, cos_stage4, SHUFFLE_GATHER, calculate_length);
+      vshuffle(Wn_sin, shuffle_for_1024_Wn, sin_stage4, SHUFFLE_GATHER, calculate_length);
+      //  a + b
+      tempAddResult_real = vsadd(Data_without_CP_real, data_real_down, MASKREAD_OFF, calculate_length);
+      tempAddResult_imag = vsadd(Data_without_CP_imag, data_imag_down, MASKREAD_OFF, calculate_length);
+      tempAddResult_real = vsra(tempAddResult_real, fft1024_shift_vec[3], MASKREAD_OFF, calculate_length);
+      tempAddResult_imag = vsra(tempAddResult_imag, fft1024_shift_vec[3], MASKREAD_OFF, calculate_length);
+
+      // (a - b)Wn    (可用复数计算代替)
+      a_sub_b_real = vssub(data_real_down, Data_without_CP_real, MASKREAD_OFF, calculate_length);
+      a_sub_b_imag = vssub(data_imag_down, Data_without_CP_imag, MASKREAD_OFF, calculate_length);
+
+      cos_tempWnResult  = MUL4096_8_FIXED(a_sub_b_real, Wn_cos, fft1024_fixed_vec[3], calculate_length);
+      sin_tempWnResult  = MUL4096_8_FIXED(a_sub_b_imag, Wn_sin, fft1024_fixed_vec[3], calculate_length);
+      tempWnResult_real = vssub(sin_tempWnResult, cos_tempWnResult, MASKREAD_OFF, calculate_length);
+
+      cos_tempWnResult  = MUL4096_8_FIXED(a_sub_b_imag, Wn_cos, fft1024_fixed_vec[3], calculate_length);
+      sin_tempWnResult  = MUL4096_8_FIXED(a_sub_b_real, Wn_sin, fft1024_fixed_vec[3], calculate_length);
+      tempWnResult_imag = vsadd(cos_tempWnResult, sin_tempWnResult, MASKREAD_OFF, calculate_length);
+
+      tempWnResult_imag = vsadd(tempWnResult_imag, 1, MASKREAD_OFF,
+                                calculate_length); // Function FOR OFFSET
+
+      // 重排序
+      vshuffle(Data_without_CP_real, shuffle_add_stage3, tempAddResult_real, SHUFFLE_SCATTER, 1024);
+      vshuffle(Data_without_CP_real, shuffle_wn_stage3, tempWnResult_real, SHUFFLE_SCATTER, 1024);
+      vshuffle(Data_without_CP_imag, shuffle_add_stage3, tempAddResult_imag, SHUFFLE_SCATTER, 1024);
+      vshuffle(Data_without_CP_imag, shuffle_wn_stage3, tempWnResult_imag, SHUFFLE_SCATTER, 1024);
+      //---------------------------------------------
+
+      //  Stage 4------------------------------------
+      vshuffle(data_real_down, move_1024to512, Data_without_CP_real, SHUFFLE_GATHER, calculate_length);
+      vshuffle(data_imag_down, move_1024to512, Data_without_CP_imag, SHUFFLE_GATHER, calculate_length);
+      vshuffle(Wn_cos, shuffle_for_1024_Wn, cos_stage5, SHUFFLE_GATHER, calculate_length);
+      vshuffle(Wn_sin, shuffle_for_1024_Wn, sin_stage5, SHUFFLE_GATHER, calculate_length);
+      //  a + b
+      tempAddResult_real = vsadd(Data_without_CP_real, data_real_down, MASKREAD_OFF, calculate_length);
+      tempAddResult_imag = vsadd(Data_without_CP_imag, data_imag_down, MASKREAD_OFF, calculate_length);
+      tempAddResult_real = vsra(tempAddResult_real, fft1024_shift_vec[4], MASKREAD_OFF, calculate_length);
+      tempAddResult_imag = vsra(tempAddResult_imag, fft1024_shift_vec[4], MASKREAD_OFF, calculate_length);
+
+      // (a - b)Wn    (可用复数计算代替)
+      a_sub_b_real = vssub(data_real_down, Data_without_CP_real, MASKREAD_OFF, calculate_length);
+      a_sub_b_imag = vssub(data_imag_down, Data_without_CP_imag, MASKREAD_OFF, calculate_length);
+
+      cos_tempWnResult  = MUL4096_8_FIXED(a_sub_b_real, Wn_cos, fft1024_fixed_vec[4], calculate_length);
+      sin_tempWnResult  = MUL4096_8_FIXED(a_sub_b_imag, Wn_sin, fft1024_fixed_vec[4], calculate_length);
+      tempWnResult_real = vssub(sin_tempWnResult, cos_tempWnResult, MASKREAD_OFF, calculate_length);
+
+      cos_tempWnResult  = MUL4096_8_FIXED(a_sub_b_imag, Wn_cos, fft1024_fixed_vec[4], calculate_length);
+      sin_tempWnResult  = MUL4096_8_FIXED(a_sub_b_real, Wn_sin, fft1024_fixed_vec[4], calculate_length);
+      tempWnResult_imag = vsadd(cos_tempWnResult, sin_tempWnResult, MASKREAD_OFF, calculate_length);
+
+      tempWnResult_imag = vsadd(tempWnResult_imag, 1, MASKREAD_OFF,
+                                calculate_length); // Function FOR OFFSET
+
+      // 重排序
+      vshuffle(Data_without_CP_real, shuffle_add_stage4, tempAddResult_real, SHUFFLE_SCATTER, 1024);
+      vshuffle(Data_without_CP_real, shuffle_wn_stage4, tempWnResult_real, SHUFFLE_SCATTER, 1024);
+      vshuffle(Data_without_CP_imag, shuffle_add_stage4, tempAddResult_imag, SHUFFLE_SCATTER, 1024);
+      vshuffle(Data_without_CP_imag, shuffle_wn_stage4, tempWnResult_imag, SHUFFLE_SCATTER, 1024);
+      //---------------------------------------------
+
+      //  Stage 5------------------------------------
+      vshuffle(data_real_down, move_1024to512, Data_without_CP_real, SHUFFLE_GATHER, calculate_length);
+      vshuffle(data_imag_down, move_1024to512, Data_without_CP_imag, SHUFFLE_GATHER, calculate_length);
+      vshuffle(Wn_cos, shuffle_for_1024_Wn, cos_stage6, SHUFFLE_GATHER, calculate_length);
+      vshuffle(Wn_sin, shuffle_for_1024_Wn, sin_stage6, SHUFFLE_GATHER, calculate_length);
+      //  a + b
+      tempAddResult_real = vsadd(Data_without_CP_real, data_real_down, MASKREAD_OFF, calculate_length);
+      tempAddResult_imag = vsadd(Data_without_CP_imag, data_imag_down, MASKREAD_OFF, calculate_length);
+      tempAddResult_real = vsra(tempAddResult_real, fft1024_shift_vec[5], MASKREAD_OFF, calculate_length);
+      tempAddResult_imag = vsra(tempAddResult_imag, fft1024_shift_vec[5], MASKREAD_OFF, calculate_length);
+
+      // (a - b)Wn    (可用复数计算代替)
+      a_sub_b_real = vssub(data_real_down, Data_without_CP_real, MASKREAD_OFF, calculate_length);
+      a_sub_b_imag = vssub(data_imag_down, Data_without_CP_imag, MASKREAD_OFF, calculate_length);
+
+      cos_tempWnResult  = MUL4096_8_FIXED(a_sub_b_real, Wn_cos, fft1024_fixed_vec[5], calculate_length);
+      sin_tempWnResult  = MUL4096_8_FIXED(a_sub_b_imag, Wn_sin, fft1024_fixed_vec[5], calculate_length);
+      tempWnResult_real = vssub(sin_tempWnResult, cos_tempWnResult, MASKREAD_OFF, calculate_length);
+
+      cos_tempWnResult  = MUL4096_8_FIXED(a_sub_b_imag, Wn_cos, fft1024_fixed_vec[5], calculate_length);
+      sin_tempWnResult  = MUL4096_8_FIXED(a_sub_b_real, Wn_sin, fft1024_fixed_vec[5], calculate_length);
+      tempWnResult_imag = vsadd(cos_tempWnResult, sin_tempWnResult, MASKREAD_OFF, calculate_length);
+
+      tempWnResult_imag = vsadd(tempWnResult_imag, 1, MASKREAD_OFF,
+                                calculate_length); // Function FOR OFFSET
+
+      // 重排序
+      vshuffle(Data_without_CP_real, shuffle_add_stage5, tempAddResult_real, SHUFFLE_SCATTER, 1024);
+      vshuffle(Data_without_CP_real, shuffle_wn_stage5, tempWnResult_real, SHUFFLE_SCATTER, 1024);
+      vshuffle(Data_without_CP_imag, shuffle_add_stage5, tempAddResult_imag, SHUFFLE_SCATTER, 1024);
+      vshuffle(Data_without_CP_imag, shuffle_wn_stage5, tempWnResult_imag, SHUFFLE_SCATTER, 1024);
+      //---------------------------------------------
+
+      //  Stage 6------------------------------------
+      vshuffle(data_real_down, move_1024to512, Data_without_CP_real, SHUFFLE_GATHER, calculate_length);
+      vshuffle(data_imag_down, move_1024to512, Data_without_CP_imag, SHUFFLE_GATHER, calculate_length);
+      vshuffle(Wn_cos, shuffle_for_1024_Wn, cos_stage7, SHUFFLE_GATHER, calculate_length);
+      vshuffle(Wn_sin, shuffle_for_1024_Wn, sin_stage7, SHUFFLE_GATHER, calculate_length);
+      //  a + b
+      tempAddResult_real = vsadd(Data_without_CP_real, data_real_down, MASKREAD_OFF, calculate_length);
+      tempAddResult_imag = vsadd(Data_without_CP_imag, data_imag_down, MASKREAD_OFF, calculate_length);
+      tempAddResult_real = vsra(tempAddResult_real, fft1024_shift_vec[6], MASKREAD_OFF, calculate_length);
+      tempAddResult_imag = vsra(tempAddResult_imag, fft1024_shift_vec[6], MASKREAD_OFF, calculate_length);
+
+      // (a - b)Wn    (可用复数计算代替)
+      a_sub_b_real = vssub(data_real_down, Data_without_CP_real, MASKREAD_OFF, calculate_length);
+      a_sub_b_imag = vssub(data_imag_down, Data_without_CP_imag, MASKREAD_OFF, calculate_length);
+
+      cos_tempWnResult  = MUL4096_8_FIXED(a_sub_b_real, Wn_cos, fft1024_fixed_vec[6], calculate_length);
+      sin_tempWnResult  = MUL4096_8_FIXED(a_sub_b_imag, Wn_sin, fft1024_fixed_vec[6], calculate_length);
+      tempWnResult_real = vssub(sin_tempWnResult, cos_tempWnResult, MASKREAD_OFF, calculate_length);
+
+      cos_tempWnResult  = MUL4096_8_FIXED(a_sub_b_imag, Wn_cos, fft1024_fixed_vec[6], calculate_length);
+      sin_tempWnResult  = MUL4096_8_FIXED(a_sub_b_real, Wn_sin, fft1024_fixed_vec[6], calculate_length);
+      tempWnResult_imag = vsadd(cos_tempWnResult, sin_tempWnResult, MASKREAD_OFF, calculate_length);
+
+      tempWnResult_imag = vsadd(tempWnResult_imag, 1, MASKREAD_OFF,
+                                calculate_length); // Function FOR OFFSET
+
+      // 重排序
+      vshuffle(Data_without_CP_real, shuffle_add_stage6, tempAddResult_real, SHUFFLE_SCATTER, 1024);
+      vshuffle(Data_without_CP_real, shuffle_wn_stage6, tempWnResult_real, SHUFFLE_SCATTER, 1024);
+      vshuffle(Data_without_CP_imag, shuffle_add_stage6, tempAddResult_imag, SHUFFLE_SCATTER, 1024);
+      vshuffle(Data_without_CP_imag, shuffle_wn_stage6, tempWnResult_imag, SHUFFLE_SCATTER, 1024);
+      //---------------------------------------------
+
+      //  Stage 7------------------------------------
+      vshuffle(data_real_down, move_1024to512, Data_without_CP_real, SHUFFLE_GATHER, calculate_length);
+      vshuffle(data_imag_down, move_1024to512, Data_without_CP_imag, SHUFFLE_GATHER, calculate_length);
+      vshuffle(Wn_cos, shuffle_for_1024_Wn, cos_stage8, SHUFFLE_GATHER, calculate_length);
+      vshuffle(Wn_sin, shuffle_for_1024_Wn, sin_stage8, SHUFFLE_GATHER, calculate_length);
+      //  a + b
+      tempAddResult_real = vsadd(Data_without_CP_real, data_real_down, MASKREAD_OFF, calculate_length);
+      tempAddResult_imag = vsadd(Data_without_CP_imag, data_imag_down, MASKREAD_OFF, calculate_length);
+      tempAddResult_real = vsra(tempAddResult_real, fft1024_shift_vec[7], MASKREAD_OFF, calculate_length);
+      tempAddResult_imag = vsra(tempAddResult_imag, fft1024_shift_vec[7], MASKREAD_OFF, calculate_length);
+
+      // (a - b)Wn    (可用复数计算代替)
+      a_sub_b_real = vssub(data_real_down, Data_without_CP_real, MASKREAD_OFF, calculate_length);
+      a_sub_b_imag = vssub(data_imag_down, Data_without_CP_imag, MASKREAD_OFF, calculate_length);
+
+      cos_tempWnResult  = MUL4096_8_FIXED(a_sub_b_real, Wn_cos, fft1024_fixed_vec[7], calculate_length);
+      sin_tempWnResult  = MUL4096_8_FIXED(a_sub_b_imag, Wn_sin, fft1024_fixed_vec[7], calculate_length);
+      tempWnResult_real = vssub(sin_tempWnResult, cos_tempWnResult, MASKREAD_OFF, calculate_length);
+
+      cos_tempWnResult  = MUL4096_8_FIXED(a_sub_b_imag, Wn_cos, fft1024_fixed_vec[7], calculate_length);
+      sin_tempWnResult  = MUL4096_8_FIXED(a_sub_b_real, Wn_sin, fft1024_fixed_vec[7], calculate_length);
+      tempWnResult_imag = vsadd(cos_tempWnResult, sin_tempWnResult, MASKREAD_OFF, calculate_length);
+
+      tempWnResult_imag = vsadd(tempWnResult_imag, 1, MASKREAD_OFF,
+                                calculate_length); // Function FOR OFFSET
+
+      // 重排序
+      vshuffle(Data_without_CP_real, shuffle_add_stage7, tempAddResult_real, SHUFFLE_SCATTER, 1024);
+      vshuffle(Data_without_CP_real, shuffle_wn_stage7, tempWnResult_real, SHUFFLE_SCATTER, 1024);
+      vshuffle(Data_without_CP_imag, shuffle_add_stage7, tempAddResult_imag, SHUFFLE_SCATTER, 1024);
+      vshuffle(Data_without_CP_imag, shuffle_wn_stage7, tempWnResult_imag, SHUFFLE_SCATTER, 1024);
+      //---------------------------------------------
+
+      //  Stage 8------------------------------------
+      vshuffle(data_real_down, move_1024to512, Data_without_CP_real, SHUFFLE_GATHER, calculate_length);
+      vshuffle(data_imag_down, move_1024to512, Data_without_CP_imag, SHUFFLE_GATHER, calculate_length);
+      vshuffle(Wn_cos, shuffle_for_1024_Wn, cos_stage9, SHUFFLE_GATHER, calculate_length);
+      vshuffle(Wn_sin, shuffle_for_1024_Wn, sin_stage9, SHUFFLE_GATHER, calculate_length);
+      //  a + b
+      tempAddResult_real = vsadd(Data_without_CP_real, data_real_down, MASKREAD_OFF, calculate_length);
+      tempAddResult_imag = vsadd(Data_without_CP_imag, data_imag_down, MASKREAD_OFF, calculate_length);
+      tempAddResult_real = vsra(tempAddResult_real, fft1024_shift_vec[8], MASKREAD_OFF, calculate_length);
+      tempAddResult_imag = vsra(tempAddResult_imag, fft1024_shift_vec[8], MASKREAD_OFF, calculate_length);
+
+      // (a - b)Wn    (可用复数计算代替)
+      a_sub_b_real = vssub(data_real_down, Data_without_CP_real, MASKREAD_OFF, calculate_length);
+      a_sub_b_imag = vssub(data_imag_down, Data_without_CP_imag, MASKREAD_OFF, calculate_length);
+
+      cos_tempWnResult  = MUL4096_8_FIXED(a_sub_b_real, Wn_cos, fft1024_fixed_vec[8], calculate_length);
+      sin_tempWnResult  = MUL4096_8_FIXED(a_sub_b_imag, Wn_sin, fft1024_fixed_vec[8], calculate_length);
+      tempWnResult_real = vssub(sin_tempWnResult, cos_tempWnResult, MASKREAD_OFF, calculate_length);
+
+      cos_tempWnResult  = MUL4096_8_FIXED(a_sub_b_imag, Wn_cos, fft1024_fixed_vec[8], calculate_length);
+      sin_tempWnResult  = MUL4096_8_FIXED(a_sub_b_real, Wn_sin, fft1024_fixed_vec[8], calculate_length);
+      tempWnResult_imag = vsadd(cos_tempWnResult, sin_tempWnResult, MASKREAD_OFF, calculate_length);
+
+      tempWnResult_imag = vsadd(tempWnResult_imag, 1, MASKREAD_OFF,
+                                calculate_length); // Function FOR OFFSET
+
+      // 重排序
+      vshuffle(Data_without_CP_real, shuffle_add_stage8, tempAddResult_real, SHUFFLE_SCATTER, 1024);
+      vshuffle(Data_without_CP_real, shuffle_wn_stage8, tempWnResult_real, SHUFFLE_SCATTER, 1024);
+      vshuffle(Data_without_CP_imag, shuffle_add_stage8, tempAddResult_imag, SHUFFLE_SCATTER, 1024);
+      vshuffle(Data_without_CP_imag, shuffle_wn_stage8, tempWnResult_imag, SHUFFLE_SCATTER, 1024);
+      //---------------------------------------------
+
+      //  Stage 9------------------------------------
+      vshuffle(data_real_down, move_1024to512, Data_without_CP_real, SHUFFLE_GATHER, calculate_length);
+      vshuffle(data_imag_down, move_1024to512, Data_without_CP_imag, SHUFFLE_GATHER, calculate_length);
+      vshuffle(Wn_cos, shuffle_for_1024_Wn, cos_stage10, SHUFFLE_GATHER, calculate_length);
+      vshuffle(Wn_sin, shuffle_for_1024_Wn, sin_stage10, SHUFFLE_GATHER, calculate_length);
+      //  a + b
+      tempAddResult_real = vsadd(Data_without_CP_real, data_real_down, MASKREAD_OFF, calculate_length);
+      tempAddResult_imag = vsadd(Data_without_CP_imag, data_imag_down, MASKREAD_OFF, calculate_length);
+      tempAddResult_real = vsra(tempAddResult_real, fft1024_shift_vec[9], MASKREAD_OFF, calculate_length);
+      tempAddResult_imag = vsra(tempAddResult_imag, fft1024_shift_vec[9], MASKREAD_OFF, calculate_length);
+
+      // (a - b)Wn    (可用复数计算代替)
+      a_sub_b_real = vssub(data_real_down, Data_without_CP_real, MASKREAD_OFF, calculate_length);
+      a_sub_b_imag = vssub(data_imag_down, Data_without_CP_imag, MASKREAD_OFF, calculate_length);
+
+      cos_tempWnResult  = MUL4096_8_FIXED(a_sub_b_real, Wn_cos, fft1024_fixed_vec[9], calculate_length);
+      sin_tempWnResult  = MUL4096_8_FIXED(a_sub_b_imag, Wn_sin, fft1024_fixed_vec[9], calculate_length);
+      tempWnResult_real = vssub(sin_tempWnResult, cos_tempWnResult, MASKREAD_OFF, calculate_length);
+
+      cos_tempWnResult  = MUL4096_8_FIXED(a_sub_b_imag, Wn_cos, fft1024_fixed_vec[9], calculate_length);
+      sin_tempWnResult  = MUL4096_8_FIXED(a_sub_b_real, Wn_sin, fft1024_fixed_vec[9], calculate_length);
+      tempWnResult_imag = vsadd(cos_tempWnResult, sin_tempWnResult, MASKREAD_OFF, calculate_length);
+
+      tempWnResult_imag = vsadd(tempWnResult_imag, 1, MASKREAD_OFF,
+                                calculate_length); // Function FOR OFFSET
+
+      // 重排序
+      //  STEP 3 : fft shift
+      vshuffle(OFDM_OutReal, shuffle_add_stage9, tempWnResult_real, SHUFFLE_SCATTER, 1024);
+      vshuffle(OFDM_OutReal, shuffle_wn_stage9, tempAddResult_real, SHUFFLE_SCATTER, 1024);
+      vshuffle(OFDM_OutImag, shuffle_add_stage9, tempWnResult_imag, SHUFFLE_SCATTER, 1024);
+      vshuffle(OFDM_OutImag, shuffle_wn_stage9, tempAddResult_imag, SHUFFLE_SCATTER, 1024);
+      //  STEP 3 'END'
+      //---------------------------------------------
+    }
+
+    __v2048i16 targetIndices;
+    vclaim(targetIndices);
+    vrange(targetIndices, K);
+    targetIndices = vsadd(targetIndices, firstSC, MASKREAD_OFF, K);
+
+    __v4096i8 OFDM_OutReal0;
+    __v4096i8 OFDM_OutImag0;
+    vclaim(OFDM_OutReal0);
+    vclaim(OFDM_OutImag0);
+
+    vshuffle(OFDM_OutReal0, targetIndices, OFDM_OutReal, SHUFFLE_GATHER, K);
+    vshuffle(OFDM_OutImag0, targetIndices, OFDM_OutImag, SHUFFLE_GATHER, K);
+
+    K = csetNRB * subcarrierPerRB;
+    vshuffle(OFDM_OutReal, csetSubcarriers, OFDM_OutReal0, SHUFFLE_GATHER, K);
+    vshuffle(OFDM_OutImag, csetSubcarriers, OFDM_OutImag0, SHUFFLE_GATHER, K);
+
+    vreturn(OFDM_OutReal, K, OFDM_OutImag, K);
+    // vreturn(OFDM_OutReal, sizeof(OFDM_OutReal), OFDM_OutImag, sizeof(OFDM_OutImag));
   } else {
-    // printf("\n\nThe OFDM_Demodulaton Module only support FFT of 1024 or
-    // 2048
-    // "
-    //        "points, now is %hd\n\n",
-    //        &N_FFT);
-    stage_init       = 0;
-    calculate_length = 1024;
+    short subcarrierPerRB = 12;
+    short K               = nrb * subcarrierPerRB;
+
+    __v4096i8 OFDM_OutReal;
+    __v4096i8 OFDM_OutImag;
+    vclaim(OFDM_OutReal);
+    vclaim(OFDM_OutImag);
+    vbrdcst(OFDM_OutReal, 0, MASKREAD_OFF, 1);
+    vbrdcst(OFDM_OutImag, 0, MASKREAD_OFF, 1);
+    vreturn(OFDM_OutReal, K, OFDM_OutImag, K);
+    // vreturn(OFDM_OutReal, sizeof(OFDM_OutReal), OFDM_OutImag, sizeof(OFDM_OutImag));
   }
-
-  // 从2048点FFT的Wn中提取1024点的Wn的shuffle_Index
-  __v2048i16 shuffle_for_1024_Wn;
-  vclaim(shuffle_for_1024_Wn);
-  vrange(shuffle_for_1024_Wn, 2048);
-  shuffle_for_1024_Wn = vsll(shuffle_for_1024_Wn, 1, MASKREAD_OFF, 2048);
-  __v4096i8 Wn_cos;
-  vclaim(Wn_cos);
-  __v4096i8 Wn_sin;
-  vclaim(Wn_sin);
-
-  // 向量搬移index
-  __v2048i16 copy_2048; // copy_2048 = [0 1 2 ... 2047]
-  vclaim(copy_2048);
-  vrange(copy_2048, 2048);
-  __v2048i16 move_2048to1024; // move_2048to1024 = [1024 1025 1026 ... 3071]
-  move_2048to1024 = vsadd(copy_2048, 1024, MASKREAD_OFF, 2048);
-  __v2048i16 move_1024to512; // move_1024to512 = [512 513 514 ... 2559]
-  move_1024to512 = vsadd(copy_2048, 512, MASKREAD_OFF, 2048);
-
-  //  进行计算的四个向量分别为    Data_without_CP_real（up）
-  //  Data_without_CP_imag（up）    data_real_down data_imag_down
-  __v4096i8 data_real_down;
-  __v4096i8 data_imag_down;
-  vclaim(data_real_down);
-  vclaim(data_imag_down);
-
-  // if (N_FFT == 2048)
-  // {
-  //     vshuffle(data_real_down, move_2048to1024, Data_without_CP_real,
-  //     SHUFFLE_GATHER, calculate_length); vshuffle(data_imag_down,
-  //     move_2048to1024, Data_without_CP_imag, SHUFFLE_GATHER,
-  //     calculate_length);
-  // }
-  // else if (N_FFT == 1024)
-  // {
-  //     vshuffle(data_real_down, move_1024to512, Data_without_CP_real,
-  //     SHUFFLE_GATHER, calculate_length); vshuffle(data_imag_down,
-  //     move_1024to512, Data_without_CP_imag, SHUFFLE_GATHER,
-  //     calculate_length);
-  // }
-
-  // FFT每一级计算过程中的中间变量
-  __v4096i8 tempAddResult_real;
-  vclaim(tempAddResult_real);
-  __v4096i8 tempAddResult_imag;
-  vclaim(tempAddResult_imag);
-  __v4096i8 tempWnResult_real;
-  vclaim(tempWnResult_real);
-  __v4096i8 tempWnResult_imag;
-  vclaim(tempWnResult_imag);
-
-  __v4096i8 a_sub_b_real;
-  vclaim(a_sub_b_real);
-  __v4096i8 a_sub_b_imag;
-  vclaim(a_sub_b_imag);
-  __v4096i8 cos_tempWnResult;
-  __v4096i8 sin_tempWnResult;
-  vclaim(cos_tempWnResult);
-  vclaim(sin_tempWnResult);
-
-  if (N_FFT == 2048) {
-    // 蝶形计算
-    // a ------- (a + b)
-    //      |
-    // b ------- (a - b)Wn
-
-    //  Stage 0------------------------------------
-    vshuffle(data_real_down, move_2048to1024, Data_without_CP_real, SHUFFLE_GATHER, calculate_length);
-    vshuffle(data_imag_down, move_2048to1024, Data_without_CP_imag, SHUFFLE_GATHER, calculate_length);
-    //  a + b
-    tempAddResult_real = vsadd(Data_without_CP_real, data_real_down, MASKREAD_OFF, calculate_length);
-    tempAddResult_imag = vsadd(Data_without_CP_imag, data_imag_down, MASKREAD_OFF, calculate_length);
-    tempAddResult_real = vsra(tempAddResult_real, fft_shift_vec[0], MASKREAD_OFF, calculate_length);
-    tempAddResult_imag = vsra(tempAddResult_imag, fft_shift_vec[0], MASKREAD_OFF, calculate_length);
-
-    // (a - b)Wn    (可用复数计算代替)
-    a_sub_b_real = vssub(data_real_down, Data_without_CP_real, MASKREAD_OFF, calculate_length);
-    a_sub_b_imag = vssub(data_imag_down, Data_without_CP_imag, MASKREAD_OFF, calculate_length);
-
-    cos_tempWnResult  = MUL4096_8_FIXED(a_sub_b_real, cos_stage0, fft_fixed_vec[0], calculate_length);
-    sin_tempWnResult  = MUL4096_8_FIXED(a_sub_b_imag, sin_stage0, fft_fixed_vec[0], calculate_length);
-    tempWnResult_real = vssub(sin_tempWnResult, cos_tempWnResult, MASKREAD_OFF, calculate_length);
-
-    cos_tempWnResult  = MUL4096_8_FIXED(a_sub_b_imag, cos_stage0, fft_fixed_vec[0], calculate_length);
-    sin_tempWnResult  = MUL4096_8_FIXED(a_sub_b_real, sin_stage0, fft_fixed_vec[0], calculate_length);
-    tempWnResult_imag = vsadd(cos_tempWnResult, sin_tempWnResult, MASKREAD_OFF, calculate_length);
-
-    tempWnResult_imag = vsadd(tempWnResult_imag, 1, MASKREAD_OFF,
-                              calculate_length); // Function FOR OFFSET
-
-    // 重排序
-    vshuffle(Data_without_CP_real, shuffle_add_stage0, tempAddResult_real, SHUFFLE_SCATTER, calculate_length);
-    vshuffle(Data_without_CP_real, shuffle_wn_stage0, tempWnResult_real, SHUFFLE_SCATTER, calculate_length);
-    vshuffle(Data_without_CP_imag, shuffle_add_stage0, tempAddResult_imag, SHUFFLE_SCATTER, calculate_length);
-    vshuffle(Data_without_CP_imag, shuffle_wn_stage0, tempWnResult_imag, SHUFFLE_SCATTER, calculate_length);
-    //---------------------------------------------
-
-    //  Stage 1------------------------------------
-    vshuffle(data_real_down, move_2048to1024, Data_without_CP_real, SHUFFLE_GATHER, calculate_length);
-    vshuffle(data_imag_down, move_2048to1024, Data_without_CP_imag, SHUFFLE_GATHER, calculate_length);
-    //  a + b
-    tempAddResult_real = vsadd(Data_without_CP_real, data_real_down, MASKREAD_OFF, calculate_length);
-    tempAddResult_imag = vsadd(Data_without_CP_imag, data_imag_down, MASKREAD_OFF, calculate_length);
-    tempAddResult_real = vsra(tempAddResult_real, fft_shift_vec[1], MASKREAD_OFF, calculate_length);
-    tempAddResult_imag = vsra(tempAddResult_imag, fft_shift_vec[1], MASKREAD_OFF, calculate_length);
-
-    // (a - b)Wn    (可用复数计算代替)
-    a_sub_b_real = vssub(data_real_down, Data_without_CP_real, MASKREAD_OFF, calculate_length);
-    a_sub_b_imag = vssub(data_imag_down, Data_without_CP_imag, MASKREAD_OFF, calculate_length);
-
-    cos_tempWnResult  = MUL4096_8_FIXED(a_sub_b_real, cos_stage1, fft_fixed_vec[1], calculate_length);
-    sin_tempWnResult  = MUL4096_8_FIXED(a_sub_b_imag, sin_stage1, fft_fixed_vec[1], calculate_length);
-    tempWnResult_real = vssub(sin_tempWnResult, cos_tempWnResult, MASKREAD_OFF, calculate_length);
-
-    cos_tempWnResult  = MUL4096_8_FIXED(a_sub_b_imag, cos_stage1, fft_fixed_vec[1], calculate_length);
-    sin_tempWnResult  = MUL4096_8_FIXED(a_sub_b_real, sin_stage1, fft_fixed_vec[1], calculate_length);
-    tempWnResult_imag = vsadd(cos_tempWnResult, sin_tempWnResult, MASKREAD_OFF, calculate_length);
-
-    tempWnResult_imag = vsadd(tempWnResult_imag, 1, MASKREAD_OFF,
-                              calculate_length); // Function FOR OFFSET
-
-    // 重排序
-    vshuffle(Data_without_CP_real, shuffle_add_stage1, tempAddResult_real, SHUFFLE_SCATTER, calculate_length);
-    vshuffle(Data_without_CP_real, shuffle_wn_stage1, tempWnResult_real, SHUFFLE_SCATTER, calculate_length);
-    vshuffle(Data_without_CP_imag, shuffle_add_stage1, tempAddResult_imag, SHUFFLE_SCATTER, calculate_length);
-    vshuffle(Data_without_CP_imag, shuffle_wn_stage1, tempWnResult_imag, SHUFFLE_SCATTER, calculate_length);
-    //---------------------------------------------
-
-    //  Stage 2------------------------------------
-    vshuffle(data_real_down, move_2048to1024, Data_without_CP_real, SHUFFLE_GATHER, calculate_length);
-    vshuffle(data_imag_down, move_2048to1024, Data_without_CP_imag, SHUFFLE_GATHER, calculate_length);
-    //  a + b
-    tempAddResult_real = vsadd(Data_without_CP_real, data_real_down, MASKREAD_OFF, calculate_length);
-    tempAddResult_imag = vsadd(Data_without_CP_imag, data_imag_down, MASKREAD_OFF, calculate_length);
-    tempAddResult_real = vsra(tempAddResult_real, fft_shift_vec[2], MASKREAD_OFF, calculate_length);
-    tempAddResult_imag = vsra(tempAddResult_imag, fft_shift_vec[2], MASKREAD_OFF, calculate_length);
-
-    // (a - b)Wn    (可用复数计算代替)
-    a_sub_b_real = vssub(data_real_down, Data_without_CP_real, MASKREAD_OFF, calculate_length);
-    a_sub_b_imag = vssub(data_imag_down, Data_without_CP_imag, MASKREAD_OFF, calculate_length);
-
-    cos_tempWnResult  = MUL4096_8_FIXED(a_sub_b_real, cos_stage2, fft_fixed_vec[2], calculate_length);
-    sin_tempWnResult  = MUL4096_8_FIXED(a_sub_b_imag, sin_stage2, fft_fixed_vec[2], calculate_length);
-    tempWnResult_real = vssub(sin_tempWnResult, cos_tempWnResult, MASKREAD_OFF, calculate_length);
-
-    cos_tempWnResult  = MUL4096_8_FIXED(a_sub_b_imag, cos_stage2, fft_fixed_vec[2], calculate_length);
-    sin_tempWnResult  = MUL4096_8_FIXED(a_sub_b_real, sin_stage2, fft_fixed_vec[2], calculate_length);
-    tempWnResult_imag = vsadd(cos_tempWnResult, sin_tempWnResult, MASKREAD_OFF, calculate_length);
-
-    tempWnResult_imag = vsadd(tempWnResult_imag, 1, MASKREAD_OFF,
-                              calculate_length); // Function FOR OFFSET
-
-    // 重排序
-    vshuffle(Data_without_CP_real, shuffle_add_stage2, tempAddResult_real, SHUFFLE_SCATTER, calculate_length);
-    vshuffle(Data_without_CP_real, shuffle_wn_stage2, tempWnResult_real, SHUFFLE_SCATTER, calculate_length);
-    vshuffle(Data_without_CP_imag, shuffle_add_stage2, tempAddResult_imag, SHUFFLE_SCATTER, calculate_length);
-    vshuffle(Data_without_CP_imag, shuffle_wn_stage2, tempWnResult_imag, SHUFFLE_SCATTER, calculate_length);
-    //---------------------------------------------
-
-    //  Stage 3------------------------------------
-    vshuffle(data_real_down, move_2048to1024, Data_without_CP_real, SHUFFLE_GATHER, calculate_length);
-    vshuffle(data_imag_down, move_2048to1024, Data_without_CP_imag, SHUFFLE_GATHER, calculate_length);
-    //  a + b
-    tempAddResult_real = vsadd(Data_without_CP_real, data_real_down, MASKREAD_OFF, calculate_length);
-    tempAddResult_imag = vsadd(Data_without_CP_imag, data_imag_down, MASKREAD_OFF, calculate_length);
-    tempAddResult_real = vsra(tempAddResult_real, fft_shift_vec[3], MASKREAD_OFF, calculate_length);
-    tempAddResult_imag = vsra(tempAddResult_imag, fft_shift_vec[3], MASKREAD_OFF, calculate_length);
-
-    // (a - b)Wn    (可用复数计算代替)
-    a_sub_b_real = vssub(data_real_down, Data_without_CP_real, MASKREAD_OFF, calculate_length);
-    a_sub_b_imag = vssub(data_imag_down, Data_without_CP_imag, MASKREAD_OFF, calculate_length);
-
-    cos_tempWnResult  = MUL4096_8_FIXED(a_sub_b_real, cos_stage3, fft_fixed_vec[3], calculate_length);
-    sin_tempWnResult  = MUL4096_8_FIXED(a_sub_b_imag, sin_stage3, fft_fixed_vec[3], calculate_length);
-    tempWnResult_real = vssub(sin_tempWnResult, cos_tempWnResult, MASKREAD_OFF, calculate_length);
-
-    cos_tempWnResult  = MUL4096_8_FIXED(a_sub_b_imag, cos_stage3, fft_fixed_vec[3], calculate_length);
-    sin_tempWnResult  = MUL4096_8_FIXED(a_sub_b_real, sin_stage3, fft_fixed_vec[3], calculate_length);
-    tempWnResult_imag = vsadd(cos_tempWnResult, sin_tempWnResult, MASKREAD_OFF, calculate_length);
-
-    tempWnResult_imag = vsadd(tempWnResult_imag, 1, MASKREAD_OFF,
-                              calculate_length); // Function FOR OFFSET
-
-    // 重排序
-    vshuffle(Data_without_CP_real, shuffle_add_stage3, tempAddResult_real, SHUFFLE_SCATTER, calculate_length);
-    vshuffle(Data_without_CP_real, shuffle_wn_stage3, tempWnResult_real, SHUFFLE_SCATTER, calculate_length);
-    vshuffle(Data_without_CP_imag, shuffle_add_stage3, tempAddResult_imag, SHUFFLE_SCATTER, calculate_length);
-    vshuffle(Data_without_CP_imag, shuffle_wn_stage3, tempWnResult_imag, SHUFFLE_SCATTER, calculate_length);
-    //---------------------------------------------
-
-    //  Stage 4------------------------------------
-    vshuffle(data_real_down, move_2048to1024, Data_without_CP_real, SHUFFLE_GATHER, calculate_length);
-    vshuffle(data_imag_down, move_2048to1024, Data_without_CP_imag, SHUFFLE_GATHER, calculate_length);
-    //  a + b
-    tempAddResult_real = vsadd(Data_without_CP_real, data_real_down, MASKREAD_OFF, calculate_length);
-    tempAddResult_imag = vsadd(Data_without_CP_imag, data_imag_down, MASKREAD_OFF, calculate_length);
-    tempAddResult_real = vsra(tempAddResult_real, fft_shift_vec[4], MASKREAD_OFF, calculate_length);
-    tempAddResult_imag = vsra(tempAddResult_imag, fft_shift_vec[4], MASKREAD_OFF, calculate_length);
-
-    // (a - b)Wn    (可用复数计算代替)
-    a_sub_b_real = vssub(data_real_down, Data_without_CP_real, MASKREAD_OFF, calculate_length);
-    a_sub_b_imag = vssub(data_imag_down, Data_without_CP_imag, MASKREAD_OFF, calculate_length);
-
-    cos_tempWnResult  = MUL4096_8_FIXED(a_sub_b_real, cos_stage4, fft_fixed_vec[4], calculate_length);
-    sin_tempWnResult  = MUL4096_8_FIXED(a_sub_b_imag, sin_stage4, fft_fixed_vec[4], calculate_length);
-    tempWnResult_real = vssub(sin_tempWnResult, cos_tempWnResult, MASKREAD_OFF, calculate_length);
-
-    cos_tempWnResult  = MUL4096_8_FIXED(a_sub_b_imag, cos_stage4, fft_fixed_vec[4], calculate_length);
-    sin_tempWnResult  = MUL4096_8_FIXED(a_sub_b_real, sin_stage4, fft_fixed_vec[4], calculate_length);
-    tempWnResult_imag = vsadd(cos_tempWnResult, sin_tempWnResult, MASKREAD_OFF, calculate_length);
-
-    tempWnResult_imag = vsadd(tempWnResult_imag, 1, MASKREAD_OFF,
-                              calculate_length); // Function FOR OFFSET
-
-    // 重排序
-    vshuffle(Data_without_CP_real, shuffle_add_stage4, tempAddResult_real, SHUFFLE_SCATTER, calculate_length);
-    vshuffle(Data_without_CP_real, shuffle_wn_stage4, tempWnResult_real, SHUFFLE_SCATTER, calculate_length);
-    vshuffle(Data_without_CP_imag, shuffle_add_stage4, tempAddResult_imag, SHUFFLE_SCATTER, calculate_length);
-    vshuffle(Data_without_CP_imag, shuffle_wn_stage4, tempWnResult_imag, SHUFFLE_SCATTER, calculate_length);
-    //---------------------------------------------
-
-    //  Stage 5------------------------------------
-    vshuffle(data_real_down, move_2048to1024, Data_without_CP_real, SHUFFLE_GATHER, calculate_length);
-    vshuffle(data_imag_down, move_2048to1024, Data_without_CP_imag, SHUFFLE_GATHER, calculate_length);
-    //  a + b
-    tempAddResult_real = vsadd(Data_without_CP_real, data_real_down, MASKREAD_OFF, calculate_length);
-    tempAddResult_imag = vsadd(Data_without_CP_imag, data_imag_down, MASKREAD_OFF, calculate_length);
-    tempAddResult_real = vsra(tempAddResult_real, fft_shift_vec[5], MASKREAD_OFF, calculate_length);
-    tempAddResult_imag = vsra(tempAddResult_imag, fft_shift_vec[5], MASKREAD_OFF, calculate_length);
-
-    // (a - b)Wn    (可用复数计算代替)
-    a_sub_b_real = vssub(data_real_down, Data_without_CP_real, MASKREAD_OFF, calculate_length);
-    a_sub_b_imag = vssub(data_imag_down, Data_without_CP_imag, MASKREAD_OFF, calculate_length);
-
-    cos_tempWnResult  = MUL4096_8_FIXED(a_sub_b_real, cos_stage5, fft_fixed_vec[5], calculate_length);
-    sin_tempWnResult  = MUL4096_8_FIXED(a_sub_b_imag, sin_stage5, fft_fixed_vec[5], calculate_length);
-    tempWnResult_real = vssub(sin_tempWnResult, cos_tempWnResult, MASKREAD_OFF, calculate_length);
-
-    cos_tempWnResult  = MUL4096_8_FIXED(a_sub_b_imag, cos_stage5, fft_fixed_vec[5], calculate_length);
-    sin_tempWnResult  = MUL4096_8_FIXED(a_sub_b_real, sin_stage5, fft_fixed_vec[5], calculate_length);
-    tempWnResult_imag = vsadd(cos_tempWnResult, sin_tempWnResult, MASKREAD_OFF, calculate_length);
-
-    tempWnResult_imag = vsadd(tempWnResult_imag, 1, MASKREAD_OFF,
-                              calculate_length); // Function FOR OFFSET
-
-    // 重排序
-    vshuffle(Data_without_CP_real, shuffle_add_stage5, tempAddResult_real, SHUFFLE_SCATTER, calculate_length);
-    vshuffle(Data_without_CP_real, shuffle_wn_stage5, tempWnResult_real, SHUFFLE_SCATTER, calculate_length);
-    vshuffle(Data_without_CP_imag, shuffle_add_stage5, tempAddResult_imag, SHUFFLE_SCATTER, calculate_length);
-    vshuffle(Data_without_CP_imag, shuffle_wn_stage5, tempWnResult_imag, SHUFFLE_SCATTER, calculate_length);
-    //---------------------------------------------
-
-    //  Stage 6------------------------------------
-    vshuffle(data_real_down, move_2048to1024, Data_without_CP_real, SHUFFLE_GATHER, calculate_length);
-    vshuffle(data_imag_down, move_2048to1024, Data_without_CP_imag, SHUFFLE_GATHER, calculate_length);
-    //  a + b
-    tempAddResult_real = vsadd(Data_without_CP_real, data_real_down, MASKREAD_OFF, calculate_length);
-    tempAddResult_imag = vsadd(Data_without_CP_imag, data_imag_down, MASKREAD_OFF, calculate_length);
-    tempAddResult_real = vsra(tempAddResult_real, fft_shift_vec[6], MASKREAD_OFF, calculate_length);
-    tempAddResult_imag = vsra(tempAddResult_imag, fft_shift_vec[6], MASKREAD_OFF, calculate_length);
-
-    // (a - b)Wn    (可用复数计算代替)
-    a_sub_b_real = vssub(data_real_down, Data_without_CP_real, MASKREAD_OFF, calculate_length);
-    a_sub_b_imag = vssub(data_imag_down, Data_without_CP_imag, MASKREAD_OFF, calculate_length);
-
-    cos_tempWnResult  = MUL4096_8_FIXED(a_sub_b_real, cos_stage6, fft_fixed_vec[6], calculate_length);
-    sin_tempWnResult  = MUL4096_8_FIXED(a_sub_b_imag, sin_stage6, fft_fixed_vec[6], calculate_length);
-    tempWnResult_real = vssub(sin_tempWnResult, cos_tempWnResult, MASKREAD_OFF, calculate_length);
-
-    cos_tempWnResult  = MUL4096_8_FIXED(a_sub_b_imag, cos_stage6, fft_fixed_vec[6], calculate_length);
-    sin_tempWnResult  = MUL4096_8_FIXED(a_sub_b_real, sin_stage6, fft_fixed_vec[6], calculate_length);
-    tempWnResult_imag = vsadd(cos_tempWnResult, sin_tempWnResult, MASKREAD_OFF, calculate_length);
-
-    tempWnResult_imag = vsadd(tempWnResult_imag, 1, MASKREAD_OFF,
-                              calculate_length); // Function FOR OFFSET
-
-    // 重排序
-    vshuffle(Data_without_CP_real, shuffle_add_stage6, tempAddResult_real, SHUFFLE_SCATTER, calculate_length);
-    vshuffle(Data_without_CP_real, shuffle_wn_stage6, tempWnResult_real, SHUFFLE_SCATTER, calculate_length);
-    vshuffle(Data_without_CP_imag, shuffle_add_stage6, tempAddResult_imag, SHUFFLE_SCATTER, calculate_length);
-    vshuffle(Data_without_CP_imag, shuffle_wn_stage6, tempWnResult_imag, SHUFFLE_SCATTER, calculate_length);
-    //---------------------------------------------
-
-    //  Stage 7------------------------------------
-    vshuffle(data_real_down, move_2048to1024, Data_without_CP_real, SHUFFLE_GATHER, calculate_length);
-    vshuffle(data_imag_down, move_2048to1024, Data_without_CP_imag, SHUFFLE_GATHER, calculate_length);
-    //  a + b
-    tempAddResult_real = vsadd(Data_without_CP_real, data_real_down, MASKREAD_OFF, calculate_length);
-    tempAddResult_imag = vsadd(Data_without_CP_imag, data_imag_down, MASKREAD_OFF, calculate_length);
-    tempAddResult_real = vsra(tempAddResult_real, fft_shift_vec[7], MASKREAD_OFF, calculate_length);
-    tempAddResult_imag = vsra(tempAddResult_imag, fft_shift_vec[7], MASKREAD_OFF, calculate_length);
-
-    // (a - b)Wn    (可用复数计算代替)
-    a_sub_b_real = vssub(data_real_down, Data_without_CP_real, MASKREAD_OFF, calculate_length);
-    a_sub_b_imag = vssub(data_imag_down, Data_without_CP_imag, MASKREAD_OFF, calculate_length);
-
-    cos_tempWnResult  = MUL4096_8_FIXED(a_sub_b_real, cos_stage7, fft_fixed_vec[7], calculate_length);
-    sin_tempWnResult  = MUL4096_8_FIXED(a_sub_b_imag, sin_stage7, fft_fixed_vec[7], calculate_length);
-    tempWnResult_real = vssub(sin_tempWnResult, cos_tempWnResult, MASKREAD_OFF, calculate_length);
-
-    cos_tempWnResult  = MUL4096_8_FIXED(a_sub_b_imag, cos_stage7, fft_fixed_vec[7], calculate_length);
-    sin_tempWnResult  = MUL4096_8_FIXED(a_sub_b_real, sin_stage7, fft_fixed_vec[7], calculate_length);
-    tempWnResult_imag = vsadd(cos_tempWnResult, sin_tempWnResult, MASKREAD_OFF, calculate_length);
-
-    tempWnResult_imag = vsadd(tempWnResult_imag, 1, MASKREAD_OFF,
-                              calculate_length); // Function FOR OFFSET
-
-    // 重排序
-    vshuffle(Data_without_CP_real, shuffle_add_stage7, tempAddResult_real, SHUFFLE_SCATTER, calculate_length);
-    vshuffle(Data_without_CP_real, shuffle_wn_stage7, tempWnResult_real, SHUFFLE_SCATTER, calculate_length);
-    vshuffle(Data_without_CP_imag, shuffle_add_stage7, tempAddResult_imag, SHUFFLE_SCATTER, calculate_length);
-    vshuffle(Data_without_CP_imag, shuffle_wn_stage7, tempWnResult_imag, SHUFFLE_SCATTER, calculate_length);
-    //---------------------------------------------
-
-    //  Stage 8------------------------------------
-    vshuffle(data_real_down, move_2048to1024, Data_without_CP_real, SHUFFLE_GATHER, calculate_length);
-    vshuffle(data_imag_down, move_2048to1024, Data_without_CP_imag, SHUFFLE_GATHER, calculate_length);
-    //  a + b
-    tempAddResult_real = vsadd(Data_without_CP_real, data_real_down, MASKREAD_OFF, calculate_length);
-    tempAddResult_imag = vsadd(Data_without_CP_imag, data_imag_down, MASKREAD_OFF, calculate_length);
-    tempAddResult_real = vsra(tempAddResult_real, fft_shift_vec[8], MASKREAD_OFF, calculate_length);
-    tempAddResult_imag = vsra(tempAddResult_imag, fft_shift_vec[8], MASKREAD_OFF, calculate_length);
-
-    // (a - b)Wn    (可用复数计算代替)
-    a_sub_b_real = vssub(data_real_down, Data_without_CP_real, MASKREAD_OFF, calculate_length);
-    a_sub_b_imag = vssub(data_imag_down, Data_without_CP_imag, MASKREAD_OFF, calculate_length);
-
-    cos_tempWnResult  = MUL4096_8_FIXED(a_sub_b_real, cos_stage8, fft_fixed_vec[8], calculate_length);
-    sin_tempWnResult  = MUL4096_8_FIXED(a_sub_b_imag, sin_stage8, fft_fixed_vec[8], calculate_length);
-    tempWnResult_real = vssub(sin_tempWnResult, cos_tempWnResult, MASKREAD_OFF, calculate_length);
-
-    cos_tempWnResult  = MUL4096_8_FIXED(a_sub_b_imag, cos_stage8, fft_fixed_vec[8], calculate_length);
-    sin_tempWnResult  = MUL4096_8_FIXED(a_sub_b_real, sin_stage8, fft_fixed_vec[8], calculate_length);
-    tempWnResult_imag = vsadd(cos_tempWnResult, sin_tempWnResult, MASKREAD_OFF, calculate_length);
-
-    tempWnResult_imag = vsadd(tempWnResult_imag, 1, MASKREAD_OFF,
-                              calculate_length); // Function FOR OFFSET
-
-    // 重排序
-    vshuffle(Data_without_CP_real, shuffle_add_stage8, tempAddResult_real, SHUFFLE_SCATTER, calculate_length);
-    vshuffle(Data_without_CP_real, shuffle_wn_stage8, tempWnResult_real, SHUFFLE_SCATTER, calculate_length);
-    vshuffle(Data_without_CP_imag, shuffle_add_stage8, tempAddResult_imag, SHUFFLE_SCATTER, calculate_length);
-    vshuffle(Data_without_CP_imag, shuffle_wn_stage8, tempWnResult_imag, SHUFFLE_SCATTER, calculate_length);
-    //---------------------------------------------
-
-    //  Stage 9------------------------------------
-    vshuffle(data_real_down, move_2048to1024, Data_without_CP_real, SHUFFLE_GATHER, calculate_length);
-    vshuffle(data_imag_down, move_2048to1024, Data_without_CP_imag, SHUFFLE_GATHER, calculate_length);
-    //  a + b
-    tempAddResult_real = vsadd(Data_without_CP_real, data_real_down, MASKREAD_OFF, calculate_length);
-    tempAddResult_imag = vsadd(Data_without_CP_imag, data_imag_down, MASKREAD_OFF, calculate_length);
-    tempAddResult_real = vsra(tempAddResult_real, fft_shift_vec[9], MASKREAD_OFF, calculate_length);
-    tempAddResult_imag = vsra(tempAddResult_imag, fft_shift_vec[9], MASKREAD_OFF, calculate_length);
-
-    // (a - b)Wn    (可用复数计算代替)
-    a_sub_b_real = vssub(data_real_down, Data_without_CP_real, MASKREAD_OFF, calculate_length);
-    a_sub_b_imag = vssub(data_imag_down, Data_without_CP_imag, MASKREAD_OFF, calculate_length);
-
-    cos_tempWnResult  = MUL4096_8_FIXED(a_sub_b_real, cos_stage9, fft_fixed_vec[9], calculate_length);
-    sin_tempWnResult  = MUL4096_8_FIXED(a_sub_b_imag, sin_stage9, fft_fixed_vec[9], calculate_length);
-    tempWnResult_real = vssub(sin_tempWnResult, cos_tempWnResult, MASKREAD_OFF, calculate_length);
-
-    cos_tempWnResult  = MUL4096_8_FIXED(a_sub_b_imag, cos_stage9, fft_fixed_vec[9], calculate_length);
-    sin_tempWnResult  = MUL4096_8_FIXED(a_sub_b_real, sin_stage9, fft_fixed_vec[9], calculate_length);
-    tempWnResult_imag = vsadd(cos_tempWnResult, sin_tempWnResult, MASKREAD_OFF, calculate_length);
-
-    tempWnResult_imag = vsadd(tempWnResult_imag, 1, MASKREAD_OFF,
-                              calculate_length); // Function FOR OFFSET
-
-    // 重排序
-    vshuffle(Data_without_CP_real, shuffle_add_stage9, tempAddResult_real, SHUFFLE_SCATTER, calculate_length);
-    vshuffle(Data_without_CP_real, shuffle_wn_stage9, tempWnResult_real, SHUFFLE_SCATTER, calculate_length);
-    vshuffle(Data_without_CP_imag, shuffle_add_stage9, tempAddResult_imag, SHUFFLE_SCATTER, calculate_length);
-    vshuffle(Data_without_CP_imag, shuffle_wn_stage9, tempWnResult_imag, SHUFFLE_SCATTER, calculate_length);
-    //---------------------------------------------
-
-    //  Stage 10------------------------------------
-    vshuffle(data_real_down, move_2048to1024, Data_without_CP_real, SHUFFLE_GATHER, calculate_length);
-    vshuffle(data_imag_down, move_2048to1024, Data_without_CP_imag, SHUFFLE_GATHER, calculate_length);
-    //  a + b
-    tempAddResult_real = vsadd(Data_without_CP_real, data_real_down, MASKREAD_OFF, calculate_length);
-    tempAddResult_imag = vsadd(Data_without_CP_imag, data_imag_down, MASKREAD_OFF, calculate_length);
-    tempAddResult_real = vsra(tempAddResult_real, fft_shift_vec[10], MASKREAD_OFF, calculate_length);
-    tempAddResult_imag = vsra(tempAddResult_imag, fft_shift_vec[10], MASKREAD_OFF, calculate_length);
-
-    // (a - b)Wn    (可用复数计算代替)
-    a_sub_b_real = vssub(data_real_down, Data_without_CP_real, MASKREAD_OFF, calculate_length);
-    a_sub_b_imag = vssub(data_imag_down, Data_without_CP_imag, MASKREAD_OFF, calculate_length);
-
-    cos_tempWnResult  = MUL4096_8_FIXED(a_sub_b_real, cos_stage10, fft_fixed_vec[10], calculate_length);
-    sin_tempWnResult  = MUL4096_8_FIXED(a_sub_b_imag, sin_stage10, fft_fixed_vec[10], calculate_length);
-    tempWnResult_real = vssub(sin_tempWnResult, cos_tempWnResult, MASKREAD_OFF, calculate_length);
-
-    cos_tempWnResult  = MUL4096_8_FIXED(a_sub_b_imag, cos_stage10, fft_fixed_vec[10], calculate_length);
-    sin_tempWnResult  = MUL4096_8_FIXED(a_sub_b_real, sin_stage10, fft_fixed_vec[10], calculate_length);
-    tempWnResult_imag = vsadd(cos_tempWnResult, sin_tempWnResult, MASKREAD_OFF, calculate_length);
-
-    tempWnResult_imag = vsadd(tempWnResult_imag, 1, MASKREAD_OFF,
-                              calculate_length); // Function FOR OFFSET
-
-    // 重排序
-    //  STEP 3: fft shift
-    vshuffle(OFDM_OutReal, shuffle_wn_stage10, tempAddResult_real, SHUFFLE_SCATTER, calculate_length);
-    vshuffle(OFDM_OutReal, shuffle_add_stage10, tempWnResult_real, SHUFFLE_SCATTER, calculate_length);
-    vshuffle(OFDM_OutImag, shuffle_wn_stage10, tempAddResult_imag, SHUFFLE_SCATTER, calculate_length);
-    vshuffle(OFDM_OutImag, shuffle_add_stage10, tempWnResult_imag, SHUFFLE_SCATTER, calculate_length);
-    //  STEP 3 'END'
-    //---------------------------------------------
-  } else if (N_FFT == 1024) {
-    //  Stage 0------------------------------------
-    vshuffle(data_real_down, move_1024to512, Data_without_CP_real, SHUFFLE_GATHER, calculate_length);
-    vshuffle(data_imag_down, move_1024to512, Data_without_CP_imag, SHUFFLE_GATHER, calculate_length);
-    vshuffle(Wn_cos, shuffle_for_1024_Wn, cos_stage1, SHUFFLE_GATHER, calculate_length);
-    vshuffle(Wn_sin, shuffle_for_1024_Wn, sin_stage1, SHUFFLE_GATHER, calculate_length);
-    //  a + b
-    tempAddResult_real = vsadd(Data_without_CP_real, data_real_down, MASKREAD_OFF, calculate_length);
-    tempAddResult_imag = vsadd(Data_without_CP_imag, data_imag_down, MASKREAD_OFF, calculate_length);
-    tempAddResult_real = vsra(tempAddResult_real, fft1024_shift_vec[0], MASKREAD_OFF, calculate_length);
-    tempAddResult_imag = vsra(tempAddResult_imag, fft1024_shift_vec[0], MASKREAD_OFF, calculate_length);
-
-    // (a - b)Wn    (可用复数计算代替)
-    a_sub_b_real = vssub(data_real_down, Data_without_CP_real, MASKREAD_OFF, calculate_length);
-    a_sub_b_imag = vssub(data_imag_down, Data_without_CP_imag, MASKREAD_OFF, calculate_length);
-
-    cos_tempWnResult  = MUL4096_8_FIXED(a_sub_b_real, Wn_cos, fft1024_fixed_vec[0], calculate_length);
-    sin_tempWnResult  = MUL4096_8_FIXED(a_sub_b_imag, Wn_sin, fft1024_fixed_vec[0], calculate_length);
-    tempWnResult_real = vssub(sin_tempWnResult, cos_tempWnResult, MASKREAD_OFF, calculate_length);
-
-    cos_tempWnResult  = MUL4096_8_FIXED(a_sub_b_imag, Wn_cos, fft1024_fixed_vec[0], calculate_length);
-    sin_tempWnResult  = MUL4096_8_FIXED(a_sub_b_real, Wn_sin, fft1024_fixed_vec[0], calculate_length);
-    tempWnResult_imag = vsadd(cos_tempWnResult, sin_tempWnResult, MASKREAD_OFF, calculate_length);
-
-    tempWnResult_imag = vsadd(tempWnResult_imag, 1, MASKREAD_OFF,
-                              calculate_length); // Function FOR OFFSET
-
-    // 重排序
-    vshuffle(Data_without_CP_real, shuffle_add_stage0, tempAddResult_real, SHUFFLE_SCATTER, 1024);
-    vshuffle(Data_without_CP_real, shuffle_wn_stage0, tempWnResult_real, SHUFFLE_SCATTER, 1024);
-    vshuffle(Data_without_CP_imag, shuffle_add_stage0, tempAddResult_imag, SHUFFLE_SCATTER, 1024);
-    vshuffle(Data_without_CP_imag, shuffle_wn_stage0, tempWnResult_imag, SHUFFLE_SCATTER, 1024);
-    //---------------------------------------------
-
-    //  Stage 1------------------------------------
-    vshuffle(data_real_down, move_1024to512, Data_without_CP_real, SHUFFLE_GATHER, calculate_length);
-    vshuffle(data_imag_down, move_1024to512, Data_without_CP_imag, SHUFFLE_GATHER, calculate_length);
-    vshuffle(Wn_cos, shuffle_for_1024_Wn, cos_stage2, SHUFFLE_GATHER, calculate_length);
-    vshuffle(Wn_sin, shuffle_for_1024_Wn, sin_stage2, SHUFFLE_GATHER, calculate_length);
-    //  a + b
-    tempAddResult_real = vsadd(Data_without_CP_real, data_real_down, MASKREAD_OFF, calculate_length);
-    tempAddResult_imag = vsadd(Data_without_CP_imag, data_imag_down, MASKREAD_OFF, calculate_length);
-    tempAddResult_real = vsra(tempAddResult_real, fft1024_shift_vec[1], MASKREAD_OFF, calculate_length);
-    tempAddResult_imag = vsra(tempAddResult_imag, fft1024_shift_vec[1], MASKREAD_OFF, calculate_length);
-
-    // (a - b)Wn    (可用复数计算代替)
-    a_sub_b_real = vssub(data_real_down, Data_without_CP_real, MASKREAD_OFF, calculate_length);
-    a_sub_b_imag = vssub(data_imag_down, Data_without_CP_imag, MASKREAD_OFF, calculate_length);
-
-    cos_tempWnResult  = MUL4096_8_FIXED(a_sub_b_real, Wn_cos, fft1024_fixed_vec[1], calculate_length);
-    sin_tempWnResult  = MUL4096_8_FIXED(a_sub_b_imag, Wn_sin, fft1024_fixed_vec[1], calculate_length);
-    tempWnResult_real = vssub(sin_tempWnResult, cos_tempWnResult, MASKREAD_OFF, calculate_length);
-
-    cos_tempWnResult  = MUL4096_8_FIXED(a_sub_b_imag, Wn_cos, fft1024_fixed_vec[1], calculate_length);
-    sin_tempWnResult  = MUL4096_8_FIXED(a_sub_b_real, Wn_sin, fft1024_fixed_vec[1], calculate_length);
-    tempWnResult_imag = vsadd(cos_tempWnResult, sin_tempWnResult, MASKREAD_OFF, calculate_length);
-
-    tempWnResult_imag = vsadd(tempWnResult_imag, 1, MASKREAD_OFF,
-                              calculate_length); // Function FOR OFFSET
-
-    // 重排序
-    vshuffle(Data_without_CP_real, shuffle_add_stage1, tempAddResult_real, SHUFFLE_SCATTER, 1024);
-    vshuffle(Data_without_CP_real, shuffle_wn_stage1, tempWnResult_real, SHUFFLE_SCATTER, 1024);
-    vshuffle(Data_without_CP_imag, shuffle_add_stage1, tempAddResult_imag, SHUFFLE_SCATTER, 1024);
-    vshuffle(Data_without_CP_imag, shuffle_wn_stage1, tempWnResult_imag, SHUFFLE_SCATTER, 1024);
-    //---------------------------------------------
-
-    //  Stage 2------------------------------------
-    vshuffle(data_real_down, move_1024to512, Data_without_CP_real, SHUFFLE_GATHER, calculate_length);
-    vshuffle(data_imag_down, move_1024to512, Data_without_CP_imag, SHUFFLE_GATHER, calculate_length);
-    vshuffle(Wn_cos, shuffle_for_1024_Wn, cos_stage3, SHUFFLE_GATHER, calculate_length);
-    vshuffle(Wn_sin, shuffle_for_1024_Wn, sin_stage3, SHUFFLE_GATHER, calculate_length);
-    //  a + b
-    tempAddResult_real = vsadd(Data_without_CP_real, data_real_down, MASKREAD_OFF, calculate_length);
-    tempAddResult_imag = vsadd(Data_without_CP_imag, data_imag_down, MASKREAD_OFF, calculate_length);
-    tempAddResult_real = vsra(tempAddResult_real, fft1024_shift_vec[2], MASKREAD_OFF, calculate_length);
-    tempAddResult_imag = vsra(tempAddResult_imag, fft1024_shift_vec[2], MASKREAD_OFF, calculate_length);
-
-    // (a - b)Wn    (可用复数计算代替)
-    a_sub_b_real = vssub(data_real_down, Data_without_CP_real, MASKREAD_OFF, calculate_length);
-    a_sub_b_imag = vssub(data_imag_down, Data_without_CP_imag, MASKREAD_OFF, calculate_length);
-
-    cos_tempWnResult  = MUL4096_8_FIXED(a_sub_b_real, Wn_cos, fft1024_fixed_vec[2], calculate_length);
-    sin_tempWnResult  = MUL4096_8_FIXED(a_sub_b_imag, Wn_sin, fft1024_fixed_vec[2], calculate_length);
-    tempWnResult_real = vssub(sin_tempWnResult, cos_tempWnResult, MASKREAD_OFF, calculate_length);
-
-    cos_tempWnResult  = MUL4096_8_FIXED(a_sub_b_imag, Wn_cos, fft1024_fixed_vec[2], calculate_length);
-    sin_tempWnResult  = MUL4096_8_FIXED(a_sub_b_real, Wn_sin, fft1024_fixed_vec[2], calculate_length);
-    tempWnResult_imag = vsadd(cos_tempWnResult, sin_tempWnResult, MASKREAD_OFF, calculate_length);
-
-    tempWnResult_imag = vsadd(tempWnResult_imag, 1, MASKREAD_OFF,
-                              calculate_length); // Function FOR OFFSET
-
-    // 重排序
-    vshuffle(Data_without_CP_real, shuffle_add_stage2, tempAddResult_real, SHUFFLE_SCATTER, 1024);
-    vshuffle(Data_without_CP_real, shuffle_wn_stage2, tempWnResult_real, SHUFFLE_SCATTER, 1024);
-    vshuffle(Data_without_CP_imag, shuffle_add_stage2, tempAddResult_imag, SHUFFLE_SCATTER, 1024);
-    vshuffle(Data_without_CP_imag, shuffle_wn_stage2, tempWnResult_imag, SHUFFLE_SCATTER, 1024);
-    //---------------------------------------------
-
-    //  Stage 3------------------------------------
-    vshuffle(data_real_down, move_1024to512, Data_without_CP_real, SHUFFLE_GATHER, calculate_length);
-    vshuffle(data_imag_down, move_1024to512, Data_without_CP_imag, SHUFFLE_GATHER, calculate_length);
-    vshuffle(Wn_cos, shuffle_for_1024_Wn, cos_stage4, SHUFFLE_GATHER, calculate_length);
-    vshuffle(Wn_sin, shuffle_for_1024_Wn, sin_stage4, SHUFFLE_GATHER, calculate_length);
-    //  a + b
-    tempAddResult_real = vsadd(Data_without_CP_real, data_real_down, MASKREAD_OFF, calculate_length);
-    tempAddResult_imag = vsadd(Data_without_CP_imag, data_imag_down, MASKREAD_OFF, calculate_length);
-    tempAddResult_real = vsra(tempAddResult_real, fft1024_shift_vec[3], MASKREAD_OFF, calculate_length);
-    tempAddResult_imag = vsra(tempAddResult_imag, fft1024_shift_vec[3], MASKREAD_OFF, calculate_length);
-
-    // (a - b)Wn    (可用复数计算代替)
-    a_sub_b_real = vssub(data_real_down, Data_without_CP_real, MASKREAD_OFF, calculate_length);
-    a_sub_b_imag = vssub(data_imag_down, Data_without_CP_imag, MASKREAD_OFF, calculate_length);
-
-    cos_tempWnResult  = MUL4096_8_FIXED(a_sub_b_real, Wn_cos, fft1024_fixed_vec[3], calculate_length);
-    sin_tempWnResult  = MUL4096_8_FIXED(a_sub_b_imag, Wn_sin, fft1024_fixed_vec[3], calculate_length);
-    tempWnResult_real = vssub(sin_tempWnResult, cos_tempWnResult, MASKREAD_OFF, calculate_length);
-
-    cos_tempWnResult  = MUL4096_8_FIXED(a_sub_b_imag, Wn_cos, fft1024_fixed_vec[3], calculate_length);
-    sin_tempWnResult  = MUL4096_8_FIXED(a_sub_b_real, Wn_sin, fft1024_fixed_vec[3], calculate_length);
-    tempWnResult_imag = vsadd(cos_tempWnResult, sin_tempWnResult, MASKREAD_OFF, calculate_length);
-
-    tempWnResult_imag = vsadd(tempWnResult_imag, 1, MASKREAD_OFF,
-                              calculate_length); // Function FOR OFFSET
-
-    // 重排序
-    vshuffle(Data_without_CP_real, shuffle_add_stage3, tempAddResult_real, SHUFFLE_SCATTER, 1024);
-    vshuffle(Data_without_CP_real, shuffle_wn_stage3, tempWnResult_real, SHUFFLE_SCATTER, 1024);
-    vshuffle(Data_without_CP_imag, shuffle_add_stage3, tempAddResult_imag, SHUFFLE_SCATTER, 1024);
-    vshuffle(Data_without_CP_imag, shuffle_wn_stage3, tempWnResult_imag, SHUFFLE_SCATTER, 1024);
-    //---------------------------------------------
-
-    //  Stage 4------------------------------------
-    vshuffle(data_real_down, move_1024to512, Data_without_CP_real, SHUFFLE_GATHER, calculate_length);
-    vshuffle(data_imag_down, move_1024to512, Data_without_CP_imag, SHUFFLE_GATHER, calculate_length);
-    vshuffle(Wn_cos, shuffle_for_1024_Wn, cos_stage5, SHUFFLE_GATHER, calculate_length);
-    vshuffle(Wn_sin, shuffle_for_1024_Wn, sin_stage5, SHUFFLE_GATHER, calculate_length);
-    //  a + b
-    tempAddResult_real = vsadd(Data_without_CP_real, data_real_down, MASKREAD_OFF, calculate_length);
-    tempAddResult_imag = vsadd(Data_without_CP_imag, data_imag_down, MASKREAD_OFF, calculate_length);
-    tempAddResult_real = vsra(tempAddResult_real, fft1024_shift_vec[4], MASKREAD_OFF, calculate_length);
-    tempAddResult_imag = vsra(tempAddResult_imag, fft1024_shift_vec[4], MASKREAD_OFF, calculate_length);
-
-    // (a - b)Wn    (可用复数计算代替)
-    a_sub_b_real = vssub(data_real_down, Data_without_CP_real, MASKREAD_OFF, calculate_length);
-    a_sub_b_imag = vssub(data_imag_down, Data_without_CP_imag, MASKREAD_OFF, calculate_length);
-
-    cos_tempWnResult  = MUL4096_8_FIXED(a_sub_b_real, Wn_cos, fft1024_fixed_vec[4], calculate_length);
-    sin_tempWnResult  = MUL4096_8_FIXED(a_sub_b_imag, Wn_sin, fft1024_fixed_vec[4], calculate_length);
-    tempWnResult_real = vssub(sin_tempWnResult, cos_tempWnResult, MASKREAD_OFF, calculate_length);
-
-    cos_tempWnResult  = MUL4096_8_FIXED(a_sub_b_imag, Wn_cos, fft1024_fixed_vec[4], calculate_length);
-    sin_tempWnResult  = MUL4096_8_FIXED(a_sub_b_real, Wn_sin, fft1024_fixed_vec[4], calculate_length);
-    tempWnResult_imag = vsadd(cos_tempWnResult, sin_tempWnResult, MASKREAD_OFF, calculate_length);
-
-    tempWnResult_imag = vsadd(tempWnResult_imag, 1, MASKREAD_OFF,
-                              calculate_length); // Function FOR OFFSET
-
-    // 重排序
-    vshuffle(Data_without_CP_real, shuffle_add_stage4, tempAddResult_real, SHUFFLE_SCATTER, 1024);
-    vshuffle(Data_without_CP_real, shuffle_wn_stage4, tempWnResult_real, SHUFFLE_SCATTER, 1024);
-    vshuffle(Data_without_CP_imag, shuffle_add_stage4, tempAddResult_imag, SHUFFLE_SCATTER, 1024);
-    vshuffle(Data_without_CP_imag, shuffle_wn_stage4, tempWnResult_imag, SHUFFLE_SCATTER, 1024);
-    //---------------------------------------------
-
-    //  Stage 5------------------------------------
-    vshuffle(data_real_down, move_1024to512, Data_without_CP_real, SHUFFLE_GATHER, calculate_length);
-    vshuffle(data_imag_down, move_1024to512, Data_without_CP_imag, SHUFFLE_GATHER, calculate_length);
-    vshuffle(Wn_cos, shuffle_for_1024_Wn, cos_stage6, SHUFFLE_GATHER, calculate_length);
-    vshuffle(Wn_sin, shuffle_for_1024_Wn, sin_stage6, SHUFFLE_GATHER, calculate_length);
-    //  a + b
-    tempAddResult_real = vsadd(Data_without_CP_real, data_real_down, MASKREAD_OFF, calculate_length);
-    tempAddResult_imag = vsadd(Data_without_CP_imag, data_imag_down, MASKREAD_OFF, calculate_length);
-    tempAddResult_real = vsra(tempAddResult_real, fft1024_shift_vec[5], MASKREAD_OFF, calculate_length);
-    tempAddResult_imag = vsra(tempAddResult_imag, fft1024_shift_vec[5], MASKREAD_OFF, calculate_length);
-
-    // (a - b)Wn    (可用复数计算代替)
-    a_sub_b_real = vssub(data_real_down, Data_without_CP_real, MASKREAD_OFF, calculate_length);
-    a_sub_b_imag = vssub(data_imag_down, Data_without_CP_imag, MASKREAD_OFF, calculate_length);
-
-    cos_tempWnResult  = MUL4096_8_FIXED(a_sub_b_real, Wn_cos, fft1024_fixed_vec[5], calculate_length);
-    sin_tempWnResult  = MUL4096_8_FIXED(a_sub_b_imag, Wn_sin, fft1024_fixed_vec[5], calculate_length);
-    tempWnResult_real = vssub(sin_tempWnResult, cos_tempWnResult, MASKREAD_OFF, calculate_length);
-
-    cos_tempWnResult  = MUL4096_8_FIXED(a_sub_b_imag, Wn_cos, fft1024_fixed_vec[5], calculate_length);
-    sin_tempWnResult  = MUL4096_8_FIXED(a_sub_b_real, Wn_sin, fft1024_fixed_vec[5], calculate_length);
-    tempWnResult_imag = vsadd(cos_tempWnResult, sin_tempWnResult, MASKREAD_OFF, calculate_length);
-
-    tempWnResult_imag = vsadd(tempWnResult_imag, 1, MASKREAD_OFF,
-                              calculate_length); // Function FOR OFFSET
-
-    // 重排序
-    vshuffle(Data_without_CP_real, shuffle_add_stage5, tempAddResult_real, SHUFFLE_SCATTER, 1024);
-    vshuffle(Data_without_CP_real, shuffle_wn_stage5, tempWnResult_real, SHUFFLE_SCATTER, 1024);
-    vshuffle(Data_without_CP_imag, shuffle_add_stage5, tempAddResult_imag, SHUFFLE_SCATTER, 1024);
-    vshuffle(Data_without_CP_imag, shuffle_wn_stage5, tempWnResult_imag, SHUFFLE_SCATTER, 1024);
-    //---------------------------------------------
-
-    //  Stage 6------------------------------------
-    vshuffle(data_real_down, move_1024to512, Data_without_CP_real, SHUFFLE_GATHER, calculate_length);
-    vshuffle(data_imag_down, move_1024to512, Data_without_CP_imag, SHUFFLE_GATHER, calculate_length);
-    vshuffle(Wn_cos, shuffle_for_1024_Wn, cos_stage7, SHUFFLE_GATHER, calculate_length);
-    vshuffle(Wn_sin, shuffle_for_1024_Wn, sin_stage7, SHUFFLE_GATHER, calculate_length);
-    //  a + b
-    tempAddResult_real = vsadd(Data_without_CP_real, data_real_down, MASKREAD_OFF, calculate_length);
-    tempAddResult_imag = vsadd(Data_without_CP_imag, data_imag_down, MASKREAD_OFF, calculate_length);
-    tempAddResult_real = vsra(tempAddResult_real, fft1024_shift_vec[6], MASKREAD_OFF, calculate_length);
-    tempAddResult_imag = vsra(tempAddResult_imag, fft1024_shift_vec[6], MASKREAD_OFF, calculate_length);
-
-    // (a - b)Wn    (可用复数计算代替)
-    a_sub_b_real = vssub(data_real_down, Data_without_CP_real, MASKREAD_OFF, calculate_length);
-    a_sub_b_imag = vssub(data_imag_down, Data_without_CP_imag, MASKREAD_OFF, calculate_length);
-
-    cos_tempWnResult  = MUL4096_8_FIXED(a_sub_b_real, Wn_cos, fft1024_fixed_vec[6], calculate_length);
-    sin_tempWnResult  = MUL4096_8_FIXED(a_sub_b_imag, Wn_sin, fft1024_fixed_vec[6], calculate_length);
-    tempWnResult_real = vssub(sin_tempWnResult, cos_tempWnResult, MASKREAD_OFF, calculate_length);
-
-    cos_tempWnResult  = MUL4096_8_FIXED(a_sub_b_imag, Wn_cos, fft1024_fixed_vec[6], calculate_length);
-    sin_tempWnResult  = MUL4096_8_FIXED(a_sub_b_real, Wn_sin, fft1024_fixed_vec[6], calculate_length);
-    tempWnResult_imag = vsadd(cos_tempWnResult, sin_tempWnResult, MASKREAD_OFF, calculate_length);
-
-    tempWnResult_imag = vsadd(tempWnResult_imag, 1, MASKREAD_OFF,
-                              calculate_length); // Function FOR OFFSET
-
-    // 重排序
-    vshuffle(Data_without_CP_real, shuffle_add_stage6, tempAddResult_real, SHUFFLE_SCATTER, 1024);
-    vshuffle(Data_without_CP_real, shuffle_wn_stage6, tempWnResult_real, SHUFFLE_SCATTER, 1024);
-    vshuffle(Data_without_CP_imag, shuffle_add_stage6, tempAddResult_imag, SHUFFLE_SCATTER, 1024);
-    vshuffle(Data_without_CP_imag, shuffle_wn_stage6, tempWnResult_imag, SHUFFLE_SCATTER, 1024);
-    //---------------------------------------------
-
-    //  Stage 7------------------------------------
-    vshuffle(data_real_down, move_1024to512, Data_without_CP_real, SHUFFLE_GATHER, calculate_length);
-    vshuffle(data_imag_down, move_1024to512, Data_without_CP_imag, SHUFFLE_GATHER, calculate_length);
-    vshuffle(Wn_cos, shuffle_for_1024_Wn, cos_stage8, SHUFFLE_GATHER, calculate_length);
-    vshuffle(Wn_sin, shuffle_for_1024_Wn, sin_stage8, SHUFFLE_GATHER, calculate_length);
-    //  a + b
-    tempAddResult_real = vsadd(Data_without_CP_real, data_real_down, MASKREAD_OFF, calculate_length);
-    tempAddResult_imag = vsadd(Data_without_CP_imag, data_imag_down, MASKREAD_OFF, calculate_length);
-    tempAddResult_real = vsra(tempAddResult_real, fft1024_shift_vec[7], MASKREAD_OFF, calculate_length);
-    tempAddResult_imag = vsra(tempAddResult_imag, fft1024_shift_vec[7], MASKREAD_OFF, calculate_length);
-
-    // (a - b)Wn    (可用复数计算代替)
-    a_sub_b_real = vssub(data_real_down, Data_without_CP_real, MASKREAD_OFF, calculate_length);
-    a_sub_b_imag = vssub(data_imag_down, Data_without_CP_imag, MASKREAD_OFF, calculate_length);
-
-    cos_tempWnResult  = MUL4096_8_FIXED(a_sub_b_real, Wn_cos, fft1024_fixed_vec[7], calculate_length);
-    sin_tempWnResult  = MUL4096_8_FIXED(a_sub_b_imag, Wn_sin, fft1024_fixed_vec[7], calculate_length);
-    tempWnResult_real = vssub(sin_tempWnResult, cos_tempWnResult, MASKREAD_OFF, calculate_length);
-
-    cos_tempWnResult  = MUL4096_8_FIXED(a_sub_b_imag, Wn_cos, fft1024_fixed_vec[7], calculate_length);
-    sin_tempWnResult  = MUL4096_8_FIXED(a_sub_b_real, Wn_sin, fft1024_fixed_vec[7], calculate_length);
-    tempWnResult_imag = vsadd(cos_tempWnResult, sin_tempWnResult, MASKREAD_OFF, calculate_length);
-
-    tempWnResult_imag = vsadd(tempWnResult_imag, 1, MASKREAD_OFF,
-                              calculate_length); // Function FOR OFFSET
-
-    // 重排序
-    vshuffle(Data_without_CP_real, shuffle_add_stage7, tempAddResult_real, SHUFFLE_SCATTER, 1024);
-    vshuffle(Data_without_CP_real, shuffle_wn_stage7, tempWnResult_real, SHUFFLE_SCATTER, 1024);
-    vshuffle(Data_without_CP_imag, shuffle_add_stage7, tempAddResult_imag, SHUFFLE_SCATTER, 1024);
-    vshuffle(Data_without_CP_imag, shuffle_wn_stage7, tempWnResult_imag, SHUFFLE_SCATTER, 1024);
-    //---------------------------------------------
-
-    //  Stage 8------------------------------------
-    vshuffle(data_real_down, move_1024to512, Data_without_CP_real, SHUFFLE_GATHER, calculate_length);
-    vshuffle(data_imag_down, move_1024to512, Data_without_CP_imag, SHUFFLE_GATHER, calculate_length);
-    vshuffle(Wn_cos, shuffle_for_1024_Wn, cos_stage9, SHUFFLE_GATHER, calculate_length);
-    vshuffle(Wn_sin, shuffle_for_1024_Wn, sin_stage9, SHUFFLE_GATHER, calculate_length);
-    //  a + b
-    tempAddResult_real = vsadd(Data_without_CP_real, data_real_down, MASKREAD_OFF, calculate_length);
-    tempAddResult_imag = vsadd(Data_without_CP_imag, data_imag_down, MASKREAD_OFF, calculate_length);
-    tempAddResult_real = vsra(tempAddResult_real, fft1024_shift_vec[8], MASKREAD_OFF, calculate_length);
-    tempAddResult_imag = vsra(tempAddResult_imag, fft1024_shift_vec[8], MASKREAD_OFF, calculate_length);
-
-    // (a - b)Wn    (可用复数计算代替)
-    a_sub_b_real = vssub(data_real_down, Data_without_CP_real, MASKREAD_OFF, calculate_length);
-    a_sub_b_imag = vssub(data_imag_down, Data_without_CP_imag, MASKREAD_OFF, calculate_length);
-
-    cos_tempWnResult  = MUL4096_8_FIXED(a_sub_b_real, Wn_cos, fft1024_fixed_vec[8], calculate_length);
-    sin_tempWnResult  = MUL4096_8_FIXED(a_sub_b_imag, Wn_sin, fft1024_fixed_vec[8], calculate_length);
-    tempWnResult_real = vssub(sin_tempWnResult, cos_tempWnResult, MASKREAD_OFF, calculate_length);
-
-    cos_tempWnResult  = MUL4096_8_FIXED(a_sub_b_imag, Wn_cos, fft1024_fixed_vec[8], calculate_length);
-    sin_tempWnResult  = MUL4096_8_FIXED(a_sub_b_real, Wn_sin, fft1024_fixed_vec[8], calculate_length);
-    tempWnResult_imag = vsadd(cos_tempWnResult, sin_tempWnResult, MASKREAD_OFF, calculate_length);
-
-    tempWnResult_imag = vsadd(tempWnResult_imag, 1, MASKREAD_OFF,
-                              calculate_length); // Function FOR OFFSET
-
-    // 重排序
-    vshuffle(Data_without_CP_real, shuffle_add_stage8, tempAddResult_real, SHUFFLE_SCATTER, 1024);
-    vshuffle(Data_without_CP_real, shuffle_wn_stage8, tempWnResult_real, SHUFFLE_SCATTER, 1024);
-    vshuffle(Data_without_CP_imag, shuffle_add_stage8, tempAddResult_imag, SHUFFLE_SCATTER, 1024);
-    vshuffle(Data_without_CP_imag, shuffle_wn_stage8, tempWnResult_imag, SHUFFLE_SCATTER, 1024);
-    //---------------------------------------------
-
-    //  Stage 9------------------------------------
-    vshuffle(data_real_down, move_1024to512, Data_without_CP_real, SHUFFLE_GATHER, calculate_length);
-    vshuffle(data_imag_down, move_1024to512, Data_without_CP_imag, SHUFFLE_GATHER, calculate_length);
-    vshuffle(Wn_cos, shuffle_for_1024_Wn, cos_stage10, SHUFFLE_GATHER, calculate_length);
-    vshuffle(Wn_sin, shuffle_for_1024_Wn, sin_stage10, SHUFFLE_GATHER, calculate_length);
-    //  a + b
-    tempAddResult_real = vsadd(Data_without_CP_real, data_real_down, MASKREAD_OFF, calculate_length);
-    tempAddResult_imag = vsadd(Data_without_CP_imag, data_imag_down, MASKREAD_OFF, calculate_length);
-    tempAddResult_real = vsra(tempAddResult_real, fft1024_shift_vec[9], MASKREAD_OFF, calculate_length);
-    tempAddResult_imag = vsra(tempAddResult_imag, fft1024_shift_vec[9], MASKREAD_OFF, calculate_length);
-
-    // (a - b)Wn    (可用复数计算代替)
-    a_sub_b_real = vssub(data_real_down, Data_without_CP_real, MASKREAD_OFF, calculate_length);
-    a_sub_b_imag = vssub(data_imag_down, Data_without_CP_imag, MASKREAD_OFF, calculate_length);
-
-    cos_tempWnResult  = MUL4096_8_FIXED(a_sub_b_real, Wn_cos, fft1024_fixed_vec[9], calculate_length);
-    sin_tempWnResult  = MUL4096_8_FIXED(a_sub_b_imag, Wn_sin, fft1024_fixed_vec[9], calculate_length);
-    tempWnResult_real = vssub(sin_tempWnResult, cos_tempWnResult, MASKREAD_OFF, calculate_length);
-
-    cos_tempWnResult  = MUL4096_8_FIXED(a_sub_b_imag, Wn_cos, fft1024_fixed_vec[9], calculate_length);
-    sin_tempWnResult  = MUL4096_8_FIXED(a_sub_b_real, Wn_sin, fft1024_fixed_vec[9], calculate_length);
-    tempWnResult_imag = vsadd(cos_tempWnResult, sin_tempWnResult, MASKREAD_OFF, calculate_length);
-
-    tempWnResult_imag = vsadd(tempWnResult_imag, 1, MASKREAD_OFF,
-                              calculate_length); // Function FOR OFFSET
-
-    // 重排序
-    //  STEP 3 : fft shift
-    vshuffle(OFDM_OutReal, shuffle_add_stage9, tempWnResult_real, SHUFFLE_SCATTER, 1024);
-    vshuffle(OFDM_OutReal, shuffle_wn_stage9, tempAddResult_real, SHUFFLE_SCATTER, 1024);
-    vshuffle(OFDM_OutImag, shuffle_add_stage9, tempWnResult_imag, SHUFFLE_SCATTER, 1024);
-    vshuffle(OFDM_OutImag, shuffle_wn_stage9, tempAddResult_imag, SHUFFLE_SCATTER, 1024);
-    //  STEP 3 'END'
-    //---------------------------------------------
-  }
-
-  __v2048i16 targetIndices;
-  vclaim(targetIndices);
-  vrange(targetIndices, K);
-  targetIndices = vsadd(targetIndices, firstSC, MASKREAD_OFF, K);
-
-  vshuffle(OFDM_OutReal, targetIndices, OFDM_OutReal, SHUFFLE_GATHER, K);
-  vshuffle(OFDM_OutImag, targetIndices, OFDM_OutImag, SHUFFLE_GATHER, K);
-
-  K = csetNRB * subcarrierPerRB;
-  vshuffle(OFDM_OutReal, csetSubcarriers, OFDM_OutReal, SHUFFLE_GATHER, K);
-  vshuffle(OFDM_OutImag, csetSubcarriers, OFDM_OutImag, SHUFFLE_GATHER, K);
-
-  vreturn(OFDM_OutReal, sizeof(OFDM_OutReal), OFDM_OutImag, sizeof(OFDM_OutImag));
 }

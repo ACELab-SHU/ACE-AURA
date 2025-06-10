@@ -19,7 +19,7 @@ typedef char  __v12288i8 __attribute__((ext_vector_type(12288)));
 //   short data;
 // } __attribute__((aligned(64))) short_struct;
 
-int Task_nrEqualize(__v12288i8 rxData_real, __v12288i8 rxData_imag, __v12288i8 H_real, __v12288i8 H_imag,
+int Task_nrEqualize(__v12288i8 rxData_real0, __v12288i8 rxData_imag0, __v12288i8 H_real, __v12288i8 H_imag,
                     __v6144i16 pdcch_index, __v6144i16 rxData_shuffle_index, short_struct input_sequence_length,
                     short_struct input_nrbLength, short_struct input_data_symbol_length) __attribute__((aligned(64))) {
 
@@ -31,8 +31,12 @@ int Task_nrEqualize(__v12288i8 rxData_real, __v12288i8 rxData_imag, __v12288i8 H
   int nVar           = 0;
 
   /*--------------------ExtractResources--------------------*/
-  vshuffle(rxData_real, rxData_shuffle_index, rxData_real, SHUFFLE_GATHER, subcarrierLength * data_symbol_length);
-  vshuffle(rxData_imag, rxData_shuffle_index, rxData_imag, SHUFFLE_GATHER, subcarrierLength * data_symbol_length);
+  __v12288i8 rxData_real;
+  __v12288i8 rxData_imag;
+  vclaim(rxData_real);
+  vclaim(rxData_imag);
+  vshuffle(rxData_real, rxData_shuffle_index, rxData_real0, SHUFFLE_GATHER, subcarrierLength * data_symbol_length);
+  vshuffle(rxData_imag, rxData_shuffle_index, rxData_imag0, SHUFFLE_GATHER, subcarrierLength * data_symbol_length);
 
   __v12288i8 rxSym_real;
   __v12288i8 rxSym_imag;
@@ -60,8 +64,8 @@ int Task_nrEqualize(__v12288i8 rxData_real, __v12288i8 rxData_imag, __v12288i8 H
   csi_tmp2 = vmul(Hest_imag, Hest_imag, MASKREAD_OFF, sequence_length);
   vsetshamt(0);
 
-  csi = vadd(csi_tmp1, csi_tmp2, MASKREAD_OFF, sequence_length);
-  csi = vadd(csi, nVar, MASKREAD_OFF, sequence_length);
+  csi = vsadd(csi_tmp1, csi_tmp2, MASKREAD_OFF, sequence_length);
+  csi = vsadd(csi, nVar, MASKREAD_OFF, sequence_length);
 
   __v12288i8 pdcchEq_real;
   __v12288i8 pdcchEq_imag;
@@ -79,13 +83,13 @@ int Task_nrEqualize(__v12288i8 rxData_real, __v12288i8 rxData_imag, __v12288i8 H
   pdcchEq_tmp1 = vmul(Hest_real, rxSym_real, MASKREAD_OFF, sequence_length);
   pdcchEq_tmp2 = vmul(Hest_imag, rxSym_imag, MASKREAD_OFF, sequence_length);
   vsetshamt(0);
-  pdcchEq_real = vadd(pdcchEq_tmp1, pdcchEq_tmp2, MASKREAD_OFF, sequence_length);
+  pdcchEq_real = vsadd(pdcchEq_tmp1, pdcchEq_tmp2, MASKREAD_OFF, sequence_length);
 
   vsetshamt(fractionLength);
   pdcchEq_tmp3 = vmul(Hest_real, rxSym_imag, MASKREAD_OFF, sequence_length);
   pdcchEq_tmp4 = vmul(Hest_imag, rxSym_real, MASKREAD_OFF, sequence_length);
   vsetshamt(0);
-  pdcchEq_imag = vsub(pdcchEq_tmp4, pdcchEq_tmp3, MASKREAD_OFF, sequence_length);
+  pdcchEq_imag = vssub(pdcchEq_tmp4, pdcchEq_tmp3, MASKREAD_OFF, sequence_length);
 
   vreturn(pdcchEq_real, sizeof(pdcchEq_real), pdcchEq_imag, sizeof(pdcchEq_imag), csi, sizeof(csi));
 }

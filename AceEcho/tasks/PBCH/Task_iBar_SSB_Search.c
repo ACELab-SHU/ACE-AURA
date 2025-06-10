@@ -13,7 +13,6 @@
 #include "venus.h"
 
 typedef short __v2048i16 __attribute__((ext_vector_type(2048)));
-typedef short __v4096i16 __attribute__((ext_vector_type(4096)));
 typedef char  __v4096i8 __attribute__((ext_vector_type(4096)));
 
 #define LEFT_SHIFT  0
@@ -41,24 +40,6 @@ VENUS_INLINE __v4096i8 cyclic_shift_4096_8(__v4096i8 tgtvec, int shift_length, i
   __v2048i16 tmp_index;
   vclaim(tmp_index);
   __v2048i16 tmp_1;
-  vclaim(tmp_1);
-  vbrdcst(tmp_1, vectorLength, MASKREAD_OFF, vectorLength);
-  vrange(tmp_index, vectorLength);
-  tmp_index = vsadd(tmp_index, shift_direction == LEFT_SHIFT ? shift_length : (vectorLength - shift_length),
-                    MASKREAD_OFF, vectorLength);
-  tmp_index = vrem(tmp_1, tmp_index, MASKREAD_OFF, vectorLength);
-  vclaim(result);
-  vshuffle(result, tmp_index, tgtvec, SHUFFLE_GATHER, vectorLength);
-  // vshuffle(retvec, tmp_index, tgtvec, SHUFFLE_GATHER, vectorLength);
-  return result;
-}
-
-VENUS_INLINE __v4096i16 cyclic_shift_4096_16(__v4096i16 tgtvec, int shift_length, int shift_direction,
-                                             int vectorLength) {
-  __v4096i16 result;
-  __v4096i16 tmp_index;
-  vclaim(tmp_index);
-  __v4096i16 tmp_1;
   vclaim(tmp_1);
   vbrdcst(tmp_1, vectorLength, MASKREAD_OFF, vectorLength);
   vrange(tmp_index, vectorLength);
@@ -882,8 +863,9 @@ nrPRBS(__v4096i8 seq1_vec, __v4096i8 init2_vec, __v2048i16 seq2_init_table_0_vec
   // seq = vaddmul(seq, -2, 1, MASKREAD_OFF, sequenceLength);
   return seq;
 }
+volatile short dmrs_length_perSymbol[4] = {0, 60, 24, 60};
 
-int64_t dmrsEst[8] = {0};
+volatile int64_t dmrsEst[8] = {0};
 
 typedef struct {
   short data;
@@ -899,22 +881,31 @@ int Task_iBar_SSB_Search(
     __v2048i16 seq2_init_table_17_vec, __v2048i16 seq2_init_table_18_vec, __v2048i16 seq2_init_table_19_vec,
     __v2048i16 seq2_trans_table_0_vec, __v2048i16 seq2_trans_table_1_vec, __v2048i16 seq2_trans_table_2_vec,
     __v2048i16 seq2_trans_table_3_vec, __v2048i16 seq2_trans_table_4_vec, __v2048i16 seq2_trans_table_5_vec,
-    __v2048i16 seq2_trans_table_6_vec, short_struct input_ncellid, __v4096i8 rxData_real, __v4096i8 rxData_imag,
-    __v2048i16 dmrs_index, __v2048i16 rxData_shuffle_index) {
-  int   fractionLength = 7;
-  int   dmrsRefLength  = 144;
-  short ncellid        = input_ncellid.data;
-  int   maxSSB         = 0;
-  int   maxSSBIndex    = 0;
-  vshuffle(rxData_real, rxData_shuffle_index, rxData_real, SHUFFLE_GATHER, 720);
-  vshuffle(rxData_imag, rxData_shuffle_index, rxData_imag, SHUFFLE_GATHER, 720);
+    __v2048i16 seq2_trans_table_6_vec, short_struct input_ncellid, __v4096i8 rxData_real0, __v4096i8 rxData_imag0,
+    __v2048i16 dmrs_index, __v2048i16 rxData_shuffle_index, short_struct input_Lmax) {
 
-  for (size_t ibar_SSB = 0; ibar_SSB <= 7; ibar_SSB++) {
+  int       fractionLength = 7;
+  int       dmrsRefLength  = 144;
+  short     ncellid        = input_ncellid.data;
+  short     Lmax           = input_Lmax.data;
+  int       maxSSB         = 0;
+  int       maxSSBIndex    = 0;
+  __v4096i8 rxData_real;
+  __v4096i8 rxData_imag;
+  vclaim(rxData_real);
+  vclaim(rxData_imag);
+  vshuffle(rxData_real, rxData_shuffle_index, rxData_real0, SHUFFLE_GATHER, 720);
+  vshuffle(rxData_imag, rxData_shuffle_index, rxData_imag0, SHUFFLE_GATHER, 720);
+
+  for (size_t ibar_SSB = 0; ibar_SSB <= Lmax; ibar_SSB++) {
 
     // nrPBCHDMRS
     unsigned int cinit = (1 << 11) * (ibar_SSB + 1) * ((ncellid / 4) + 1) + (1 << 6) * (ibar_SSB + 1) + (ncellid % 4);
     __v4096i8    init;
     vclaim(init);
+    vbrdcst(init, 0, MASKREAD_OFF, 32);
+    vbrdcst(init, 0, MASKREAD_OFF, 32);
+    vbrdcst(init, 0, MASKREAD_OFF, 32);
     vbrdcst(init, 0, MASKREAD_OFF, 32);
     vbarrier();
     VSPM_OPEN();
@@ -975,67 +966,89 @@ int Task_iBar_SSB_Search(
 
     dmrsEst_real_vec = vsadd(dmrsEst_real_vec_part1, dmrsEst_real_vec_part2, MASKREAD_OFF, dmrsRefLength);
     dmrsEst_imag_vec = vssub(dmrsEst_imag_vec_part1, dmrsEst_imag_vec_part2, MASKREAD_OFF, dmrsRefLength);
+
+    __v4096i8 dmrsEst_real_vec_tmp;
+    __v4096i8 dmrsEst_imag_vec_tmp;
+    vclaim(dmrsEst_real_vec_tmp);
+    vclaim(dmrsEst_imag_vec_tmp);
+
+    __v2048i16 dmrsEst_shuffle_index;
+    vclaim(dmrsEst_shuffle_index);
+
     __v4096i8 dmrsEst_mean_real;
     __v4096i8 dmrsEst_mean_imag;
     vclaim(dmrsEst_mean_real);
     vclaim(dmrsEst_mean_imag);
-    vbrdcst(dmrsEst_mean_real, 0, MASKREAD_OFF, dmrsRefLength);
-    vbrdcst(dmrsEst_mean_imag, 0, MASKREAD_OFF, dmrsRefLength);
-    dmrsEst_mean_real              = vredsum(dmrsEst_real_vec, MASKREAD_OFF, dmrsRefLength);
-    dmrsEst_mean_imag              = vredsum(dmrsEst_imag_vec, MASKREAD_OFF, dmrsRefLength);
-    int32_t dmrsEst_tmp            = 0;
-    int     dmrsEst_mean_real_addr = vaddr(dmrsEst_mean_real);
-    vbarrier();
-    VSPM_OPEN();
-    dmrsEst_tmp = ((*(volatile char *)(dmrsEst_mean_real_addr)) & 0xFF);
-    VSPM_CLOSE();
-    dmrsEst_mean_real_addr = vaddr(dmrsEst_mean_real);
-    vbarrier();
-    VSPM_OPEN();
-    dmrsEst_tmp += (((*(volatile char *)(dmrsEst_mean_real_addr + 1)) & 0xFF) << 8);
-    VSPM_CLOSE();
-    dmrsEst_mean_real_addr = vaddr(dmrsEst_mean_real);
-    vbarrier();
-    VSPM_OPEN();
-    dmrsEst_tmp += (((*(volatile char *)(dmrsEst_mean_real_addr + 2)) & 0xFF) << 16);
-    VSPM_CLOSE();
-    dmrsEst_mean_real_addr = vaddr(dmrsEst_mean_real);
-    vbarrier();
-    VSPM_OPEN();
-    dmrsEst_tmp += (((*(volatile char *)(dmrsEst_mean_real_addr + 3)) & 0xFF) << 24);
-    VSPM_CLOSE();
-    if (dmrsEst_tmp == INT32_MIN) {
-      dmrsEst[ibar_SSB] = INT32_MAX;
-    } else {
-      dmrsEst[ibar_SSB] = dmrsEst_tmp > 0 ? dmrsEst_tmp : -dmrsEst_tmp;
-    }
-    // printf("dmrsEst:%hd\n", &dmrsEst_tmp);
-    // printf("dmrsEst_tmp:%hd\n", &dmrsEst_tmp);
-    int dmrsEst_mean_imag_addr = vaddr(dmrsEst_mean_imag);
-    vbarrier();
-    VSPM_OPEN();
-    dmrsEst_tmp = ((*(volatile char *)(dmrsEst_mean_imag_addr)) & 0xFF);
-    VSPM_CLOSE();
-    dmrsEst_mean_imag_addr = vaddr(dmrsEst_mean_imag);
-    vbarrier();
-    VSPM_OPEN();
-    dmrsEst_tmp += (((*(volatile char *)(dmrsEst_mean_imag_addr + 1)) & 0xFF) << 8);
-    VSPM_CLOSE();
-    dmrsEst_mean_imag_addr = vaddr(dmrsEst_mean_imag);
-    vbarrier();
-    VSPM_OPEN();
-    dmrsEst_tmp += (((*(volatile char *)(dmrsEst_mean_imag_addr + 2)) & 0xFF) << 16);
-    VSPM_CLOSE();
-    dmrsEst_mean_imag_addr = vaddr(dmrsEst_mean_imag);
-    vbarrier();
-    VSPM_OPEN();
-    dmrsEst_tmp += (((*(volatile char *)(dmrsEst_mean_imag_addr + 3)) & 0xFF) << 24);
-    VSPM_CLOSE();
-    // printf("dmrsEst:%hd\n", &dmrsEst_tmp);
-    if (dmrsEst_tmp == INT32_MIN) {
-      dmrsEst[ibar_SSB] += INT32_MAX;
-    } else {
-      dmrsEst[ibar_SSB] += dmrsEst_tmp > 0 ? dmrsEst_tmp : -dmrsEst_tmp;
+    for (int symbol_index = 1; symbol_index < 4; ++symbol_index) {
+      vrange(dmrsEst_shuffle_index, dmrs_length_perSymbol[symbol_index]);
+      // printf("dmrs_length_perSymbol:%hd\n", &dmrs_length_perSymbol[symbol_index]);
+      // VENUS_PRINTVEC_SHORT(dmrsEst_shuffle_index, 5);
+      dmrsEst_shuffle_index = vsadd(dmrsEst_shuffle_index, dmrs_length_perSymbol[symbol_index - 1], MASKREAD_OFF,
+                                    dmrs_length_perSymbol[symbol_index]);
+      // VENUS_PRINTVEC_SHORT(dmrsEst_shuffle_index, 5);
+      vshuffle(dmrsEst_real_vec_tmp, dmrsEst_shuffle_index, dmrsEst_real_vec, SHUFFLE_GATHER,
+               dmrs_length_perSymbol[symbol_index]);
+      vshuffle(dmrsEst_imag_vec_tmp, dmrsEst_shuffle_index, dmrsEst_imag_vec, SHUFFLE_GATHER,
+               dmrs_length_perSymbol[symbol_index]);
+
+      vbrdcst(dmrsEst_mean_real, 0, MASKREAD_OFF, 32); // 提前置零，稍微多置零一些，方便Debug
+      vbrdcst(dmrsEst_mean_imag, 0, MASKREAD_OFF, 32);
+      dmrsEst_mean_real              = vredsum(dmrsEst_real_vec_tmp, MASKREAD_OFF, dmrs_length_perSymbol[symbol_index]);
+      dmrsEst_mean_imag              = vredsum(dmrsEst_imag_vec_tmp, MASKREAD_OFF, dmrs_length_perSymbol[symbol_index]);
+      int32_t dmrsEst_tmp            = 0;
+      int     dmrsEst_mean_real_addr = vaddr(dmrsEst_mean_real);
+      vbarrier();
+      VSPM_OPEN();
+      dmrsEst_tmp = ((*(volatile char *)(dmrsEst_mean_real_addr)) & 0xFF);
+      VSPM_CLOSE();
+      dmrsEst_mean_real_addr = vaddr(dmrsEst_mean_real);
+      vbarrier();
+      VSPM_OPEN();
+      dmrsEst_tmp += (((*(volatile char *)(dmrsEst_mean_real_addr + 1)) & 0xFF) << 8);
+      VSPM_CLOSE();
+      dmrsEst_mean_real_addr = vaddr(dmrsEst_mean_real);
+      vbarrier();
+      VSPM_OPEN();
+      dmrsEst_tmp += (((*(volatile char *)(dmrsEst_mean_real_addr + 2)) & 0xFF) << 16);
+      VSPM_CLOSE();
+      dmrsEst_mean_real_addr = vaddr(dmrsEst_mean_real);
+      vbarrier();
+      VSPM_OPEN();
+      dmrsEst_tmp += (((*(volatile char *)(dmrsEst_mean_real_addr + 3)) & 0xFF) << 24);
+      VSPM_CLOSE();
+      if (dmrsEst_tmp == INT32_MIN) {
+        dmrsEst[ibar_SSB] = INT32_MAX;
+      } else {
+        dmrsEst[ibar_SSB] = dmrsEst_tmp > 0 ? dmrsEst_tmp : -dmrsEst_tmp;
+      }
+      // printf("dmrsEst:%hd\n", &dmrsEst_tmp);
+      // printf("dmrsEst_tmp:%hd\n", &dmrsEst_tmp);
+      int dmrsEst_mean_imag_addr = vaddr(dmrsEst_mean_imag);
+      vbarrier();
+      VSPM_OPEN();
+      dmrsEst_tmp = ((*(volatile char *)(dmrsEst_mean_imag_addr)) & 0xFF);
+      VSPM_CLOSE();
+      dmrsEst_mean_imag_addr = vaddr(dmrsEst_mean_imag);
+      vbarrier();
+      VSPM_OPEN();
+      dmrsEst_tmp += (((*(volatile char *)(dmrsEst_mean_imag_addr + 1)) & 0xFF) << 8);
+      VSPM_CLOSE();
+      dmrsEst_mean_imag_addr = vaddr(dmrsEst_mean_imag);
+      vbarrier();
+      VSPM_OPEN();
+      dmrsEst_tmp += (((*(volatile char *)(dmrsEst_mean_imag_addr + 2)) & 0xFF) << 16);
+      VSPM_CLOSE();
+      dmrsEst_mean_imag_addr = vaddr(dmrsEst_mean_imag);
+      vbarrier();
+      VSPM_OPEN();
+      dmrsEst_tmp += (((*(volatile char *)(dmrsEst_mean_imag_addr + 3)) & 0xFF) << 24);
+      VSPM_CLOSE();
+      // printf("dmrsEst:%hd\n", &dmrsEst_tmp);
+      if (dmrsEst_tmp == INT32_MIN) {
+        dmrsEst[ibar_SSB] += INT32_MAX;
+      } else {
+        dmrsEst[ibar_SSB] += dmrsEst_tmp > 0 ? dmrsEst_tmp : -dmrsEst_tmp;
+      }
     }
     maxSSBIndex = dmrsEst[ibar_SSB] > maxSSB ? ibar_SSB : maxSSBIndex;
     maxSSB      = dmrsEst[ibar_SSB] > maxSSB ? dmrsEst[ibar_SSB] : maxSSB;

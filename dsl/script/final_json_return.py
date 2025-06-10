@@ -4,6 +4,11 @@ import shutil
 
 def fill(final_json, map_json_path, output_json):
     # Check if map_json_path file is empty
+    if not os.path.exists(map_json_path):
+        print(f"!!Warning: {map_json_path} is no exist. Skipping processing.")
+        with open(map_json_path, 'w') as f:
+            pass  # 创建空文件，不写任何内容
+
     if os.path.getsize(map_json_path) == 0:
         shutil.copyfile(output_json, final_json)
         print(f"!!Warning: {map_json_path} is empty. Skipping processing.")
@@ -46,13 +51,13 @@ def process_dag_files(map_folder_path, output_base_path, final_base_path):
     for dag_folder in os.listdir(output_base_path):
         dag_base= dag_folder.split(".json")[0]
         dag_path = os.path.join(output_base_path, dag_base)
-
+        var_json_path = os.path.join(map_folder_path, dag_base, "return_value.json")
         if os.path.isdir(dag_path):
             final_json_path = os.path.join(final_base_path, f"{dag_base}.json")
             output_json_path = os.path.join(output_base_path, dag_base, "final_all_input.json")
-            fill(final_json_path, map_folder_path, output_json_path)
+            fill(final_json_path, var_json_path, output_json_path)
 
 output_base_path = "./IJ"
-map_folder_path = "./variable/map/return_value.json"
+map_folder_path = "./IJ"
 final_base_path = "./final_output"
 process_dag_files(map_folder_path, output_base_path, final_base_path)

@@ -18,7 +18,7 @@ def find_variable_info(map_filename, variable_name):
 
     return None
 
-def update_json_with_info(json_filenames, map_filename, json_file_to_extract_offset_from):
+def update_json_with_info(json_filenames, map_filename, json_file_to_extract_offset_from, output_dag_folder):
     try:
         with open(json_file_to_extract_offset_from, 'r') as json_file:
             extracted_data = json.load(json_file)
@@ -52,22 +52,24 @@ def update_json_with_info(json_filenames, map_filename, json_file_to_extract_off
 
 def process_dag_folders(map_base_path, task_base_path, output_base_path):
     for dag_folder in os.listdir(output_base_path):
-        dag_path = os.path.join(output_base_path)
+        dag_path = os.path.join(output_base_path, dag_folder)
         if os.path.isdir(dag_path):
-
-            map_filename = os.path.join(map_base_path, "variable.map")
-            json_file_to_extract_offset_from = os.path.join(output_base_path, dag_folder, "combined_task_without_padding.json")
+            
+            # 每个 DAG 文件夹有自己独立的 variable.map 文件
+            map_filename = os.path.join(dag_path, "variable.map")
+            json_file_to_extract_offset_from = os.path.join(dag_path, "combined_task_without_padding.json")
             
             json_filenames = [
-                os.path.join(task_base_path, "global.json"),
-                os.path.join(task_base_path, "return_value.json"),
-                os.path.join(task_base_path, "parameter.json"),
-                os.path.join(task_base_path, "dag_input.json"),
-                os.path.join(task_base_path, "dfedata.json"),
-                os.path.join(task_base_path, "all_data.json")
+                os.path.join(dag_path, "global.json"),
+                os.path.join(dag_path, "return_value.json"),
+                os.path.join(dag_path, "parameter.json"),
+                os.path.join(dag_path, "dag_input.json"),
+                os.path.join(dag_path, "dfedata.json"),
+                os.path.join(dag_path, "all_data.json")
             ]
 
-            update_json_with_info(json_filenames, map_filename, json_file_to_extract_offset_from)
+            # 更新 JSON 文件，传递当前 DAG 文件夹路径
+            update_json_with_info(json_filenames, map_filename, json_file_to_extract_offset_from, dag_path)
 
 if __name__ == "__main__":
     map_base_path = os.getcwd()

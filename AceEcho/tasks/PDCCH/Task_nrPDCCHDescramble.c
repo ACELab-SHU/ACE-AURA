@@ -143,7 +143,12 @@ nrPRBS(__v4096i8 seq1_vec, __v4096i8 init2_vec, __v2048i16 seq2_init_table_0_vec
   vshuffle(seq2_init_table_8_tmp, seq2_init_table_8_vec, init2_vec, SHUFFLE_GATHER, tabLength);
   __v4096i8 seq2_init_table_9_tmp;
   vclaim(seq2_init_table_9_tmp);
+
+  seq2_init_table_9_vec = vsadd(seq2_init_table_9_vec, 0, MASKREAD_OFF, 2048);
+  init2_vec = vsadd(init2_vec, 0, MASKREAD_OFF, 4096);
   vshuffle(seq2_init_table_9_tmp, seq2_init_table_9_vec, init2_vec, SHUFFLE_GATHER, tabLength);
+  seq2_init_table_9_tmp = vsadd(seq2_init_table_9_tmp, 0, MASKREAD_OFF, 4096);
+  
   __v4096i8 seq2_init_table_10_tmp;
   vclaim(seq2_init_table_10_tmp);
   vshuffle(seq2_init_table_10_tmp, seq2_init_table_10_vec, init2_vec, SHUFFLE_GATHER, tabLength);
@@ -266,6 +271,9 @@ int Task_nrPDCCHDescramble(
 
   __v4096i8 init2_vec;
   vclaim(init2_vec);
+  vbrdcst(init2_vec, 0, MASKREAD_OFF, 32);
+  vbrdcst(init2_vec, 0, MASKREAD_OFF, 32);
+  vbrdcst(init2_vec, 0, MASKREAD_OFF, 32);
   vbrdcst(init2_vec, 0, MASKREAD_OFF, 32);
   vbarrier();
   VSPM_OPEN();

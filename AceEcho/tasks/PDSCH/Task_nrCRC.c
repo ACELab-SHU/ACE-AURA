@@ -16,9 +16,9 @@ typedef short __v2048i16 __attribute__((ext_vector_type(2048)));
 typedef char  __v4096i8 __attribute__((ext_vector_type(4096)));
 
 int Task_nrCRC(__v4096i8 vin, short_struct in_fullLen, short_struct in_pariLen, __v4096i8 poly) {
-  int fullLen = in_fullLen.data;
-  int pariLen = in_pariLen.data + 1;
-  int msgLen  = fullLen - pariLen + 1;
+  short fullLen = in_fullLen.data;
+  short pariLen = in_pariLen.data + 1;
+  short msgLen  = fullLen - pariLen + 1;
   int tmp;
 
   __v4096i8  buf;
@@ -73,8 +73,8 @@ int Task_nrCRC(__v4096i8 vin, short_struct in_fullLen, short_struct in_pariLen, 
   VSPM_CLOSE();
 
   short_struct out_crc_result;
-  out_crc_result.data = crc_result;
-  printf("crc_result: %hd\n", &crc_result);
+  out_crc_result.data = (short)(crc_result == 0 ? 0 : 1);
+  // printf("crc_result: %hd\n", &crc_result);
 
-  vreturn(buf, sizeof(buf), &out_crc_result, sizeof(out_crc_result));
+  vreturn(buf, 4096, &out_crc_result, sizeof(out_crc_result));
 }

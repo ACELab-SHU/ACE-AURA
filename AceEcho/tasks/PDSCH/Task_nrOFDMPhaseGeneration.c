@@ -102,7 +102,7 @@ char sin_table[720] = {
     -40,  -38,  -37,  -36,  -35,  -34,  -33,  -32,  -31,  -30,  -29,  -28,  -27,  -26,  -24,  -23,  -22,  -21,  -20,
     -19,  -18,  -17,  -16,  -14,  -13,  -12,  -11,  -10,  -9,   -8,   -7,   -6,   -4,   -3,   -2,   -1};
 
-int Task_nrOFDMPhaseGeneration(short_struct subCarrierSpace, short_struct symbolNum, int_struct freq0) {
+int Task_nrOFDMPhaseGeneration(short_struct subCarrierSpace, short_struct symbolNum, double_struct freq0) {
 
   //   double f0         = 2132.62e6;
   // input parameter
@@ -131,37 +131,62 @@ int Task_nrOFDMPhaseGeneration(short_struct subCarrierSpace, short_struct symbol
     }
   }
 
-  short n_mu_tot   = cp_length + N_FFT;
-  short n_mu_start = 0;
-  if (symbol_num == 0) {
-    n_mu_start = 0 + cp_length;
-  } else if (symbol_num > 0 && symbol_num < 7) {
-    n_mu_start = symbol_num * N_FFT + (symbol_num + 1) * cp_length + 16;
-  } else if (symbol_num == 7) {
-    n_mu_start = symbol_num * N_FFT + (symbol_num + 1) * (cp_length - 16) + 32;
+  if ((symbol_num <= 13) && (symbol_num >= 0)) {
+    short n_mu_tot   = cp_length + N_FFT;
+    short n_mu_start = 0;
+    if (symbol_num == 0) {
+      n_mu_start = 0 + cp_length;
+    } else if (symbol_num > 0 && symbol_num < 7) {
+      n_mu_start = symbol_num * N_FFT + (symbol_num + 1) * cp_length + 16;
+    } else if (symbol_num == 7) {
+      n_mu_start = symbol_num * N_FFT + (symbol_num + 1) * (cp_length - 16) + 32;
+    } else {
+      n_mu_start = symbol_num * N_FFT + (symbol_num + 1) * cp_length + 32;
+    }
+
+    double SR = N_FFT * scs;
+    // double t_mu_start = n_mu_start / SR;
+    double symbolPhases = -2 * f0 * n_mu_start / (SR * 1000);
+
+    symbolPhases = symbolPhases - (int)(symbolPhases / (2)) * (2);
+    if (symbolPhases < 0) {
+      symbolPhases += 2;
+    }
+    //     symbolPhases = symbolPhases * PI;
+    // int index = (int)(angle * TABLE_SIZE / (2 * PI));
+    char cos_result = cos_table[(int)(symbolPhases * 720 / 2)];
+    char sin_result = sin_table[(int)(symbolPhases * 720 / 2)];
+
+    // __v4096i8 Phase_cos;
+    // __v4096i8 Phase_sin;
+    // vclaim(Phase_cos);
+    // vclaim(Phase_sin);
+    // vbrdcst(Phase_cos, cos_result, MASKREAD_OFF, N_FFT);
+    // vbrdcst(Phase_sin, sin_result, MASKREAD_OFF, N_FFT);
+
+    // vreturn(Phase_cos, N_FFT, Phase_sin, N_FFT);
+
+    char_struct Phase_cos;
+    char_struct Phase_sin;
+    Phase_cos.data = cos_result;
+    Phase_sin.data = sin_result;
+    vreturn(&Phase_cos, sizeof(Phase_cos), &Phase_sin, sizeof(Phase_sin));
+
+    // vreturn(Phase_cos, sizeof(Phase_cos), Phase_sin, sizeof(Phase_sin));
   } else {
-    n_mu_start = symbol_num * N_FFT + (symbol_num + 1) * cp_length + 32;
+
+    // __v4096i8 Phase_cos;
+    // __v4096i8 Phase_sin;
+    // vclaim(Phase_cos);
+    // vclaim(Phase_sin);
+    // vbrdcst(Phase_cos, 0, MASKREAD_OFF, 1);
+    // vbrdcst(Phase_sin, 0, MASKREAD_OFF, 1);
+    // vreturn(Phase_cos, N_FFT, Phase_sin, N_FFT);
+
+    short_struct Phase_cos;
+    short_struct Phase_sin;
+    Phase_cos.data = 0;
+    Phase_sin.data = 0;
+    vreturn(&Phase_cos, sizeof(Phase_cos), &Phase_sin, sizeof(Phase_sin));
   }
-
-  double SR = N_FFT * scs;
-  // double t_mu_start = n_mu_start / SR;
-  double symbolPhases = -2 * f0 * n_mu_start / (SR * 1000);
-
-  symbolPhases = symbolPhases - (int)(symbolPhases / (2)) * (2);
-  if (symbolPhases < 0) {
-    symbolPhases += 2;
-  }
-  //     symbolPhases = symbolPhases * PI;
-  // int index = (int)(angle * TABLE_SIZE / (2 * PI));
-  char cos_result = cos_table[(int)(symbolPhases * 720 / 2)];
-  char sin_result = sin_table[(int)(symbolPhases * 720 / 2)];
-
-  __v4096i8 Phase_cos;
-  __v4096i8 Phase_sin;
-  vclaim(Phase_cos);
-  vclaim(Phase_sin);
-  vbrdcst(Phase_cos, cos_result, MASKREAD_OFF, N_FFT);
-  vbrdcst(Phase_sin, sin_result, MASKREAD_OFF, N_FFT);
-
-  vreturn(Phase_cos, N_FFT, Phase_sin, N_FFT);
 }

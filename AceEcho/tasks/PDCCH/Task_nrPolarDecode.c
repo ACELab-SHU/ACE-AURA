@@ -159,6 +159,11 @@ VENUS_INLINE __v2048i16 nr_polar_interleaving_pattern(uint16_t K, uint8_t I_IL) 
 
 // 输入定点化的点数，实现定点乘法的输出
 VENUS_INLINE __v4096i8 MUL4096_8_FIXED(__v4096i8 a, __v4096i8 b, int fix_point, int length) {
+  // __v4096i8 result;
+  // vsetshamt(fix_point);
+  // result = vmul(a, b, MASKREAD_OFF, length);
+  // vsetshamt(0);
+  // return result;
   __v4096i8 high8;
   __v4096i8 low8;
   __v4096i8 result;

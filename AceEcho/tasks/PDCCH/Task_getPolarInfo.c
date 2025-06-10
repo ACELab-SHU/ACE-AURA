@@ -11,11 +11,12 @@
 #include "data_type.h"
 #include "riscv_printf.h"
 #include "venus.h"
+#include "vmath.h"
 
 typedef short __v2048i16 __attribute__((ext_vector_type(2048)));
 typedef char  __v4096i8 __attribute__((ext_vector_type(4096)));
 
-uint16_t polarSequence[1024] = {
+static uint16_t polarSequence[1024] = {
     0,    1,    2,    4,   8,   16,   32,   3,    5,    64,   9,    6,   17,   10,   18,   128,  12,  33,   65,   20,
     256,  34,   24,   36,  7,   129,  66,   512,  11,   40,   68,   130, 19,   13,   48,   14,   72,  257,  21,   132,
     35,   258,  26,   513, 80,  37,   25,   22,   136,  260,  264,  38,  514,  96,   67,   41,   144, 28,   69,   42,
@@ -69,19 +70,19 @@ uint16_t polarSequence[1024] = {
     1012, 999,  1016, 767, 989, 1003, 990,  1005, 959,  1011, 1013, 895, 1006, 1014, 1017, 1018, 991, 1020, 1007, 1015,
     1019, 1021, 1022, 1023};
 
-uint8_t pi[32]  = {0,  1,  2,  4,  3,  5,  6,  7,  8,  16, 9,  17, 10, 18, 11, 19,
-                  12, 20, 13, 21, 14, 22, 15, 23, 24, 25, 26, 28, 27, 29, 30, 31};
-int     wg[256] = {1,  2,  2,  4,  2,  4,  4,  8,   2,  4,  4,  8,   4,  8,   8,   16, 2,  4,  4,  8,  4,  8,  8,  16,
-               4,  8,  8,  16, 8,  16, 16, 32,  2,  4,  4,  8,   4,  8,   8,   16, 4,  8,  8,  16, 8,  16, 16, 32,
-               4,  8,  8,  16, 8,  16, 16, 32,  8,  16, 16, 32,  16, 32,  32,  64, 2,  4,  4,  8,  4,  8,  8,  16,
-               4,  8,  8,  16, 8,  16, 16, 32,  4,  8,  8,  16,  8,  16,  16,  32, 8,  16, 16, 32, 16, 32, 32, 64,
-               4,  8,  8,  16, 8,  16, 16, 32,  8,  16, 16, 32,  16, 32,  32,  64, 8,  16, 16, 32, 16, 32, 32, 64,
-               16, 32, 32, 64, 32, 64, 64, 128, 2,  4,  4,  8,   4,  8,   8,   16, 4,  8,  8,  16, 8,  16, 16, 32,
-               4,  8,  8,  16, 8,  16, 16, 32,  8,  16, 16, 32,  16, 32,  32,  64, 4,  8,  8,  16, 8,  16, 16, 32,
-               8,  16, 16, 32, 16, 32, 32, 64,  8,  16, 16, 32,  16, 32,  32,  64, 16, 32, 32, 64, 32, 64, 64, 128,
-               4,  8,  8,  16, 8,  16, 16, 32,  8,  16, 16, 32,  16, 32,  32,  64, 8,  16, 16, 32, 16, 32, 32, 64,
-               16, 32, 32, 64, 32, 64, 64, 128, 8,  16, 16, 32,  16, 32,  32,  64, 16, 32, 32, 64, 32, 64, 64, 128,
-               16, 32, 32, 64, 32, 64, 64, 128, 32, 64, 64, 128, 64, 128, 128, 256};
+static uint8_t pi[32]  = {0,  1,  2,  4,  3,  5,  6,  7,  8,  16, 9,  17, 10, 18, 11, 19,
+                         12, 20, 13, 21, 14, 22, 15, 23, 24, 25, 26, 28, 27, 29, 30, 31};
+static uint8_t wg[256] = {
+    1,  2,  2,  4,  2,  4,   4,  8,  2,  4,   4,  8,  4,  8,   8,  16,  2,  4,   4,  8,   4,   8,  8,  16,  4,  8,
+    8,  16, 8,  16, 16, 32,  2,  4,  4,  8,   4,  8,  8,  16,  4,  8,   8,  16,  8,  16,  16,  32, 4,  8,   8,  16,
+    8,  16, 16, 32, 8,  16,  16, 32, 16, 32,  32, 64, 2,  4,   4,  8,   4,  8,   8,  16,  4,   8,  8,  16,  8,  16,
+    16, 32, 4,  8,  8,  16,  8,  16, 16, 32,  8,  16, 16, 32,  16, 32,  32, 64,  4,  8,   8,   16, 8,  16,  16, 32,
+    8,  16, 16, 32, 16, 32,  32, 64, 8,  16,  16, 32, 16, 32,  32, 64,  16, 32,  32, 64,  32,  64, 64, 128, 2,  4,
+    4,  8,  4,  8,  8,  16,  4,  8,  8,  16,  8,  16, 16, 32,  4,  8,   8,  16,  8,  16,  16,  32, 8,  16,  16, 32,
+    16, 32, 32, 64, 4,  8,   8,  16, 8,  16,  16, 32, 8,  16,  16, 32,  16, 32,  32, 64,  8,   16, 16, 32,  16, 32,
+    32, 64, 16, 32, 32, 64,  32, 64, 64, 128, 4,  8,  8,  16,  8,  16,  16, 32,  8,  16,  16,  32, 16, 32,  32, 64,
+    8,  16, 16, 32, 16, 32,  32, 64, 16, 32,  32, 64, 32, 64,  64, 128, 8,  16,  16, 32,  16,  32, 32, 64,  16, 32,
+    32, 64, 32, 64, 64, 128, 16, 32, 32, 64,  32, 64, 64, 128, 32, 64,  64, 128, 64, 128, 128, 256};
 
 VENUS_INLINE short ceillog2_Venus(short in) {
   short out  = -1;
@@ -374,7 +375,22 @@ VENUS_INLINE short polarGetN(short K, short E, uint8_t nMax) {
 //   return out;
 // }
 
-VENUS_INLINE __v2048i16 polarConstruct(uint16_t K, uint16_t E, uint16_t N, uint8_t nPC, uint8_t nPCwm, uint8_t nMax) {
+typedef struct {
+  short data[2048];
+} __attribute__((aligned(64))) shortArray_struct;
+
+volatile short out[2048] = {0};
+// volatile uint16_t qSeq[1024];
+// volatile uint16_t jn[1024];
+// volatile uint16_t qFtmp[1024];
+// volatile short    Index_Value[1024];
+// volatile short    qI[1024];
+// volatile int      qPC[1024];
+// volatile int      wt_qtildeI[1024];
+
+// VENUS_INLINE __v2048i16 polarConstruct(uint16_t K, uint16_t E, uint16_t N, uint8_t nPC, uint8_t nPCwm, uint8_t nMax)
+// {
+VENUS_INLINE void polarConstruct(uint16_t K, uint16_t E, uint16_t N, uint8_t nPC, uint8_t nPCwm, uint8_t nMax) {
   // Get sequence for N, ascending ordered, Section 5.3.1.2
   uint16_t qSeq[1024];
   int      j = 0;
@@ -505,7 +521,7 @@ VENUS_INLINE __v2048i16 polarConstruct(uint16_t K, uint16_t E, uint16_t N, uint8
   // }
 
   // PC - Polar   暂不支持
-  int qPC[1024];
+  short qPC[1024];
   for (int i = 0; i < nPC; i++) {
     qPC[i] = 0;
   }
@@ -515,7 +531,7 @@ VENUS_INLINE __v2048i16 polarConstruct(uint16_t K, uint16_t E, uint16_t N, uint8
     }
 
     if (nPCwm > 0) {
-      int wt_qtildeI[1024];
+      short wt_qtildeI[1024];
       for (int i = 0; i < K; i++) {
         wt_qtildeI[i] = wg[qI[i]];
       }
@@ -535,31 +551,49 @@ VENUS_INLINE __v2048i16 polarConstruct(uint16_t K, uint16_t E, uint16_t N, uint8
     }
   }
 
-  __v2048i16 out;
-  vclaim(out);
-  vbarrier();
-  VSPM_OPEN();
-  int out_addr = vaddr(out);
-  for (int i = 0; i < K + nPC; i++) {
-    *(volatile unsigned short *)(out_addr + (i << 1)) = qI[i];
-  }
-  VSPM_CLOSE();
+  // __v2048i16 out;
+  // vclaim(out);
+  // vbarrier();
+  // VSPM_OPEN();
+  // int out_addr = vaddr(out);
+  // for (int i = 0; i < K + nPC; i++) {
+  //   *(volatile unsigned short *)(out_addr + (i << 1)) = qI[i];
+  // }
+  // VSPM_CLOSE();
 
-  return out;
+  for (int i = 0; i < K + nPC; i++) {
+    out[i] = qI[i];
+  }
+
+  // return out;
 }
 
-int Task_getPolarInfo(short_struct input_K, short_struct input_E) {
+int Task_getPolarInfo(short_struct input_csetNRB, short_struct input_E) {
+  // __asm__("lui sp, 0x140");
+  VSPM_OPEN();
 
-  short      K    = input_K.data;
-  short      E    = input_E.data;
-  short      nMax = 9;
-  uint16_t   N    = polarGetN(K, E, nMax);
-  __v2048i16 InfoIndex;
-  vclaim(InfoIndex);
-  InfoIndex = polarConstruct(K, E, N, 0, 0, nMax);
+  short csetNRB = input_csetNRB.data;
+  short E       = input_E.data;
+  short nMax    = 9;
 
-  short_struct out_N;
+  short K = 28 + ceil_log2(csetNRB * (csetNRB + 1) / 2) + 24; // dci.Width+24
+
+  uint16_t N = polarGetN(K, E, nMax);
+  // __v2048i16 InfoIndex;
+  // vclaim(InfoIndex);
+  // InfoIndex = polarConstruct(K, E, N, 0, 0, nMax);
+  polarConstruct(K, E, N, 0, 0, nMax);
+
+  shortArray_struct outArr;
+  for (int i = 0; i < K; i++) {
+    outArr.data[i] = out[i];
+  }
+
+  short_struct out_N, out_K;
   out_N.data = N;
+  out_K.data = K;
 
-  vreturn(InfoIndex, sizeof(InfoIndex), &out_N, sizeof(out_N));
+  VSPM_CLOSE();
+  // vreturn(InfoIndex, sizeof(InfoIndex), &out_N, sizeof(out_N), &out_K, sizeof(out_K));
+  vreturn(&outArr, sizeof(outArr), &out_N, sizeof(out_N), &out_K, sizeof(out_K));
 }

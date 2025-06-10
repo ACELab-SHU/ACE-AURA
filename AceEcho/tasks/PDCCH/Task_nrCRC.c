@@ -86,10 +86,11 @@ int Task_nrCRC(__v4096i8 tmp_vin, short_struct in_fullLen, short_struct in_pariL
   compare_result          = vredsum(compare_result, MASKREAD_OFF, pariLen - 1);
   int compare_result_addr = vaddr(compare_result);
   vbarrier();
-  VSPM_CLOSE();
-  int crc_result = *(volatile unsigned char *)(compare_result_addr);
+  VSPM_OPEN();
+  uint32_t crc_result = *(volatile uint32_t *)(compare_result_addr);
   VSPM_CLOSE();
 
+  crc_result = crc_result == 0 ? 0 : 1;
   short_struct out_crc_result;
   out_crc_result.data = crc_result;
   // printf("crc_result: %hd\n", &crc_result);

@@ -90,6 +90,9 @@ typedef struct fTABLE {
  * */
 
 int Task_nrPDSCHIndices(nrPDSCHConfig pdsch, nrCarrierConfig carrier) {
+
+  VSPM_OPEN();
+
   uint16_t pdsch_NSizeBWP  = pdsch.NSizeBWP;
   uint16_t pdsch_NStartBWP = pdsch.NStartBWP;
   uint16_t nSizeGrid       = carrier.NSizeGrid;
@@ -1032,8 +1035,9 @@ int Task_nrPDSCHIndices(nrPDSCHConfig pdsch, nrCarrierConfig carrier) {
     *(volatile unsigned short *)(pdsch_index_out_addr + (i << 1)) = ind[i] - symbolset[0] * nSizeGrid * 12;
   }
   VSPM_CLOSE();
-  pdsch_index_out = vadd(pdsch_index_out, 0, MASKREAD_OFF, 2048);
+  pdsch_index_out = vsadd(pdsch_index_out, 0, MASKREAD_OFF, 2048);
 
+  VSPM_OPEN();
   short_struct out_NREPerPRB;
   out_NREPerPRB.data = NREPerPRB;
 
@@ -1045,8 +1049,13 @@ int Task_nrPDSCHIndices(nrPDSCHConfig pdsch, nrCarrierConfig carrier) {
 
   short_struct pdsch_index_length_out;
   pdsch_index_length_out.data = slotindicesCount;
+  
+  VSPM_CLOSE();
 
-  vreturn(pdsch_index_out, sizeof(pdsch_index_out), &pdsch_index_length_out, sizeof(pdsch_index_length_out),
+  vreturn(pdsch_index_out, slotindicesCount * 2, &pdsch_index_length_out, sizeof(pdsch_index_length_out),
           &out_NREPerPRB, sizeof(out_NREPerPRB), &out_subcarrierLength, sizeof(out_subcarrierLength),
           &out_pdsch_symbol_length, sizeof(out_pdsch_symbol_length));
+  // vreturn(pdsch_index_out, sizeof(pdsch_index_out), &pdsch_index_length_out, sizeof(pdsch_index_length_out),
+  //         &out_NREPerPRB, sizeof(out_NREPerPRB), &out_subcarrierLength, sizeof(out_subcarrierLength),
+  //         &out_pdsch_symbol_length, sizeof(out_pdsch_symbol_length));
 }

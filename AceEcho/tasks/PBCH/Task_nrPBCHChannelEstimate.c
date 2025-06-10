@@ -589,15 +589,21 @@ short dmrs_interval    = 4;
 
 static long long noise_power_arry[2] = {0};
 
-int Task_nrPBCHChannelEstimate(__v4096i8 rxData_real, __v4096i8 rxData_imag, __v4096i8 dmrs_real, __v4096i8 dmrs_imag,
+int Task_nrPBCHChannelEstimate(__v4096i8 rxData_real0, __v4096i8 rxData_imag0, __v4096i8 dmrs_real, __v4096i8 dmrs_imag,
                                __v2048i16 dmrs_index, __v4096i8 global_coef_h, __v2048i16 rxData_shuffle_index) {
-  // int Task_nrPBCHChannelEstimate(__v4096i8 rxData_real, __v4096i8 rxData_imag, __v4096i8 dmrs_real, __v4096i8
-  // dmrs_imag,
-  //                                __v2048i16 dmrs_index, __v4096i8 global_coef_h, __v2048i16 rxData_shuffle_index,
+  // int Task_nrPBCHChannelEstimate(__v4096i8 rxData_real, __v4096i8
+  // rxData_imag, __v4096i8 dmrs_real, __v4096i8 dmrs_imag,
+  //                                __v2048i16 dmrs_index, __v4096i8
+  //                                global_coef_h, __v2048i16
+  //                                rxData_shuffle_index,
   //                                __v4096i8 W_real, __v4096i8 W_imag) {
 
-  vshuffle(rxData_real, rxData_shuffle_index, rxData_real, SHUFFLE_GATHER, 720);
-  vshuffle(rxData_imag, rxData_shuffle_index, rxData_imag, SHUFFLE_GATHER, 720);
+  __v4096i8 rxData_real;
+  __v4096i8 rxData_imag;
+  vclaim(rxData_real);
+  vclaim(rxData_imag);
+  vshuffle(rxData_real, rxData_shuffle_index, rxData_real0, SHUFFLE_GATHER, 720);
+  vshuffle(rxData_imag, rxData_shuffle_index, rxData_imag0, SHUFFLE_GATHER, 720);
   __v2048i16 const_value;
   vclaim(const_value);
   vbrdcst(const_value, subcarrierLength, MASKREAD_OFF, 144);
@@ -669,7 +675,8 @@ int Task_nrPBCHChannelEstimate(__v4096i8 rxData_real, __v4096i8 rxData_imag, __v
                         dmrsRefLength); // bc_temp_h_imag-ad_temp_h_imag
 
     /*--------------------noise estimate--------------------*/
-    // noise_power_arry[0] = noiseEstimate(temp_h_real, temp_h_imag, W_real, W_imag);
+    // noise_power_arry[0] = noiseEstimate(temp_h_real, temp_h_imag, W_real,
+    // W_imag);
 
     /*--------------------linear interpolation--------------------*/
     __v4096i8 base_h_real;
@@ -760,14 +767,18 @@ int Task_nrPBCHChannelEstimate(__v4096i8 rxData_real, __v4096i8 rxData_imag, __v
     vclaim(base_h_imag);
     vshuffle(base_h_real, base_dmrs_shuffle_index, temp_h_real, SHUFFLE_GATHER, subcarrierLength);
     vshuffle(base_h_imag, base_dmrs_shuffle_index, temp_h_imag, SHUFFLE_GATHER, subcarrierLength);
-    vshuffle(weight_h_real, weight_dmrs_shuffle_index, weight_h_real, SHUFFLE_GATHER, subcarrierLength);
-    vshuffle(weight_h_imag, weight_dmrs_shuffle_index, weight_h_imag, SHUFFLE_GATHER, subcarrierLength);
+    __v4096i8 weight_h_real1;
+    __v4096i8 weight_h_imag1;
+    vclaim(weight_h_real1);
+    vclaim(weight_h_imag1);
+    vshuffle(weight_h_real1, weight_dmrs_shuffle_index, weight_h_real, SHUFFLE_GATHER, subcarrierLength);
+    vshuffle(weight_h_imag1, weight_dmrs_shuffle_index, weight_h_imag, SHUFFLE_GATHER, subcarrierLength);
 
     __v4096i8 symbol_h_real;
     __v4096i8 symbol_h_imag;
 
-    symbol_h_real = vmuladd(weight_h_real, coef_h, base_h_real, MASKREAD_OFF, subcarrierLength);
-    symbol_h_imag = vmuladd(weight_h_imag, coef_h, base_h_imag, MASKREAD_OFF, subcarrierLength);
+    symbol_h_real = vmuladd(weight_h_real1, coef_h, base_h_real, MASKREAD_OFF, subcarrierLength);
+    symbol_h_imag = vmuladd(weight_h_imag1, coef_h, base_h_imag, MASKREAD_OFF, subcarrierLength);
     vshuffle(h_real, global_shuffle_index_1, symbol_h_real, SHUFFLE_SCATTER, subcarrierLength);
     vshuffle(h_imag, global_shuffle_index_1, symbol_h_imag, SHUFFLE_SCATTER, subcarrierLength);
     // h_real = vmul(weight_h_real, coef_h, MASKREAD_OFF, subcarrierLength);
@@ -941,8 +952,12 @@ int Task_nrPBCHChannelEstimate(__v4096i8 rxData_real, __v4096i8 rxData_imag, __v
       vclaim(base_h_imag);
       vshuffle(base_h_real, base_dmrs_shuffle_index, temp_h_real, SHUFFLE_GATHER, partLength);
       vshuffle(base_h_imag, base_dmrs_shuffle_index, temp_h_imag, SHUFFLE_GATHER, partLength);
-      vshuffle(weight_h_real, weight_dmrs_shuffle_index, weight_h_real, SHUFFLE_GATHER, partLength);
-      vshuffle(weight_h_imag, weight_dmrs_shuffle_index, weight_h_imag, SHUFFLE_GATHER, partLength);
+      __v4096i8 weight_h_real1;
+      __v4096i8 weight_h_imag1;
+      vclaim(weight_h_real1);
+      vclaim(weight_h_imag1);
+      vshuffle(weight_h_real1, weight_dmrs_shuffle_index, weight_h_real, SHUFFLE_GATHER, partLength);
+      vshuffle(weight_h_imag1, weight_dmrs_shuffle_index, weight_h_imag, SHUFFLE_GATHER, partLength);
 
       // __v4096i8 h_real;
       // __v4096i8 h_imag;
@@ -952,8 +967,8 @@ int Task_nrPBCHChannelEstimate(__v4096i8 rxData_real, __v4096i8 rxData_imag, __v
       __v2048i16 h_index;
       vclaim(h_index);
       vrange(h_index, partLength);
-      tmp_h_real = vmuladd(weight_h_real, coef_h, base_h_real, MASKREAD_OFF, partLength);
-      tmp_h_imag = vmuladd(weight_h_imag, coef_h, base_h_imag, MASKREAD_OFF, partLength);
+      tmp_h_real = vmuladd(weight_h_real1, coef_h, base_h_real, MASKREAD_OFF, partLength);
+      tmp_h_imag = vmuladd(weight_h_imag1, coef_h, base_h_imag, MASKREAD_OFF, partLength);
       vshuffle(symbol_h_real, h_index, tmp_h_real, SHUFFLE_SCATTER, partLength);
       vshuffle(symbol_h_imag, h_index, tmp_h_imag, SHUFFLE_SCATTER, partLength);
     }
@@ -1092,8 +1107,12 @@ int Task_nrPBCHChannelEstimate(__v4096i8 rxData_real, __v4096i8 rxData_imag, __v
       vclaim(base_h_imag);
       vshuffle(base_h_real, base_dmrs_shuffle_index, temp_h_real, SHUFFLE_GATHER, partLength);
       vshuffle(base_h_imag, base_dmrs_shuffle_index, temp_h_imag, SHUFFLE_GATHER, partLength);
-      vshuffle(weight_h_real, weight_dmrs_shuffle_index, weight_h_real, SHUFFLE_GATHER, partLength);
-      vshuffle(weight_h_imag, weight_dmrs_shuffle_index, weight_h_imag, SHUFFLE_GATHER, partLength);
+      __v4096i8 weight_h_real1;
+      __v4096i8 weight_h_imag1;
+      vclaim(weight_h_real1);
+      vclaim(weight_h_imag1);
+      vshuffle(weight_h_real1, weight_dmrs_shuffle_index, weight_h_real, SHUFFLE_GATHER, partLength);
+      vshuffle(weight_h_imag1, weight_dmrs_shuffle_index, weight_h_imag, SHUFFLE_GATHER, partLength);
 
       __v4096i8  tmp_h_real;
       __v4096i8  tmp_h_imag;
@@ -1101,8 +1120,8 @@ int Task_nrPBCHChannelEstimate(__v4096i8 rxData_real, __v4096i8 rxData_imag, __v
       vclaim(h_index);
       vrange(h_index, partLength);
       h_index    = vsadd(h_index, secondPartStart, MASKREAD_OFF, partLength);
-      tmp_h_real = vmuladd(weight_h_real, coef_h, base_h_real, MASKREAD_OFF, partLength);
-      tmp_h_imag = vmuladd(weight_h_imag, coef_h, base_h_imag, MASKREAD_OFF, partLength);
+      tmp_h_real = vmuladd(weight_h_real1, coef_h, base_h_real, MASKREAD_OFF, partLength);
+      tmp_h_imag = vmuladd(weight_h_imag1, coef_h, base_h_imag, MASKREAD_OFF, partLength);
       vshuffle(symbol_h_real, h_index, tmp_h_real, SHUFFLE_SCATTER, partLength);
       vshuffle(symbol_h_imag, h_index, tmp_h_imag, SHUFFLE_SCATTER, partLength);
     }
@@ -1168,7 +1187,8 @@ int Task_nrPBCHChannelEstimate(__v4096i8 rxData_real, __v4096i8 rxData_imag, __v
                         dmrsRefLength); // bc_temp_h_imag-ad_temp_h_imag
 
     /*--------------------noise estimate--------------------*/
-    // noise_power_arry[1] = noiseEstimate(temp_h_real, temp_h_imag, W_real, W_imag);
+    // noise_power_arry[1] = noiseEstimate(temp_h_real, temp_h_imag, W_real,
+    // W_imag);
 
     /*--------------------linear interpolation--------------------*/
     __v4096i8 base_h_real;
@@ -1259,14 +1279,18 @@ int Task_nrPBCHChannelEstimate(__v4096i8 rxData_real, __v4096i8 rxData_imag, __v
     vclaim(base_h_imag);
     vshuffle(base_h_real, base_dmrs_shuffle_index, temp_h_real, SHUFFLE_GATHER, subcarrierLength);
     vshuffle(base_h_imag, base_dmrs_shuffle_index, temp_h_imag, SHUFFLE_GATHER, subcarrierLength);
-    vshuffle(weight_h_real, weight_dmrs_shuffle_index, weight_h_real, SHUFFLE_GATHER, subcarrierLength);
-    vshuffle(weight_h_imag, weight_dmrs_shuffle_index, weight_h_imag, SHUFFLE_GATHER, subcarrierLength);
+    __v4096i8 weight_h_real1;
+    __v4096i8 weight_h_imag1;
+    vclaim(weight_h_real1);
+    vclaim(weight_h_imag1);
+    vshuffle(weight_h_real1, weight_dmrs_shuffle_index, weight_h_real, SHUFFLE_GATHER, subcarrierLength);
+    vshuffle(weight_h_imag1, weight_dmrs_shuffle_index, weight_h_imag, SHUFFLE_GATHER, subcarrierLength);
 
     __v4096i8 symbol_h_real;
     __v4096i8 symbol_h_imag;
 
-    symbol_h_real = vmuladd(weight_h_real, coef_h, base_h_real, MASKREAD_OFF, subcarrierLength);
-    symbol_h_imag = vmuladd(weight_h_imag, coef_h, base_h_imag, MASKREAD_OFF, subcarrierLength);
+    symbol_h_real = vmuladd(weight_h_real1, coef_h, base_h_real, MASKREAD_OFF, subcarrierLength);
+    symbol_h_imag = vmuladd(weight_h_imag1, coef_h, base_h_imag, MASKREAD_OFF, subcarrierLength);
     vshuffle(h_real, global_shuffle_index_1, symbol_h_real, SHUFFLE_SCATTER, subcarrierLength);
     vshuffle(h_imag, global_shuffle_index_1, symbol_h_imag, SHUFFLE_SCATTER, subcarrierLength);
     // h_real = vmul(weight_h_real, coef_h, MASKREAD_OFF, subcarrierLength);
@@ -1277,6 +1301,7 @@ int Task_nrPBCHChannelEstimate(__v4096i8 rxData_real, __v4096i8 rxData_imag, __v
   }
 
   // long long noise_power = (noise_power_arry[0] + noise_power_arry[1]) >> 2;
-  // vreturn(h_real, subcarrierLength * 3, h_imag, subcarrierLength * 3, &noise_power, sizeof(noise_power));
+  // vreturn(h_real, subcarrierLength * 3, h_imag, subcarrierLength * 3,
+  // &noise_power, sizeof(noise_power));
   vreturn(h_real, subcarrierLength * 3, h_imag, subcarrierLength * 3);
 }
