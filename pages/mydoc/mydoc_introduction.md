@@ -3,7 +3,7 @@ title: "OpenAURA"
 keywords: sample homepage
 # tags: [getting_started]
 sidebar: mydoc_sidebar
-permalink: index.html
+permalink: mydoc_introduction.html
 summary:  
 ---
 
