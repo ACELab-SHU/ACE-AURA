@@ -4,7 +4,7 @@ title: 🚀 Get Started with OpenEcho
 keywords: OpenEcho, Venus architecture, RISC-V, AI accelerator, cross-compilation, embedded systems, open-source, NPU, software-hardware co-design, performance computing, toolchain setup, build guide, low-latency computing, heterogeneous computing, system-on-chip, edge AI, communication stack, CMake, simulator, real-time systems
 summary: "This guide provides a comprehensive getting started tutorial for developers working with the OpenEcho × Venus open-source platform. It covers system requirements, toolchain setup (including RISC-V cross-compilation), code repository cloning, and build instructions. Designed for software-hardware co-design, OpenEcho × Venus targets high-performance, low-latency computing on edge systems integrating communication, AI, and signal processing. Whether you're building on a simulator or real hardware, this guide will help you set up your environment and get started efficiently."
 sidebar: mydoc_sidebar
-permalink: mydoc_get_started.html
+permalink: index.html
 folder: mydoc
 ---
 
