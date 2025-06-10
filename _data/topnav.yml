@@ -5,23 +5,25 @@ topnav:
   items:
     - title: GitHub
       external_url: https://github.com/ACELab-SHU/ACE-Echo
+    - title: Home
+      url: /index.html
     - title: News
       url: /news
 
 #Topnav dropdowns
-topnav_dropdowns:
-- title: Topnav dropdowns
-  folders:
-    - title: Applications
-      folderitems:
-        - title: 5G Cell Search
-          url: /mydoc_introduction.html
-        - title: LTE Cell Search
-          url: /p1_landing_page.html
-        - title: GNSS Baseband
-          url: /p2_landing_page.html
-        - title: LORA Baseband
-          url: /p2_landing_page.html
+# topnav_dropdowns:
+# - title: Topnav dropdowns
+#   folders:
+#     - title: Applications
+#       folderitems:
+#         - title: 5G Cell Search
+#           url: /mydoc_introduction.html
+#         - title: LTE Cell Search
+#           url: /p1_landing_page.html
+#         - title: GNSS Baseband
+#           url: /p2_landing_page.html
+#         - title: LORA Baseband
+#           url: /p2_landing_page.html
     # - title: Jekyll Help
     #   folderitems:
     #     - title: Jekyll Talk

@@ -3,10 +3,10 @@ repository: tomjoht/documentation-theme-jekyll
 output: web
 # this property is useful for conditional filtering of content that is separate from the PDF.
 
-topnav_title: ACE-LAB Echo Project
+topnav_title: OpenAURA
 # this appears on the top navigation bar next to the home button
 
-site_title: ACE-ECHO
+site_title: ACE-LAB OpenAURA
 # this appears in the html browser tab for the site title (seen mostly by search engines, not users)
 
 company_name: Copyright 2025 ACE-LAB of Shanghai University

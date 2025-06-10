@@ -2,7 +2,7 @@
 
 entries:
 - title: sidebar
-  product: ACE-Echo
+  product: OpenAURA
   version: v0.1-Beta
   folders:
 
@@ -30,7 +30,7 @@ entries:
       url: /mydoc_supported_features.html
       output: web, pdf
     - title: Performance
-      url: /mydoc_about.html
+      url: /mydoc_performance.html
       output: web, pdf
 
 
@@ -39,11 +39,11 @@ entries:
     folderitems:
 
     - title: Get started
-      url: /mydoc_about_ruby_gems_etc.html
+      url: /mydoc_get_started.html
       output: web, pdf
 
     - title: Programming model
-      url: /mydoc_install_jekyll_on_mac.html
+      url: /mydoc_programming_model.html
       output: web, pdf
 
 
@@ -52,19 +52,19 @@ entries:
 
     folderitems:
     - title: Platform User Guide
-      url: /mydoc_series.html
+      url: /mydoc_platform_user_guide.html
       output: web, pdf
 
     - title: Venus User Guide
-      url: /mydoc_sidebar_navigation.html
+      url: /mydoc_venus_user_guide.html
       output: web, pdf
 
     - title: DSL User Guide
-      url: /mydoc_yaml_tutorial.html
+      url: /mydoc_dsl_user_guide.html
       output: web, pdf
 
     - title: L1 Scheduler User Guide
-      url: /mydoc_tags.html
+      url: /mydoc_l1_scheduler_user_guide.html
       output: web, pdf
 
   - title: Official demos
@@ -76,11 +76,11 @@ entries:
       output: web, pdf
 
     - title: GNSS baseband
-      url: /mydoc_glossary.html
+      url: /mydoc_gnss_baseband.html
       output: web, pdf
 
     - title: LORA baseband
-      url: /mydoc_faq_layout.html
+      url: /mydoc_lora_baseband.html
       output: web, pdf
 
 
@@ -89,11 +89,11 @@ entries:
     folderitems:
 
     - title: Developers
-      url: /mydoc_tag_archives_overview.html
+      url: /mydoc_developers.html
       output: web, pdf
       
     - title: Contributing organizations
-      url: /mydoc_tag_archives_overview.html
+      url: /mydoc_contributing_organizations.html
       output: web, pdf
 
       
@@ -102,7 +102,7 @@ entries:
     folderitems:
 
     - title: v0.1-Beta Release notes
-      url: /mydoc_release_notes_60.html
+      url: /mydoc_beta_release_notes.html
       output: web, pdf
 
 
