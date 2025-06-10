@@ -71,8 +71,12 @@ entries:
     output: web, pdf
 
     folderitems:
-    - title: 5G/LTE Cell Search
-      url: /mydoc_kb_layout.html
+    - title: 5G Cell Search
+      url: /mydoc_5g_baseband.html
+      output: web, pdf
+
+    - title: LTE Cell Search
+      url: /mydoc_lte_baseband.html
       output: web, pdf
 
     - title: GNSS baseband
