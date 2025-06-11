@@ -143,7 +143,11 @@ _<font style="background-color:#E7E9E8;">[14] J. Hoydis, S. Cammerer, F. A. Aoud
 <h2 id="bYBFc"><font style="color:rgb(0, 0, 0);">4. UVP </font><font style="color:rgb(0, 0, 0);">vs</font><font style="color:rgb(0, 0, 0);"> Ara </font></h2>
 **<font style="color:rgb(0, 0, 0) !important;background-color:#FBDE28;">UVP Performance Blows Away Ara: Far Fewer Cycles in Matmul/FFT, Up to 3.0× Speedup</font>**
 
-{% include image.html file="performance4.png" caption="Fig. Comparison of UVP with Ara in the number of clock cycles across various configurations and kernels. Note that we compare the L-lane Ara with the 4L-lane UVP (as shown in the legend, with pairs organized in columns) to ensure a fair comparison, given the equal number of execution units.  " %}
+<div style="text-align: center;">
+  {% include image.html file="performance4.png" caption="Fig. Comparison of UVP with Ara in the number of clock cycles across various configurations and kernels. Note that we compare the L-lane Ara with the 4L-lane UVP (as shown in the legend, with pairs organized in columns) to ensure a fair comparison, given the equal number of execution units.  " %}
+</div>
+
+
 
 
 <h3 id="yaRgi"><font style="color:rgb(0, 0, 0) !important;">· </font><font style="color:rgba(0, 0, 0, 0.85);">Objective</font></h3>
@@ -178,7 +182,9 @@ _<font style="background-color:#E7E9E8;">[14] J. Hoydis, S. Cammerer, F. A. Aoud
 
 <h2 id="VSef3"><font style="color:rgb(0, 0, 0);">5、PBCH Decoding Latency Breakdown</font></h2>
 
-{% include image.html file="performance5.png" caption="Fig. Latency breakdown of BCH Procedure @ 50 MHz, Lane32Reg1024 (DMRS: Demodulation Reference Signal)." %}
+<div style="text-align: center;">
+  {% include image.html file="performance5.png" caption="Fig. Latency breakdown of BCH Procedure @ 50 MHz, Lane32Reg1024 (DMRS: Demodulation Reference Signal)." max-width = 500 %}
+</div>
 
 
 <h3 id="GnesM"><font style="color:rgb(0, 0, 0) !important;">· </font><font style="color:rgba(0, 0, 0, 0.85);">Test Scenario</font></h3>
