@@ -1,11 +1,11 @@
 ---
-title: 5G Cell Search
-#tags: [special_layouts]
-keywords: 
+title: 5G/LTE Cell Search
+tags: [special_layouts]
+keywords: knowledge base, support portal, grid, doc portal
 last_updated: June 11, 2025
 summary: "This document describes the multi-stage link flow of 5G cell search, which can be adapted to a variety of scenarios."
 sidebar: mydoc_sidebar
-permalink: mydoc_5g_baseband.html
+permalink: mydoc_kb_layout.html
 toc: false
 folder: mydoc
 ---
@@ -15,8 +15,7 @@ folder: mydoc
 {% include image.html file="5G0.png" %}
 
 <h2 id="rMNS6"><font style="color:rgba(0, 0, 0, 0.9);">The Multi-Stage Access Process of Contemporary Wireless Communication</font></h2>
-<font style="color:rgba(0, 0, 0, 0.9);">
-&emsp;&emsp;Contemporary wireless communication protocols, especially the 5G New Radio (NR) technology, adopt a multi-stage process to ensure the reliability and efficiency of communication. This staged approach covers the entire process from initial synchronization to system information acquisition, involving several key steps and operations.</font>
+<font style="color:rgba(0, 0, 0, 0.9);">Contemporary wireless communication protocols, especially the 5G New Radio (NR) technology, adopt a multi-stage process to ensure the reliability and efficiency of communication. This staged approach covers the entire process from initial synchronization to system information acquisition, involving several key steps and operations.</font>
 
 {% include image.html file="5G1.png" %}
 
@@ -125,7 +124,7 @@ folder: mydoc
 &emsp;&emsp;● CORESET0 Location<br>
 &emsp;&emsp;● SSB Periodicity<br>
 &emsp;&emsp;● System Bandwidth
-  </span>
+  </span><br><br>
 
 <span style="
   background-color: #FFF8E1;  
