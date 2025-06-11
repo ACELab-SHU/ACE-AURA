@@ -29,10 +29,8 @@ folder: mydoc
 
 &emsp;&emsp;<font style="color:rgba(0, 0, 0, 0.85);">○ </font><font style="color:#0C68CA;">AI computing performance</font><font style="color:rgba(0, 0, 0, 0.85) !important;"> meets mobile communication needs, </font><font style="color:#0C68CA;">energy consumption</font><font style="color:rgba(0, 0, 0, 0.85) !important;"> outperforms x86/GPU solutions, and Venus-based deployment </font><font style="color:#0C68CA;">costs are lower</font>
 
-&emsp;&emsp;<font></font>  
-&emsp;&emsp;<font></font>  
-&emsp;&emsp;<font></font>  
-&emsp;&emsp;<font></font>  
+
+<br><br><br>
 
 
 
@@ -54,10 +52,7 @@ folder: mydoc
 <h3 id="H6wD8"><font style="color:rgb(0, 0, 0) !important;">· Configurable Operator Library</font></h3>
 &emsp;&emsp;<font style="color:rgba(0, 0, 0, 0.85) !important;">Provides reusable operator modules (e.g.,fft_4096, polar_decoder) configurable via Python APIs or DSL scripts.</font>
 
-&emsp;&emsp;<font></font>  
-&emsp;&emsp;<font></font>  
-&emsp;&emsp;<font></font>  
-&emsp;&emsp;<font></font>  
+<br><br><br>
 
 
 
@@ -88,10 +83,7 @@ folder: mydoc
 
 
 
-&emsp;&emsp;<font></font>  
-&emsp;&emsp;<font></font>  
-&emsp;&emsp;<font></font>  
-&emsp;&emsp;<font></font>  
+<br><br><br>
 
 
 

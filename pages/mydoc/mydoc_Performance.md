@@ -75,10 +75,7 @@ folder: mydoc
 
 &emsp;&emsp;<font style="color:rgba(0, 0, 0, 0.85);">○ </font><font style="color:#0C68CA;">Venus (DSA - based)</font><font style="color:rgba(0, 0, 0, 0.85) !important;">: >1.5× speedup in all “5G + AI” tasks → more balanced adaptation.</font>
 
-&emsp;&emsp;<font></font>  
-&emsp;&emsp;<font></font>  
-&emsp;&emsp;<font></font>  
-&emsp;&emsp;<font></font>  
+<br><br><br> 
 
 
 
@@ -116,10 +113,7 @@ _<font style="background-color:#E7E9E8;">[14] J. Hoydis, S. Cammerer, F. A. Aoud
 &emsp;&emsp;<font style="color:rgba(0, 0, 0, 0.85);">○ Intel CPU has similar latency to Arm baseline without ISPC. After optimization, it's still </font><font style="color:#0C68CA;">3.61× slower than Venusian</font><font style="color:rgba(0, 0, 0, 0.85);"> (with multi - core & SIMD).</font>  
 &emsp;&emsp;<font style="color:rgba(0, 0, 0, 0.85);">○ Sionna offers rich visualization but low efficiency. On GPU, it's up to </font><font style="color:#0C68CA;">292.61× slower than Venusian</font><font style="color:rgba(0, 0, 0, 0.85);">, likely due to CPU - GPU data transfer overhead.</font>  
 
-&emsp;&emsp;<font></font>  
-&emsp;&emsp;<font></font>  
-&emsp;&emsp;<font></font>  
-&emsp;&emsp;<font></font>  
+<br><br><br>
 
 <h2 id="bYBFc"><font style="color:rgb(0, 0, 0);">3. UVP </font><font style="color:rgb(0, 0, 0);">vs</font><font style="color:rgb(0, 0, 0);"> Ara </font></h2>
 **<font style="color:rgb(0, 0, 0) !important;background-color:#FBDE28;">UVP Performance Blows Away Ara: Far Fewer Cycles in Matmul/FFT, Up to 3.0× Speedup</font>**
@@ -154,10 +148,7 @@ _<font style="background-color:#E7E9E8;">[14] J. Hoydis, S. Cammerer, F. A. Aoud
 
 
 
-&emsp;&emsp;<font></font>  
-&emsp;&emsp;<font></font>  
-&emsp;&emsp;<font></font>  
-&emsp;&emsp;<font></font>  
+<br><br><br>
 
 
 
