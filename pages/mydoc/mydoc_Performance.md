@@ -9,29 +9,10 @@ permalink: mydoc_performance.html
 folder: mydoc
 ---
 
-<h2 id="wGsZX"><font style="color:rgb(0, 0, 0);">1. </font><font style="color:rgba(0, 0, 0, 0.85) !important;">ACE-Echo+Venus </font><font style="color:rgba(0, 0, 0, 0.85) !important;">vs</font><font style="color:rgba(0, 0, 0, 0.85) !important;"> Other Solutions</font></h2>
 
 
-<div style="text-align: center;">
-  {% include image.html file="performance1.png" caption="" %}
-</div>
 
-
-<h3 id="X0BDd"><font style="color:rgb(0, 0, 0) !important;">· Compared Solutions</font><font style="color:rgba(0, 0, 0, 0.85) !important;"></font></h3>
-&emsp;&emsp;<font style="color:rgba(0, 0, 0, 0.85) !important;">OAI, srsRAN, Amarisoft, AI-RAN, Modem+NPU, ACE-Echo+Venus</font>
-
-<h3 id="VdaIE"><font style="color:rgb(0, 0, 0) !important;">· 🚩 Key Advantages</font></h3>
-&emsp;&emsp;<font style="color:rgba(0, 0, 0, 0.85);">○ </font><font style="color:rgba(0, 0, 0, 0.85) !important;">Supports </font><font style="color:#0C68CA;">UE simulation</font><font style="color:rgba(0, 0, 0, 0.85) !important;"> and </font><font style="color:#0C68CA;">RAN simulation</font><font style="color:rgba(0, 0, 0, 0.85) !important;"> in research scenarios, covering </font><font style="color:#0C68CA;">commercial private networks, carrier-grade RAN</font><font style="color:rgba(0, 0, 0, 0.85) !important;">, and </font><font style="color:#0C68CA;">full-process UE</font><font style="color:rgba(0, 0, 0, 0.85) !important;"> adaptation</font>
-
-&emsp;&emsp;<font style="color:rgba(0, 0, 0, 0.85);">○ </font><font style="color:#0C68CA;">AI computing performance</font><font style="color:rgba(0, 0, 0, 0.85) !important;"> meets mobile communication needs, </font><font style="color:#0C68CA;">energy consumption</font><font style="color:rgba(0, 0, 0, 0.85) !important;"> outperforms x86/GPU solutions, and Venus-based deployment </font><font style="color:#0C68CA;">costs are lower</font>
-
-&emsp;&emsp;<font></font>  
-&emsp;&emsp;<font></font>  
-&emsp;&emsp;<font></font>  
-&emsp;&emsp;<font></font>  
-
-
-<h2 id="ydnAu"><font style="color:rgb(0, 0, 0);">2. </font><font style="color:rgba(0, 0, 0, 0.85) !important;">Venus </font><font style="color:rgba(0, 0, 0, 0.85) !important;">vs</font><font style="color:rgba(0, 0, 0, 0.85) !important;"> Other Instruction Set </font><font style="color:rgba(0, 0, 0, 0.85);">Architectures</font></h2>
+<h2 id="ydnAu"><font style="color:rgb(0, 0, 0);">1. </font><font style="color:rgba(0, 0, 0, 0.85) !important;">Venus </font><font style="color:rgba(0, 0, 0, 0.85) !important;">vs</font><font style="color:rgba(0, 0, 0, 0.85) !important;"> Other Instruction Set </font><font style="color:rgba(0, 0, 0, 0.85);">Architectures</font></h2>
 
 **<font style="color:rgb(0, 0, 0) !important;background-color:#FBDE28;">Venus Speedups: 2.3× (FFT), >2× (Matrix), Linear Scaling (Multi - Lane)</font>**
 
@@ -101,7 +82,7 @@ folder: mydoc
 
 
 
-<h2 id="KGO7T"><font style="color:rgb(0, 0, 0);">3. </font><font style="color:rgba(0, 0, 0, 0.85) !important;">Venus </font><font style="color:rgba(0, 0, 0, 0.85) !important;">vs</font><font style="color:rgba(0, 0, 0, 0.85) !important;"> Other Hardware</font></h2>
+<h2 id="KGO7T"><font style="color:rgb(0, 0, 0);">2. </font><font style="color:rgba(0, 0, 0, 0.85) !important;">Venus </font><font style="color:rgba(0, 0, 0, 0.85) !important;">vs</font><font style="color:rgba(0, 0, 0, 0.85) !important;"> Other Hardware</font></h2>
 
 **<font style="color:rgb(0, 0, 0) !important;background-color:#FBDE28;">Venusian Performance: 51.57× Faster Than Arm Baseline; Intel CPU/GPU Are 3.61×/292.61× Slower</font>**
 
@@ -140,7 +121,7 @@ _<font style="background-color:#E7E9E8;">[14] J. Hoydis, S. Cammerer, F. A. Aoud
 &emsp;&emsp;<font></font>  
 &emsp;&emsp;<font></font>  
 
-<h2 id="bYBFc"><font style="color:rgb(0, 0, 0);">4. UVP </font><font style="color:rgb(0, 0, 0);">vs</font><font style="color:rgb(0, 0, 0);"> Ara </font></h2>
+<h2 id="bYBFc"><font style="color:rgb(0, 0, 0);">3. UVP </font><font style="color:rgb(0, 0, 0);">vs</font><font style="color:rgb(0, 0, 0);"> Ara </font></h2>
 **<font style="color:rgb(0, 0, 0) !important;background-color:#FBDE28;">UVP Performance Blows Away Ara: Far Fewer Cycles in Matmul/FFT, Up to 3.0× Speedup</font>**
 
 <div style="text-align: center;">
@@ -180,7 +161,7 @@ _<font style="background-color:#E7E9E8;">[14] J. Hoydis, S. Cammerer, F. A. Aoud
 
 
 
-<h2 id="VSef3"><font style="color:rgb(0, 0, 0);">5、PBCH Decoding Latency Breakdown</font></h2>
+<h2 id="VSef3"><font style="color:rgb(0, 0, 0);">4、PBCH Decoding Latency Breakdown</font></h2>
 
 <div style="text-align: center;">
   {% include image.html file="performance5.png" caption="Fig. Latency breakdown of BCH Procedure @ 50 MHz, Lane32Reg1024 (DMRS: Demodulation Reference Signal)." max-width = 500 %}

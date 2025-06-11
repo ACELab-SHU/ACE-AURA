@@ -11,37 +11,105 @@ permalink: mydoc_supported_features.html
 folder: mydoc
 ---
 
-<font style="color:#0C68CA;">OpenAura supports the following core features, covering communication protocols, AI integration, development toolchains, and multi-scenario deployment:</font>
 
-## <font style="color:rgb(0, 0, 0) !important;">Comprehensive Communication Protocol Support</font>
 
-* **<font style="color:rgb(0, 0, 0) !important;">5G/LTE Physical Layer</font>**<font style="color:rgba(0, 0, 0, 0.85) !important;"> </font><font style="color:rgba(0, 0, 0, 0.85) !important;">Supports OFDM modulation/demodulation, FFT/IFFT (up to 4096 subcarriers), polar coding/decoding, rate matching, scrambling/descrambling, channel estimation (LS/MMSE), and MIMO beamforming, compliant with 3GPP-standard procedures (e.g., random access, cell search).</font>
-* **<font style="color:rgb(0, 0, 0) !important;">GNSS Baseband Development</font>**<font style="color:rgba(0, 0, 0, 0.85) !important;"> </font><font style="color:rgba(0, 0, 0, 0.85) !important;">Enables signal acquisition, tracking, carrier phase recovery, pseudorange processing, and multi-constellation fusion for GPS, BeiDou, etc., with low-power modes for IoT and automotive applications.</font>
-* **<font style="color:rgb(0, 0, 0) !important;">LORA Low-Power Wide-Area Networks (LPWAN)</font>**<font style="color:rgba(0, 0, 0, 0.85) !important;"> </font><font style="color:rgba(0, 0, 0, 0.85) !important;">Optimized for chirp modulation/demodulation, spreading factors (SF7-SF12), adaptive data rate (ADR) control, and interference mitigation algorithms, with energy-efficient processing via Venus vector instructions.</font>
-* **<font style="color:rgb(0, 0, 0) !important;">Configurable Operator Library</font>**<font style="color:rgba(0, 0, 0, 0.85) !important;"> </font><font style="color:rgba(0, 0, 0, 0.85) !important;">Provides reusable operator modules (e.g.,fft_4096, polar_decoder) configurable via Python APIs or DSL scripts.</font>
+<h2 id="wGsZX"><font style="color:rgb(0, 0, 0);">1. </font><font style="color:rgba(0, 0, 0, 0.85) !important;">ACE-Echo+Venus </font><font style="color:rgba(0, 0, 0, 0.85) !important;">vs</font><font style="color:rgba(0, 0, 0, 0.85) !important;"> Other Solutions</font></h2>
 
-## <font style="color:rgb(0, 0, 0);"></font><font style="color:rgb(0, 0, 0) !important;">Deep AI-Communication Fusion</font>
 
-* **<font style="color:rgb(0, 0, 0) !important;">Neural Network Integration</font>**<font style="color:rgba(0, 0, 0, 0.85) !important;"> </font><font style="color:rgba(0, 0, 0, 0.85) !important;">Compatible with TensorFlow, PyTorch, etc., with pre-built AI operators for communication tasks:</font>
-  * **<font style="color:rgb(0, 0, 0) !important;">Channel Prediction</font>**<font style="color:rgba(0, 0, 0, 0.85) !important;">: LSTM/Transformer networks for time-varying channel prediction.</font>
-  * **<font style="color:rgb(0, 0, 0) !important;">Beam Management</font>**<font style="color:rgba(0, 0, 0, 0.85) !important;">: Reinforcement learning (RL) for dynamic beam selection in mmWave systems.</font>
-  * **<font style="color:rgb(0, 0, 0) !important;">Signal Detection</font>**<font style="color:rgba(0, 0, 0, 0.85) !important;">: CNN-based joint detection and decoding for noisy channels.</font>
-* **<font style="color:rgb(0, 0, 0) !important;">Hardware-Accelerated Inference</font>**<font style="color:rgba(0, 0, 0, 0.85) !important;"> </font><font style="color:rgba(0, 0, 0, 0.85) !important;">Utilizes Venus’s custom instructions (e.g., saturation arithmetic, complex number operations) to accelerate AI inference on edge devices, supporting quantized neural networks (QNNs) for low-latency, low-power fixed-point deployment.</font>
+<div style="text-align: center;">
+  {% include image.html file="performance1.png" caption="" %}
+</div>
 
-## <font style="color:rgba(0, 0, 0, 0.85) !important;"></font><font style="color:rgb(0, 0, 0) !important;">Flexible Development and Deployment</font>
 
-* **<font style="color:rgb(0, 0, 0) !important;">Multi-Language Support</font>**
-  * **<font style="color:rgb(0, 0, 0) !important;">Python API</font>**<font style="color:rgba(0, 0, 0, 0.85) !important;">: High-level interface for rapid prototyping (e.g., script-based 5G-LTE uplink simulation).</font>
-  * **<font style="color:rgb(0, 0, 0) !important;">DSL (Domain-Specific Language)</font>**<font style="color:rgba(0, 0, 0, 0.85) !important;">: Visual workflow editor for defining task DAGs, ideal for complex protocol design.</font>
-  * **<font style="color:rgb(0, 0, 0) !important;">C/C++</font>**<font style="color:rgba(0, 0, 0, 0.85) !important;">: Low-level access for optimizing performance-critical modules (e.g., real-time control loops).</font>
-* **<font style="color:rgb(0, 0, 0) !important;">Multi-Hardware Targets</font>**
-  * **<font style="color:rgb(0, 0, 0) !important;">Venus Processor</font>**<font style="color:rgba(0, 0, 0, 0.85) !important;">: Native support for RISC-V domain-specific hardware, with cycle-accurate simulation via Echo.</font>
-  * **<font style="color:rgb(0, 0, 0) !important;">CPU/GPU</font>**<font style="color:rgba(0, 0, 0, 0.85) !important;">: Fallback for general-purpose computing in debugging or resource-constrained environments.</font>
-  * **<font style="color:rgb(0, 0, 0) !important;">FPGA/ASIC</font>**<font style="color:rgba(0, 0, 0, 0.85) !important;">: Supports RTL export for hardware acceleration (coming in v1.0).</font>
+<h3 id="X0BDd"><font style="color:rgb(0, 0, 0) !important;">· Compared Solutions</font><font style="color:rgba(0, 0, 0, 0.85) !important;"></font></h3>
+&emsp;&emsp;<font style="color:rgba(0, 0, 0, 0.85) !important;">OAI, srsRAN, Amarisoft, AI-RAN, Modem+NPU, ACE-Echo+Venus</font>
 
-## <font style="color:rgb(0, 0, 0);"></font><font style="color:rgb(0, 0, 0) !important;">Performance Validation and Debugging</font>
+<h3 id="VdaIE"><font style="color:rgb(0, 0, 0) !important;">· 🚩 Key Advantages</font></h3>
+&emsp;&emsp;<font style="color:rgba(0, 0, 0, 0.85);">○ </font><font style="color:rgba(0, 0, 0, 0.85) !important;">Supports </font><font style="color:#0C68CA;">UE simulation</font><font style="color:rgba(0, 0, 0, 0.85) !important;"> and </font><font style="color:#0C68CA;">RAN simulation</font><font style="color:rgba(0, 0, 0, 0.85) !important;"> in research scenarios, covering </font><font style="color:#0C68CA;">commercial private networks, carrier-grade RAN</font><font style="color:rgba(0, 0, 0, 0.85) !important;">, and </font><font style="color:#0C68CA;">full-process UE</font><font style="color:rgba(0, 0, 0, 0.85) !important;"> adaptation</font>
 
-* **<font style="color:rgb(0, 0, 0) !important;">Link-Level Simulation</font>**<font style="color:rgba(0, 0, 0, 0.85) !important;"> </font><font style="color:rgba(0, 0, 0, 0.85) !important;">Echo simulator provides side-by-side floating-point (reference) and fixed-point (hardware-ready) result comparison, supporting SNR-BER analysis and large-scale network modeling (e.g., 100+ UE simulations).</font>
-* **<font style="color:rgb(0, 0, 0) !important;">Real-Time Performance Metrics</font>**<font style="color:rgba(0, 0, 0, 0.85) !important;"> </font><font style="color:rgba(0, 0, 0, 0.85) !important;">Monitors throughput (bps/Hz), latency (cycles/bit), energy efficiency (pJ/bit), and resource utilization (vector lane occupancy, memory bandwidth), generating FPGA resource estimates and ASIC power consumption reports.</font>
+&emsp;&emsp;<font style="color:rgba(0, 0, 0, 0.85);">○ </font><font style="color:#0C68CA;">AI computing performance</font><font style="color:rgba(0, 0, 0, 0.85) !important;"> meets mobile communication needs, </font><font style="color:#0C68CA;">energy consumption</font><font style="color:rgba(0, 0, 0, 0.85) !important;"> outperforms x86/GPU solutions, and Venus-based deployment </font><font style="color:#0C68CA;">costs are lower</font>
 
+&emsp;&emsp;<font></font>  
+&emsp;&emsp;<font></font>  
+&emsp;&emsp;<font></font>  
+&emsp;&emsp;<font></font>  
+
+
+
+
+<h2 id="IpMSh"><font style="color:rgb(0, 0, 0) !important;">2. Comprehensive Communication Protocol Support</font></h2>
+<div style="text-align: center;">
+  {% include image.html file="Supported_Features2.png" caption="" %}
+</div>
+
+<h3 id="h3Xvr"><font style="color:rgb(0, 0, 0) !important;">· 📶5G/LTE Physical Layer</font></h3>
+&emsp;&emsp;<font style="color:rgba(0, 0, 0, 0.85) !important;">Supports OFDM modulation/demodulation, FFT/IFFT (up to 4096 subcarriers), polar coding/decoding, rate matching, scrambling/descrambling, channel estimation (LS/MMSE), and MIMO beamforming, compliant with 3GPP-standard procedures (e.g., random access, cell search).</font>
+
+<h3 id="VuwVf"><font style="color:rgb(0, 0, 0) !important;">· 📡GNSS Baseband Development</font></h3>
+&emsp;&emsp;<font style="color:rgba(0, 0, 0, 0.85) !important;">Enables signal acquisition, tracking, carrier phase recovery, pseudorange processing, and multi-constellation fusion for GPS, BeiDou, etc., with low-power modes for IoT and automotive applications.</font>
+
+<h3 id="WwBGj"><font style="color:rgb(0, 0, 0) !important;">· 📍LORA Low-Power Wide-Area Networks (LPWAN)</font></h3>
+&emsp;&emsp;<font style="color:rgba(0, 0, 0, 0.85) !important;">Optimized for chirp modulation/demodulation, spreading factors (SF7-SF12), adaptive data rate (ADR) control, and interference mitigation algorithms, with energy-efficient processing via Venus vector instructions.</font>
+
+<h3 id="H6wD8"><font style="color:rgb(0, 0, 0) !important;">· Configurable Operator Library</font></h3>
+&emsp;&emsp;<font style="color:rgba(0, 0, 0, 0.85) !important;">Provides reusable operator modules (e.g.,fft_4096, polar_decoder) configurable via Python APIs or DSL scripts.</font>
+
+&emsp;&emsp;<font></font>  
+&emsp;&emsp;<font></font>  
+&emsp;&emsp;<font></font>  
+&emsp;&emsp;<font></font>  
+
+
+
+
+
+<h2 id="le4RI"><font style="color:rgba(0, 0, 0, 0.85) !important;">3. </font><font style="color:rgb(0, 0, 0) !important;">Flexible Development and Deployment</font></h2>
+<div style="text-align: center;">
+  {% include image.html file="Supported_Features4.png" caption="" %}
+</div>
+
+
+<h3 id="NJbmN"><font style="color:rgb(0, 0, 0) !important;">· Multi-Language Support</font></h3>
+&emsp;&emsp;<font style="color:rgba(0, 0, 0, 0.85);">○ </font>**<font style="color:rgb(0, 0, 0) !important;">Python API</font>**<font style="color:rgba(0, 0, 0, 0.85) !important;">: High-level interface for rapid prototyping (e.g., script-based 5G-LTE uplink simulation).</font>
+
+&emsp;&emsp;<font style="color:rgba(0, 0, 0, 0.85);">○ </font>**<font style="color:rgb(0, 0, 0) !important;">DSL (Domain-Specific Language)</font>**<font style="color:rgba(0, 0, 0, 0.85) !important;">: Visual workflow editor for defining task DAGs, ideal for complex protocol design.</font>
+
+&emsp;&emsp;<font style="color:rgba(0, 0, 0, 0.85);">○ </font>**<font style="color:rgb(0, 0, 0) !important;">C/C++</font>**<font style="color:rgba(0, 0, 0, 0.85) !important;">: Low-level access for optimizing performance-critical modules (e.g., real-time control loops).</font>
+
+
+
+<h3 id="dGV5G"><font style="color:rgb(0, 0, 0) !important;">· Multi-Hardware Targets</font></h3>
+&emsp;&emsp;<font style="color:rgba(0, 0, 0, 0.85);">○ </font>**<font style="color:rgb(0, 0, 0) !important;">Venus Processor</font>**<font style="color:rgba(0, 0, 0, 0.85) !important;">: Native support for RISC-V domain-specific hardware, with cycle-accurate simulation via Echo.</font>
+
+&emsp;&emsp;<font style="color:rgba(0, 0, 0, 0.85);">○ </font>**<font style="color:rgb(0, 0, 0) !important;">CPU/GPU</font>**<font style="color:rgba(0, 0, 0, 0.85) !important;">: Fallback for general-purpose computing in debugging or resource-constrained environments.</font>
+
+&emsp;&emsp;<font style="color:rgba(0, 0, 0, 0.85);">○ </font>**<font style="color:rgb(0, 0, 0) !important;">FPGA/ASIC</font>**<font style="color:rgba(0, 0, 0, 0.85) !important;">: Supports RTL export for hardware acceleration (coming in v1.0).</font>
+
+
+
+
+&emsp;&emsp;<font></font>  
+&emsp;&emsp;<font></font>  
+&emsp;&emsp;<font></font>  
+&emsp;&emsp;<font></font>  
+
+
+
+<h2 id="UjTtM"><font style="color:rgb(0, 0, 0);">4. </font><font style="color:rgb(0, 0, 0) !important;">Performance Validation and Debugging</font></h2>
+<div style="text-align: center;">
+  {% include image.html file="Supported_Features2.png" caption="" %}
+</div>
+
+
+<h3 id="e2MYf"><font style="color:rgb(0, 0, 0) !important;">· Link-Level Simulation</font></h3>
+<font style="color:rgba(0, 0, 0, 0.85) !important;">Echo simulator provides side-by-side floating-point (reference) and fixed-point (hardware-ready) result comparison, supporting SNR-BER analysis and large-scale network modeling (e.g., 100+ UE simulations).</font>
+
+<h3 id="KsLts"><font style="color:rgb(0, 0, 0) !important;">· Real-Time Performance Metrics</font></h3>
+<font style="color:rgba(0, 0, 0, 0.85) !important;">Monitors throughput (bps/Hz), latency (cycles/bit), energy efficiency (pJ/bit), and resource utilization (vector lane occupancy, memory bandwidth), generating FPGA resource estimates and ASIC power consumption reports.</font>
+
+**<font style="color:rgb(0, 0, 0) !important;"></font>**
+
+**<font style="color:rgb(0, 0, 0) !important;"></font>**
+
+**<font style="color:rgb(0, 0, 0) !important;"></font>**
 
