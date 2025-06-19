@@ -1,5 +1,5 @@
 ---
-title: "OpenAURA"
+title: "Echo"
 keywords: sample homepage
 # tags: [getting_started]
 sidebar: mydoc_sidebar
@@ -9,52 +9,106 @@ summary:
 
 
 
-{% include image.html file="introduction1.png" %}
+🚀 Echo — The Open Platform for Communication–AI Convergence Fusion
+===================================================================
 
-# What is OpenAURA？
+🌍 What is Echo?
+----------------
 
-OpenAURA<font style="color:rgba(0, 0, 0, 0.85) !important;"> is an open-source development platform led by the Advanced Communication and Computing Electronics Lab (ACE Lab), focusing on solving the key challenges of deep integration between wireless communications and artificial intelligence (AI) in the 5G/6G era. Built upon </font>**<font style="color:rgb(0, 0, 0) !important;">AURA (AI-Unified Radio Architecture)</font>**<font style="color:rgba(0, 0, 0, 0.85) !important;">, it aims to create a </font>**<font style="color:rgb(0, 0, 0) !important;">software-hardware decoupled, highly programmable ecosystem</font>**<font style="color:rgba(0, 0, 0, 0.85) !important;"> that enables real-time AI-powered signal processing, driving the communication field toward "AI-Native" transformation.</font>
+**Echo** is an open-source development platform built on **Venus**, our RISC-V processor designed for communication-AI fusion. Echo empowers developers to build, test, and deploy next-generation applications where signal processing meets intelligent computation.
 
-## <font style="color:rgb(0, 0, 0) !important;">Core Positioning and Goals</font>
+🔧 **Echo includes:**
 
-### <font style="color:rgb(0, 0, 0) !important;">1. AURA Architecture as the Foundation</font>
+* 📦 Pre-optimized operators for FFT, MIMO, neural networks, and more
+* 🛠️ A full toolchain: compiler, debugger, and hardware simulator
+* 🌍 Real-world application demos (5G/LTE, GNSS, LORA, etc.)
+* 📖 Comprehensive documentation & tutorials
 
-* <font style="color:rgba(0, 0, 0, 0.85) !important;">The </font>**<font style="color:rgb(0, 0, 0) !important;">AURA architecture</font>**<font style="color:rgba(0, 0, 0, 0.85) !important;"> employs a heterogeneous many-core design based on the </font>**<font style="color:rgb(0, 0, 0) !important;">RISC-V extended instruction set</font>**<font style="color:rgba(0, 0, 0, 0.85) !important;">, integrating vector computing units (e.g., Venus processor) and AI accelerators. This enables collaborative computing between communication signal processing (e.g., OFDM modulation, polar coding/decoding) and deep learning models (e.g., channel estimation neural networks).</font>
-* <font style="color:rgba(0, 0, 0, 0.85) !important;">Through a </font>**<font style="color:rgb(0, 0, 0) !important;">multi-level dataflow scheduling mechanism</font>**<font style="color:rgba(0, 0, 0, 0.85) !important;"> (L1 hardware scheduling for real-time tasks, L2 software scheduling for complex workflows), it optimizes data flow and task allocation, overcoming the "memory wall" and fragmented computing resources in traditional architectures.</font>
+🧠 Powered by AURA Architecture and Venus Chip
+----------------------------------------------
 
-### <font style="color:rgb(0, 0, 0) !important;">2. Full-Stack Development Toolchain</font>
+### AURA: AI Unified Radio Architecture
 
-* **<font style="color:rgb(0, 0, 0) !important;">Compiler (Zoozve)</font>**<font style="color:rgba(0, 0, 0, 0.85) !important;">: An LLVM-based cross-platform toolchain that compiles Python-like code into RISC-V instructions, with built-in register allocation optimization and asymmetric instruction coalescing to enhance execution efficiency.</font>
-* **<font style="color:rgb(0, 0, 0) !important;">Simulator (Echo)</font>**<font style="color:rgba(0, 0, 0, 0.85) !important;">: Provides </font>**<font style="color:rgb(0, 0, 0) !important;">link-level simulation capabilities</font>**<font style="color:rgba(0, 0, 0, 0.85) !important;">, supporting floating-point/fixed-point result comparison and hardware cycle-level performance prediction to accelerate algorithm validation (e.g., 5G random access procedure simulation).</font>
-* **<font style="color:rgb(0, 0, 0) !important;">Real-Time Scheduler</font>**<font style="color:rgba(0, 0, 0, 0.85) !important;">: Integrates hardware data dependency tables with software task DAG analysis to achieve microsecond-level task scheduling, ensuring low-latency collaboration between communication protocol stacks and AI operators.</font>
+AURA is the foundational computing architecture behind Echo. It is designed for **tight integration of perception, communication, and computation**, optimized for edge and low-latency scenarios.
 
-### <font style="color:rgb(0, 0, 0) !important;">3. Multi-Scenario Application Support</font>
+### Venus: Our RISC-V Communication-AI Chip
 
-* **<font style="color:rgb(0, 0, 0) !important;">Communication Protocols</font>**<font style="color:rgba(0, 0, 0, 0.85) !important;">: Covers scenarios such as 5G/LTE physical layer, GNSS baseband, and LORA, providing configurable operator libraries (e.g., FFT, channel equalization, rate matching).</font>
-* **<font style="color:rgb(0, 0, 0) !important;">AI Integration</font>**<font style="color:rgba(0, 0, 0, 0.85) !important;">: Supports joint optimization of neural network models and communication algorithms, such as using deep learning for channel prediction and beam management to improve spectral efficiency and link reliability.</font>
+Venus is a custom RISC-V processor based on the AURA architecture:
 
-## <font style="color:rgb(0, 0, 0) !important;">Key Technical Features</font>
+* ⚙️ Instruction set extensions for communication and neural workloads
+* 🚀 Built-in accelerators (vector engine, etc.)
+* 🌐 Ideal for 5G/6G, GNSS, LoRa, edge AI, V2X, and more
 
-* **<font style="color:rgb(0, 0, 0) !important;">Seamless Heterogeneous Computing Integration</font>**<font style="color:rgba(0, 0, 0, 0.85) !important;">: Dynamically invokes Venus processors (communication-specific) and AI accelerators (e.g., Kuilong chip), shielding hardware differences through a unified programming model to allow developers to focus on algorithm design.</font>
-* **<font style="color:rgb(0, 0, 0) !important;">Python-Like Programming Experience</font>**<font style="color:rgba(0, 0, 0, 0.85) !important;">: Offers a</font><font style="color:rgba(0, 0, 0, 0.85) !important;"> </font>**<font style="color:rgb(0, 0, 0) !important;">domain-specific programming language (DSL)</font>**<font style="color:rgba(0, 0, 0, 0.85) !important;"> </font><font style="color:rgba(0, 0, 0, 0.85) !important;">that supports visual workflow construction and hardware resource abstraction, reducing the entry barrier for developers without hardware expertise.</font>
-* **<font style="color:rgb(0, 0, 0) !important;">Open Source and Community Ecosystem</font>**<font style="color:rgba(0, 0, 0, 0.85) !important;">: Benchmarked against projects like NVIDIA Sionna and Aerial RAN, it opensources code and documentation via GitHub, inviting academia and industry to contribute operators, optimization schemes, and application cases.</font>
+✅ Why Choose Echo?
+------------------
 
-## <font style="color:rgb(0, 0, 0) !important;">Applications and Impact</font>
+| Feature               | Highlights                                             |
+| --------------------- | ------------------------------------------------------ |
+| 🧩 Modular by Design  | Flexible architecture for rapid prototyping            |
+| 📦 Plug & Play        | No hardware background required to get started         |
+| 🔧 Full Toolchain     | Simulation + compilation + deployment all included     |
+| 🤝 Open Collaboration | Contribute operators, apps, or hardware extensions     |
+| 🌐 Real Use Cases     | Validated in live projects with measurable performance |
 
-* **<font style="color:rgb(0, 0, 0) !important;">Academic Research</font>**<font style="color:rgba(0, 0, 0, 0.85) !important;">: Provides an</font><font style="color:rgba(0, 0, 0, 0.85) !important;"> </font>**<font style="color:rgb(0, 0, 0) !important;">open-source testbed</font>**<font style="color:rgba(0, 0, 0, 0.85) !important;"> </font><font style="color:rgba(0, 0, 0, 0.85) !important;">for communication AI algorithms, enabling rapid prototyping (e.g., AI-aided signal detection algorithms) and shortening the cycle from research papers to hardware implementation.</font>
-* **<font style="color:rgb(0, 0, 0) !important;">Industrial Deployment</font>**<font style="color:rgba(0, 0, 0, 0.85) !important;">: Helps equipment vendors and operators reduce 6G R&D costs, such as verifying AI-RAN (Intelligent Radio Access Network) solutions via the Echo simulator to avoid high trial-and-error costs of ASIC tape-out.</font>
-* **<font style="color:rgb(0, 0, 0) !important;">Standardization Acceleration</font>**<font style="color:rgba(0, 0, 0, 0.85) !important;">: Accelerates the standardization of AI-driven communication technologies through open-source collaboration, such as introducing reference implementations of AI signal processing modules in 3GPP Rel-18 and beyond.</font>
+🧠 Who Is Echo For?
+-------------------
 
-# What is Venus?
+### 🎓 Academia & Researchers
 
-{% include image.html file="introduction2_venus_hardware_architecture.png" caption=" Fig. Hardware architecture of Venus"%}
+**→ Open-Source Platform for Communication-AI Research**
 
-<font style="color:rgba(0, 0, 0, 0.85) !important;">Venus is a </font>**<font style="color:rgb(0, 0, 0) !important;">domain-specific processor</font>**<font style="color:rgba(0, 0, 0, 0.85) !important;"> developed by the Advanced Communication and Computing Electronics Lab (ACE Lab) for wireless communication applications, specifically targeting efficient hardware solutions for 4G/5G baseband signal processing. Its core design focuses on two critical dimensions: </font>**<font style="color:rgb(0, 0, 0) !important;">computational efficiency (parallelism optimization)</font>**<font style="color:rgba(0, 0, 0, 0.85) !important;"> and </font>**<font style="color:rgb(0, 0, 0) !important;">data communication efficiency (memory access mechanisms)</font>**<font style="color:rgba(0, 0, 0, 0.85) !important;">. Through a many-core architecture based on RISC-V instruction set extensions, multi-level hybrid scheduling strategies, and hardware-software co-design, Venus achieves deep optimization of vector operations, task scheduling, and memory management in baseband processing. Project outcomes include architecture prototype development, compiler toolchain construction, and link-level simulation validation, with the goal of driving breakthroughs in open architecture, low power consumption, and high-performance computing for wireless communications.</font>
+Echo provides a low-cost, low-power environment to prototype and validate communication algorithms with real-world performance. Ideal for academic research and rapid innovation.
 
-<font style="color:rgba(0, 0, 0, 0.85) !important;"></font>
+* * *
 
-<font style="color:rgba(0, 0, 0, 0.85) !important;"></font>
+### 🏭 Industry
 
-<font style="color:rgba(0, 0, 0, 0.85) !important;"></font>
+**→ Decoupled Software-Hardware Baseband Chip Solution**
 
-<font style="color:rgba(0, 0, 0, 0.85) !important;"></font>
+Accelerate your baseband chip development with a modular, software-first approach.
+
+• **R&D Cycle Reduced:** From 12–18 months to just 3–6 months.
+
+* * *
+
+### 🧩 Standards Organizations
+
+**→ Fast-Track 6G Technology Validation**
+
+Streamline the path to 6G standardization with efficient tools and full-stack communication-AI libraries.
+
+• Cut traditional prototype cycles (3–5 years) down to months.
+
+**Echo is your playground.**
+
+🎯 We offer:
+
+* 🔧 A complete developer toolchain with seamless hardware-software abstraction
+* 🌍 A vibrant and inclusive open-source community
+* 🤝 Collaborative innovation with real projects and real impact
+* 🚗 Deployment tracks for autonomous driving, smart infrastructure, and more
+
+> Whether you're building, testing, or scaling — Echo gives you the freedom to create.
+
+🚀 Get Started Now
+------------------
+
+1. Visit our quick-start guide:[🚀 Get Started with OpenEcho | ACE-LAB Echo](https://acelab-shu.github.io/ACE-Echo/mydoc_get_started.html)
+2. Download the toolchain & examples
+3. Join the community and start building!
+
+📣 Join the Echo Community
+--------------------------
+
+📬 Email: [shenyihao@shu.edu.cn](mailto:shenyihao@shu.edu.cn)
+
+💬 Community: [coming soon]
+
+> “Echo is not just a platform — it’s a call to build the future of Communication.”
+
+* * *
+
+✨ In One Line
+-------------
+
+### **Echo: Built for Communication. Designed for AI Convergence. Ready for You.**
