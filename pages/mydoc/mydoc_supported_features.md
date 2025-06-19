@@ -89,7 +89,7 @@ folder: mydoc
 
 <h2 id="UjTtM"><font style="color:rgb(0, 0, 0);">4. </font><font style="color:rgb(0, 0, 0) !important;">Performance Validation and Debugging</font></h2>
 <div style="text-align: center;">
-  {% include image.html file="Supported_Features2.png" caption="" %}
+  {% include image.html file="Supported_Features5.png" caption="" %}
 </div>
 
 
