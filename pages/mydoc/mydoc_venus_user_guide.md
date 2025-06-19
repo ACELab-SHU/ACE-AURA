@@ -445,8 +445,8 @@ END
 
 <blockquote style="background: #f0f8ff; border-left: 3px solid #4682b4; padding: 10px;">
 💡Notes:
-<p>1、<font style="color:rgb(17, 17, 17);">A single task in a bas file cannot be printed.</font>
-<p>2、<font style="color:rgb(17, 17, 17);">Each line of code can not be added“ ; ”.</font>
-<p>3、<font style="color:rgb(17, 17, 17);">Comments can not be added to the bas variable definition.</font>
-<p>4、"<font style="color:rgb(17, 17, 17);">data" can not be used as a variable name for bas.</font>
+<p>1、<font style="color:rgb(17, 17, 17);">A single task in a bas file cannot be printed.</font></p>
+<p>2、<font style="color:rgb(17, 17, 17);">Each line of code can not be added“ ; ”.</font></p>
+<p>3、<font style="color:rgb(17, 17, 17);">Comments can not be added to the bas variable definition.</font></p>
+<p>4、"<font style="color:rgb(17, 17, 17);">data" can not be used as a variable name for bas.</font></p>
 </blockquote>

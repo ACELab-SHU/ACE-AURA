@@ -12,21 +12,25 @@ folder: mydoc
 
 {% include links.html %}
 
-{% include image.html file="5G0.png" %}
+<div style="text-align: center;">
+  {% include image.html file="5G0.png" %}
+</div>
 
 <h2 id="rMNS6"><font style="color:rgba(0, 0, 0, 0.9);">The Multi-Stage Access Process of Contemporary Wireless Communication</font></h2>
 <font style="color:rgba(0, 0, 0, 0.9);">
 &emsp;&emsp;Contemporary wireless communication protocols, especially the 5G New Radio (NR) technology, adopt a multi-stage process to ensure the reliability and efficiency of communication. This staged approach covers the entire process from initial synchronization to system information acquisition, involving several key steps and operations.</font>
 
-{% include image.html file="5G1.png" %}
+<div style="text-align: center;">
+  {% include image.html file="5G1.png" %}
+</div>
 
 <h3 id="NdMiB"><font style="color:rgba(0, 0, 0, 0.9);">1. Initial Synchronization</font></h3>
 <br>
 <span style="background: #FFD6E7; padding: 4px 8px; border-radius: 4px; display: block; width: 100%; box-sizing: border-box;">
 <b>Purpose:</b><br>
-&emsp;&emsp;⭕ First critical step in random access procedure<br>
-&emsp;&emsp;⭕ Establishes basic alignment between UE and network<br>
-&emsp;&emsp;⭕ Enables subsequent access operations
+&emsp;&emsp;⭕ First critical step in random access procedure.<br>
+&emsp;&emsp;⭕ Establishes basic alignment between UE and network.<br>
+&emsp;&emsp;⭕ Enables subsequent access operations.
 </span>
 <br>
 
@@ -41,12 +45,12 @@ folder: mydoc
 </span><br>
 
 + **Main Functions:**
-  - Achieves symbol-level timing synchronization, determining the start position of each OFDM symbol 
-  - Provides a preliminary reference for frequency alignment
+  - Achieves symbol-level timing synchronization, determining the start position of each OFDM symbol. 
+  - Provides a preliminary reference for frequency alignment.
 + **Implementation:**
-  - The UE matches the received signal with three locally stored standard PSS sequences
-  - Identifies symbol boundaries by finding the position with the strongest signal correlation
-  - Detection accuracy can reach ±0.5 microseconds 
+  - The UE matches the received signal with three locally stored standard PSS sequences.
+  - Identifies symbol boundaries by finding the position with the strongest signal correlation.
+  - Detection accuracy can reach ±0.5 microseconds.
 <br><br>
 
 <span style="background: #D8F3DC; padding: 4px 8px; border-radius: 4px; display: block;width: 100%;box-sizing: border-box;">
@@ -55,32 +59,34 @@ folder: mydoc
 <br>
 
 + **Main Functions:**
-  - Completes frame synchronization, determining the boundaries of 10ms radio frames 
+  - Completes frame synchronization, determining the boundaries of 10ms radio frames. 
   - Identifies the cell group number and, together with PSS, determines the Physical Cell Identifier (PCI) :
 
-{% include image.html file="5G2.png" %}
+<div style="text-align: center;">
+  {% include image.html file="5G3.png" %}
+</div>
 
 + **Implementation:**
-  - Detects the SSS signal based on PSS synchronization 
-  - Determines cell group information by matching 336 possible SSS sequences<br><br>
+  - Detects the SSS signal based on PSS synchronization. 
+  - Determines cell group information by matching 336 possible SSS sequences.<br><br>
 
 <span style="background: #D8F3DC; padding: 4px 8px; border-radius: 4px; display: block;width: 100%;box-sizing: border-box;">
 <b>Frequency Compensation (Key Addition)</b>
 </span><br>
 
 + **Need for Compensation:**
-  - Device movement or hardware differences can cause frequency offset in the received signal  
-  - Uncompensated frequency offset severely impacts signal demodulation quality  
+  - Device movement or hardware differences can cause frequency offset in the received signal.  
+  - Uncompensated frequency offset severely impacts signal demodulation quality.  
 + **Compensation Methods:**
   - Coarse Compensation Phase:  
-    * Estimates large-range frequency offset using the cyclic prefix characteristics of the PSS signal  
-    * Compensates for typical frequency offsets (±1kHz to ±20kHz)  
+    * Estimates large-range frequency offset using the cyclic prefix characteristics of the PSS signal.  
+    * Compensates for typical frequency offsets (±1kHz to ±20kHz).  
   - Fine Compensation Phase:  
-    * Performs precise adjustments using reference signals (DMRS) in the PBCH  
-    * Controls residual frequency offset to within ±300Hz (for 15kHz subcarrier spacing)  
+    * Performs precise adjustments using reference signals (DMRS) in the PBCH.  
+    * Controls residual frequency offset to within ±300Hz (for 15kHz subcarrier spacing).  
 + **Special Scenario Handling:**
-  - Enables Doppler shift prediction algorithms during high-speed movement  
-  - Uses dynamic tracking mechanisms to adapt to continuous frequency offset changes  
+  - Enables Doppler shift prediction algorithms during high-speed movement.  
+  - Uses dynamic tracking mechanisms to adapt to continuous frequency offset changes.  
 <br>    
     
 <span style="
@@ -107,7 +113,9 @@ folder: mydoc
 <b>Signal Processing Chain</b>
 </span>
 
-{% include image.html file="5G4.png" %}
+<div style="text-align: center;">
+  {% include image.html file="5G2.png" %}
+</div>
 &emsp;&emsp;**a.** The UE locates the time-frequency resources of the Physical Broadcast Channel (PBCH) through the synchronized SSB (Synchronization Signal Block).<br>
 &emsp;&emsp;**b.** It performs channel estimation using the DM-RS (Demodulation Reference Signals) within PBCH and compensates for wireless channel effects through frequency-domain equalization techniques.<br>
 &emsp;&emsp;**c.** The QPSK-modulated PBCH data undergoes demodulation and rate dematching, with coded bits being recovered through Polar Decoding. <br>
@@ -154,7 +162,9 @@ folder: mydoc
 
 &emsp;&emsp;The 5G NR access procedure follows a strict sequence where Control Channel (CCH) identification must precede Shared Channel (SCH) localization. The UE first decodes the CCH to obtain Downlink Control Information (DCI), which contains the necessary scheduling parameters. Using this DCI, the UE then locates and decodes the SCH to acquire System Information Blocks (SIBs). This sequential approach ensures efficient and reliable network access by maintaining proper synchronization between control and data plane operations.
 
-{% include image.html file="5G4.png" %}
+<div style="text-align: center;">
+  {% include image.html file="5G4.png" %}
+</div>
 
 + **<font style="color:rgba(0, 0, 0, 0.9);">Identification of Control Channel (CCH)</font>**<br>
 &emsp;&emsp;**a.**  <font style="color:rgba(0, 0, 0, 0.9);">After achieving time-frequency synchronization through synchronization signals, the UE determines the physical resource location of CCH based on CORESET configuration information obtained from BCH decoding. </font><br>
@@ -162,15 +172,18 @@ folder: mydoc
 &emsp;&emsp;**d.** <font style="color:rgba(0, 0, 0, 0.9);">Blind detection is conducted on candidate PDCCHs, where operations including demodulation, descrambling, and CRC verification are performed to identify valid DCI formats from multiple candidate aggregation levels. </font><br>
 &emsp;&emsp;**d.** <font style="color:rgba(0, 0, 0, 0.9);">The DCI content containing critical information such as scheduling grants is parsed. The entire process must be completed within millisecond-level time constraints while maintaining robust processing capabilities against frequency offsets and phase noise.</font>
 
-{% include image.html file="5G5.png" %}
+<div style="text-align: center;">
+  {% include image.html file="5G5.png" %}
+</div>
 
 + **<font style="color:rgba(0, 0, 0, 0.9);">Localization of Shared Channel (SCH)</font>**<br>
 &emsp;&emsp;**a.** <font style="color:rgba(0, 0, 0, 0.9);">Based on the time-frequency resource location indicated by the DCI, the UE receives SIB1 data on the PDSCH and performs channel estimation and MMSE equalization using DM-RS. </font><br>
 &emsp;&emsp;**b.** <font style="color:rgba(0, 0, 0, 0.9);">The QPSK/16QAM-modulated data is then demodulated, and the transport block is recovered through LDPC decoding. </font><br>
 &emsp;&emsp;**c.** <font style="color:rgba(0, 0, 0, 0.9);">The UE parses the cell access parameters and other SIB scheduling information contained in SIB1. </font><br>
 
-{% include image.html file="5G6.png" %}
-
+<div style="text-align: center;">
+  {% include image.html file="5G6.png" %}
+</div>
 
 <span style="
   background-color: #FFF8E1;  
