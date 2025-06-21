@@ -77,8 +77,8 @@ Make sure to remember these two paths, as you will need to update them later in 
 ### 📦 4. Clone the Echo Project
 
 ```bash
-git clone https://github.com/ACELab-SHU/OpenAURA.git
-cd ./OpenAURA/dsl
+git clone https://github.com/ACELab-SHU/ACE-Echo.git
+cd ./ACE-Echo/dsl
 vim ./config.mk
 ```
 
