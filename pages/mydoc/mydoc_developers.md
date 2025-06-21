@@ -3,18 +3,14 @@ title: Developers
 keywords: developers
 last_updated: June 10, 2025
 #tags: [navigation]
-summary: "main contributor for our project"
+summary: "Welcome to the official developer page of our open-source project —— Echo! This project is proudly initiated and maintained by students and researchers from Shanghai University, aimed at advancing AI-native wireless communication. Below is an introduction to our core team members, their roles, and contributions."
 sidebar: mydoc_sidebar
 permalink: mydoc_developers.html
 toc: false
 folder: mydoc
 ---
 
-# 👨‍💻 Meet the Developers
 
-Welcome to the official developer page of our open-source project —— **Echo**! This project is proudly initiated and maintained by students and researchers from **Shanghai University**, aimed at advancing AI-native wireless communication.
-
-Below is an introduction to our core team members, their roles, and contributions.
 
 ---
 
@@ -28,13 +24,13 @@ Below is an introduction to our core team members, their roles, and contribution
 
 ---
 
-# 👥 Developer Team Overview
+## 👥 Developer Team Overview
 
 Our open-source initiative brings together students and researchers working on three key subprojects: **Echo**, **Venus**, and **AURA**. Below is an overview of team members grouped by project responsibility.
 
 ---
 
-## 🔁 Echo: Open Platform, Protocol Stack & Simulator
+### Echo: Open Platform, Protocol Stack & Simulator
 
 **Project Lead**: Yihao Shen  
 **Contributors**: Yi Shi, Limin Jiang, Qingyu Deng, Siyi Xu, Feng Yuan, Xiaoxiao Chen, Qianli Wang, Fangfang Ye, Si Wang
@@ -51,7 +47,7 @@ Our open-source initiative brings together students and researchers working on t
 
 * * *
 
-⚙️ Venus: Domain-Specific RISC-V Architecture
+### Venus: Domain-Specific RISC-V Architecture
 ---------------------------------------------
 
 **Project Leads**: Limin Jiang, Yi Shi  
@@ -59,7 +55,7 @@ Our open-source initiative brings together students and researchers working on t
 
 * * *
 
-🧠 AURA: Compiler & Runtime Toolchain for AI + Communication
+### AURA: Compiler & Runtime Toolchain for AI + Communication
 ------------------------------------------------------------
 
 **Contributors**: Shared team members from both the Echo and Venus projects
