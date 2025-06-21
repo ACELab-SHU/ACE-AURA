@@ -14,7 +14,7 @@ Welcome to the **Echo** project! This guide will walk you through setting up you
 
 ### ✅ System Requirements
 
-⚠️ **Linux only** — Ubuntu 18.04+ or Debian 10+ recommended
+⚠️ **Linux only** — Ubuntu 18.04+(18.04, 20.04, 22.04, 24.04 is tested) or Debian 10+ recommended
 
 * CPU: 4+ cores
 
@@ -47,10 +47,11 @@ git clone https://github.com/riscv-collab/riscv-gnu-toolchain.git
 cd ./riscv-gnu-toolchain
 
 # Generate a compilation file
+# The directory /usr/venus_compiler/opt-riscv32-glibc-ima can be modified to any path of your choice.
 ./configure --prefix=/usr/venus_compiler/opt-riscv32-glibc-ima --with-arch=rv32ima --with-abi=ilp32
 
 # Compile
-make
+sudo make
 ```
 
 ```bash
@@ -59,6 +60,7 @@ git clone https://github.com/ACELab-SHU/Venus-Compiler.git
 cd ./Venus-Compiler/venus-llvm-project-venus
 mkdir build
 cd ./build
+sudo apt-get install ccache
 cmake -G Ninja -DCMAKE_BUILD_TYPE=Debug -DCMAKE_INSTALL_PREFIX=../../llvm-bin -DLLVM_TARGETS_TO_BUILD="RISCV" -DLLVM_CCACHE_BUILD=ON -DLLVM_ENABLE_PROJECTS="clang;llvm" -DLLVM_USE_LINKER=gold -DLLVM_DEFAULT_TARGET_TRIPLE="riscv32-unknown-elf" ../llvm && ninja install
 ```
 
