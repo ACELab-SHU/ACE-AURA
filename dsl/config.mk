@@ -1,8 +1,8 @@
 # LLVM path in your computer
-LLVM_PATH=/home/syh_gyh/文档/venus-llvm-project-venus/llvm-bin/bin
+LLVM_PATH=/home/horry/AURA/Echo_online/Venus-Compiler/llvm-bin/bin
 
 # RISC-V gnu toolchain path in your computer
-RVPATH=/home/syh_gyh/SYH_Project/opt-riscv32-glibc-ima
+RVPATH=/usr/venus_compiler/opt-riscv32-glibc-ima
 
 # change the target dag
 TARGET_DAG=ltePBCHDag1_hw

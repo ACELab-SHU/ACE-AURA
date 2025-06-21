@@ -1,3 +1,4 @@
 *.log
 Emulator
 *.txt
+emulator_vins_result/*/
