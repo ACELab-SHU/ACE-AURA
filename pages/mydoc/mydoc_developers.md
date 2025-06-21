@@ -1,11 +1,12 @@
 ---
 title: Developers
-keywords: archives, tagging
+keywords: developers
 last_updated: June 10, 2025
 #tags: [navigation]
-summary: "main contributor for OpenAura"
+summary: "main contributor for our project"
 sidebar: mydoc_sidebar
 permalink: mydoc_developers.html
+toc: false
 folder: mydoc
 ---
 
