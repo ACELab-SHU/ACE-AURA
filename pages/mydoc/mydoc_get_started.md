@@ -8,7 +8,6 @@ permalink: mydoc_get_started.html
 folder: mydoc
 ---
 
-## 
 
 Welcome to the **Echo** project! This guide will walk you through setting up your development environment, installing required toolchains, cloning the project, and building the codebase.
 
