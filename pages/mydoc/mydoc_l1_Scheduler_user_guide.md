@@ -3,7 +3,7 @@ title: L1 Scheduler User Guide
 audience: writer, designer
 #tags: [navigation]
 last_updated: June 10, 2025
-keywords: l1, scheduler, user, guide, language
+keywords: l1, scheduler, user, guide, language, dag, bas
 summary: "L1 scheduler"
 sidebar: mydoc_sidebar
 permalink: mydoc_l1_scheduler_user_guide.html
@@ -11,7 +11,7 @@ folder: mydoc
 ---
 
 
-# Step 1: Prepare Your DSL DAG Projec
+**<span style="font-size: 150%;">Step 1: Prepare Your DSL DAG Project</span>**
 
 **Make sure your DSL DAG project has been properly generated. The following files are required for integration with the L1 simulator:**
 
@@ -21,7 +21,9 @@ folder: mydoc
 
 These files will be used by the L1 simulator for joint debugging and integration.
 
-# Step 2: Write the L1 Runtime Code
+* * *
+
+**<span style="font-size: 150%;">Step 2: Write the L1 Runtime Code</span>**
 
 **2.1 Acquire the input and output sequence of the DAG by running dagInfoPaser script:**
 

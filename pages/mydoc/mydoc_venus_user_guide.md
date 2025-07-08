@@ -2,7 +2,7 @@
 title: Venus User Guide
 #tags: [getting_started]
 last_updated: June 10, 2025
-keywords: 
+keywords: Venus, User, Guide, datatypes, intrinsics
 summary: "This guide provides essential information for working with the Venus framework, covering data types, intrinsic functions, and sample code for task and bas file creation."
 sidebar: mydoc_sidebar
 permalink: mydoc_venus_user_guide.html

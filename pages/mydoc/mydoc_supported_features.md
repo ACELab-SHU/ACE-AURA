@@ -2,7 +2,7 @@
 title: Supported features
 #tags:
  # - getting_started
-keywords: "features, capabilities, scalability, multichannel output, dita, hats, comparison, benefits"
+keywords: features, capabilities, comparison
 last_updated: "June 10, 2025"
 summary: "What you can do with ACE-Echo"
 published: true

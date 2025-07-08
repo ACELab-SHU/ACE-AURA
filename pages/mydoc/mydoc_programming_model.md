@@ -2,7 +2,7 @@
 title: Programming Model
 #tags: [getting_started]
 last_updated: June 10, 2025
-keywords: 
+keywords: Programming, Model
 summary: "This guide outlines the workflow for creating and managing projects in the AceEcho framework, covering project setup, task file creation, BAS file configuration, and result analysis. It provides four steps for developing Venus applications in the AceEcho environment"
 sidebar: mydoc_sidebar
 permalink: mydoc_programming_model.html

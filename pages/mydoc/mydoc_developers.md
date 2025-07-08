@@ -1,6 +1,6 @@
 ---
 title: Developers
-keywords: developers
+keywords: developers, Email 
 last_updated: June 10, 2025
 #tags: [navigation]
 summary: "Welcome to the official developer page of our open-source project —— Echo! This project is proudly initiated and maintained by students and researchers from Shanghai University, aimed at advancing AI-native wireless communication. Below is an introduction to our core team members, their roles, and contributions."
@@ -75,8 +75,6 @@ Our open-source initiative brings together students and researchers working on t
 ## 📫 Get in Touch
 
 - **Email**: shenyihao@shu.edu.cn
-- **GitHub**: [ACELab-SHU/ACE-Echo: An open-source test and development platform for ComAI](https://github.com/ACELab-SHU/ACE-Echo)
-- **Website**: [Echo | ACE-LAB Echo](https://acelab-shu.github.io/ACE-Echo/)
 
 We welcome contributors, collaborators, and curious minds from around the world. Join us in shaping the future of open communication and AI-driven systems!
 

@@ -1,7 +1,7 @@
 ---
-title: 🚀 Get Started with Echo
+title: Get Started with Echo
 #tags: [getting_started, troubleshooting]
-keywords: Echo, Venus architecture, RISC-V, AI accelerator, cross-compilation, embedded systems, open-source, NPU, software-hardware co-design, performance computing, toolchain setup, build guide, low-latency computing, heterogeneous computing, system-on-chip, edge AI, communication stack, CMake, simulator, real-time systems,docker,images,
+keywords: Echo, Venus, docker, deploy, start, run, install
 summary: "This guide provides a comprehensive getting started tutorial for developers working with the Echo × Venus open-source platform."
 sidebar: mydoc_sidebar
 permalink: mydoc_get_started.html
@@ -39,15 +39,14 @@ folder: mydoc
 
 ## 🏷️Option 1: Local compilation chain deployment  
 
-### 1. Install Dependencies
+<span style="font-size: 120%; color: red;">1. Install Dependencies</span>
 
 ```bash
 sudo apt update
 sudo apt-get install autoconf automake autotools-dev curl python3 python3-pip libmpc-dev libmpfr-dev libgmp-dev gawk build-essential bison flex texinfo gperf libtool patchutils bc zlib1g-dev libexpat-dev ninja-build git cmake libglib2.0-dev
 ```
 
-
-### 2. Install RISC-V Toolchain & our modified LLVM (for Venus backend)
+<span style="font-size: 120%; color: red;">2. Install RISC-V Toolchain & our modified LLVM (for Venus backend)</span>
 
 ```bash
 # Install RISC-V Toolchain
@@ -83,8 +82,7 @@ Make sure to remember these two paths, as you will need to update them later in 
 
 
 
-
-### 3. Clone the Echo Project
+<span style="font-size: 120%; color: red;">3. Clone the Echo Project</span>
 
 ```bash
 git clone https://github.com/ACELab-SHU/ACE-Echo.git
@@ -100,8 +98,7 @@ You can also modify `TARGET_DAG` to change the build target, but it's recommende
 
 
 
-
-### 4. Run a Demo or Test
+<span style="font-size: 120%; color: red;">4. Run a Demo or Test</span>
 
 Open the Echo folder in VSCode, making sure that the top-level folder is **Echo**, then press F5 to start debugging mode directly.
 
@@ -117,7 +114,8 @@ If everything works correctly, you will see the following information printed in
 
 ## 🏷️Option 2: Use Docker for rapid deployment
 
-### 🔍Overview
+<span style="font-size: 120%; color: red;">🔍Overview </span>
+
 <font style="color:rgba(0, 0, 0, 0.85) !important;">This Docker image is designed for the rapid deployment of the Venus emulator, providing LTE/5G-related routines.</font>
 &emsp;&emsp;<font style="color:rgba(0, 0, 0, 0.85) !important;">● </font><font style="color:rgb(0, 0, 0) !important;">Image Link</font><font style="color:rgba(0, 0, 0, 0.85) !important;">: </font>[<font style="color:rgb(9, 105, 218);">https://zenodo.org/records/15803394</font>](https://zenodo.org/records/15803394)<font style="color:rgba(0, 0, 0, 0.85) !important;"> </font>
 
@@ -130,8 +128,10 @@ If everything works correctly, you will see the following information printed in
 
 <br>
 
-### 📝Solution 1: Run via Terminal and Access via Browser
-#### 1. Obtain the Image (Download from Zenodo)
+<span style="font-size: 120%; color: red;">📝Solution 1: Run via Terminal and Access via Browser</span>
+
+<span style="font-size: 120%;">1. Obtain the Image (Download from Zenodo)</span>
+
 1. <font style="color:rgba(0, 0, 0, 0.85) !important;">Visit the Zenodo dataset page and download the image tarball (<b>ace-echo-docker.tar</b>).</font>
 2. <font style="color:rgba(0, 0, 0, 0.85) !important;">Import it into your local Docker environment:</font>**<font style="color:rgba(0, 0, 0, 0.85);"></font>**
 
@@ -139,13 +139,13 @@ If everything works correctly, you will see the following information printed in
 # Replace `[path]` with the actual path.
 docker load -i /[path]/ace-echo-docker.tar
 ```
+<span style="font-size: 120%;">2. Launch the Container</span>
 
-#### 2. Launch the Container
 ```bash
 docker run -it -p 8080:8080 -v $(pwd):/root/ACE-Echo ace-echo
 ```
+<span style="font-size: 120%;">3. Execute Code in Browser</span>
 
-#### 3. Execute Code in Browser
 1. <font style="color:rgba(0, 0, 0, 0.85) !important;">Open your browser and navigate to <b>http://localhost:8080</b> to access the interface. </font>
 2. <font style="color:rgba(0, 0, 0, 0.85) !important;">Set the folder path to <b>/root/ACE-Echo/AURA/Docker_Echo/ACE-Echo/</b> and click <b>Start Debugging</b> to run the application.</font>
 
@@ -156,25 +156,27 @@ docker run -it -p 8080:8080 -v $(pwd):/root/ACE-Echo ace-echo
 
 
 <br>
+<span style="font-size: 120%; color: red;">📝Solution 2: Run via VSCode + Docker Extension</span>  
+<span style="font-size: 120%;">Prerequisites</span>
 
-### 📝Solution 2: Run via VSCode + Docker Extension
-#### Prerequisites
 1. <font style="color:rgba(0, 0, 0, 0.85) !important;">Install</font>[<font style="color:rgb(9, 105, 218);">VSCode</font>](https://code.visualstudio.com/)<font style="color:rgba(0, 0, 0, 0.85) !important;">.</font>
 2. <font style="color:rgba(0, 0, 0, 0.85) !important;">Install the</font><font style="color:rgba(0, 0, 0, 0.85) !important;"> </font>[<font style="color:rgb(9, 105, 218);">Docker Extension</font>](https://marketplace.visualstudio.com/items?itemName=ms-azuretools.vscode-docker)<font style="color:rgba(0, 0, 0, 0.85) !important;">.</font>
 
-#### 1. Import the Image (Same as Solution 1)
+<span style="font-size: 120%;">1. Import the Image (Same as Solution 1)</span>
+
 <font style="color:rgba(0, 0, 0, 0.85) !important;">Import the Zenodo-downloaded image via the terminal:</font>
 
 ```bash
 # Replace `[path]` with the actual path.
 docker load -i /[path]/ace-echo-docker.tar
 ```
+<span style="font-size: 120%;">2. Start the Container in VSCode</span>
 
-#### 2. Start the Container in VSCode
 1. <font style="color:rgba(0, 0, 0, 0.85) !important;">Open VSCode and click the<b> Containers</b> icon in the Activity Bar.</font>
 2. <font style="color:rgba(0, 0, 0, 0.85) !important;">Locate <b>ace-echo-docker</b> in the Containers list, then right-click and select <b>Start</b><font style="color:rgba(0, 0, 0, 0.85) !important;">.</font>
 
-#### 3. Run the Application
+<span style="font-size: 120%;">3. Run the Application</span>
+
 **🧪Method 1: Execute Code in Browser**
 
 &emsp;&emsp;<font style="color:rgba(0, 0, 0, 0.85) !important;">Right-click the running <b>ace-echo-docker</b> container and select <b>Open in Browser</b>. Follow Step 3 from Solution 1 thereafter.</font>

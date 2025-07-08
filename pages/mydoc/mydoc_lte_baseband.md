@@ -1,7 +1,7 @@
 ---
 title: LTE Cell Search
 #tags: [special_layouts]
-keywords: 
+keywords: lte, cell search, baseband
 last_updated: June 10, 2025
 summary: ""
 sidebar: mydoc_sidebar

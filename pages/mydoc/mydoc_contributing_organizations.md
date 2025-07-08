@@ -1,6 +1,6 @@
 ---
 title: Contributing Organizations
-keywords: contributing, organizations
+keywords: contributing, organizations, Shanghai University, Deep Transcend
 last_updated: June 10, 2025
 #tags: [navigation]
 # summary: "contributing organizations for Echo"

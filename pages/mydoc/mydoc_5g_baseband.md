@@ -1,7 +1,8 @@
 ---
 title: 5G Cell Search
 #tags: [special_layouts]
-keywords: 
+keywords: 5G, NR, Cell Search, MIB, SIB, SSS, PSS, BCH, CCH, SCH
+
 last_updated: June 11, 2025
 summary: "This document describes the multi-stage link flow of 5G cell search, which can be adapted to a variety of scenarios."
 sidebar: mydoc_sidebar
@@ -61,11 +62,10 @@ folder: mydoc
 + **Main Functions:**
   - Completes frame synchronization, determining the boundaries of 10ms radio frames. 
   - Identifies the cell group number and, together with PSS, determines the Physical Cell Identifier (PCI) :
-
 <div style="text-align: center;">
-  {% include image.html file="5G3.png" %}
+  {% include image.html file="5G3.png" max-width = '400' %}
 </div>
-
+ 
 + **Implementation:**
   - Detects the SSS signal based on PSS synchronization. 
   - Determines cell group information by matching 336 possible SSS sequences.<br><br>
@@ -163,7 +163,7 @@ folder: mydoc
 &emsp;&emsp;The 5G NR access procedure follows a strict sequence where Control Channel (CCH) identification must precede Shared Channel (SCH) localization. The UE first decodes the CCH to obtain Downlink Control Information (DCI), which contains the necessary scheduling parameters. Using this DCI, the UE then locates and decodes the SCH to acquire System Information Blocks (SIBs). This sequential approach ensures efficient and reliable network access by maintaining proper synchronization between control and data plane operations.
 
 <div style="text-align: center;">
-  {% include image.html file="5G4.png" %}
+  {% include image.html file="5G4.png" max-width = '400'%}
 </div>
 
 + **<font style="color:rgba(0, 0, 0, 0.9);">Identification of Control Channel (CCH)</font>**<br>
@@ -173,7 +173,7 @@ folder: mydoc
 &emsp;&emsp;**d.** <font style="color:rgba(0, 0, 0, 0.9);">The DCI content containing critical information such as scheduling grants is parsed. The entire process must be completed within millisecond-level time constraints while maintaining robust processing capabilities against frequency offsets and phase noise.</font>
 
 <div style="text-align: center;">
-  {% include image.html file="5G5.png" %}
+  {% include image.html file="5G5.png" max-width = '650' %}
 </div>
 
 + **<font style="color:rgba(0, 0, 0, 0.9);">Localization of Shared Channel (SCH)</font>**<br>
@@ -182,7 +182,7 @@ folder: mydoc
 &emsp;&emsp;**c.** <font style="color:rgba(0, 0, 0, 0.9);">The UE parses the cell access parameters and other SIB scheduling information contained in SIB1. </font><br>
 
 <div style="text-align: center;">
-  {% include image.html file="5G6.png" %}
+  {% include image.html file="5G6.png" max-width = '500' %}
 </div>
 
 <span style="
