@@ -65,11 +65,13 @@ sudo make
 ```bash
 # Install our modified LLVM
 git clone https://github.com/ACELab-SHU/Venus-Compiler.git
-cd ./Venus-Compiler/venus-llvm-project-venus
+cd ./Venus-Compiler/
+git checkout develop
+cd ./venus-llvm-project-venus
 mkdir build
 cd ./build
 sudo apt-get install ccache
-cmake -G Ninja -DCMAKE_BUILD_TYPE=Debug -DCMAKE_INSTALL_PREFIX=../../llvm-bin -DLLVM_TARGETS_TO_BUILD="RISCV" -DLLVM_CCACHE_BUILD=ON -DLLVM_ENABLE_PROJECTS="clang;llvm" -DLLVM_USE_LINKER=gold -DLLVM_DEFAULT_TARGET_TRIPLE="riscv32-unknown-elf" ../llvm && ninja install
+cmake -G Ninja -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=../../llvm-bin -DLLVM_TARGETS_TO_BUILD="RISCV" -DLLVM_CCACHE_BUILD=ON -DLLVM_ENABLE_PROJECTS="clang;llvm" -DLLVM_USE_LINKER=gold -DLLVM_DEFAULT_TARGET_TRIPLE="riscv32-unknown-elf" ../llvm && ninja install
 ```
 
 
