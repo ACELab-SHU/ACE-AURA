@@ -1,0 +1,25 @@
+---
+title:  "A Hierarchical Dataflow-Driven Heterogeneous Architecture for Wireless Baseband Processing"
+published: true
+permalink: myupdate.html
+summary: false
+tags: [Wireless baseband processing, NUMA, dataflow-driven]
+---
+
+
+&emsp;&emsp;At the 30th Asia and South Pacific Design Automation Conference (ASPDAC ’25), we presented a cache-free, NUMA-based heterogeneous architecture tailored to the cyclical and modular nature of wireless baseband processing (WBP). Leveraging a novel "pack-and-ship" data dispatching strategy and a multi-level dataflow scheduling model, our system improves data locality and reduces memory latency. Experimental results show up to 2.3× speedup in single-tile performance and a link-level throughput of 288 Mbps, demonstrating strong scalability and superior performance compared to graphics processing units (GPUs) and digital signal processors (DSPs) baselines.
+
+
+&emsp;&emsp;<b>Check out our paper at </b>: [<font style="color:rgb(9, 105, 218);">https://dl.acm.org/doi/abs/10.1145/3658617.3697558</font>](https://dl.acm.org/doi/abs/10.1145/3658617.3697558)<font style="color:rgba(0, 0, 0, 0.85) !important;"> </font>
+
+<div style="text-align: center;">
+    {% include image.html file="news_2025_3_4_fig1.png" caption="Overview of proposed design." %}
+</div>
+
+<div style="text-align: center;">
+    {% include image.html file="news_2025_3_4_fig2.png" caption="Tile-level scheduling scheme." %}
+</div>
+
+
+
+{% include links.html %}

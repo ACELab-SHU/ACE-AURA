@@ -1,0 +1,19 @@
+---
+title:  "Zoozve: A Strip-Mining-Free RISC-V Vector Extension with Arbitrary Register Grouping Compilation Support (WIP)"
+published: true
+permalink: samplepost.html
+summary: false
+# "This is some summary frontmatter for my sample post."
+tags: [RISC-V, vector processing, LLVM, hardware implementation]
+---
+
+
+&emsp;&emsp;At the 26th ACM SIGPLAN/SIGBED International Conference on Languages, Compilers, and Tools for Embedded Systems (LCTES '25), we proposed Zoozve, a novel RISC-V vector extension that eliminates the need for strip-mining in long-vector processing. Zoozve supports arbitrary vector register grouping and features a data-adaptive register allocation strategy, significantly reducing register pressure. Backed by a custom LLVM-based compiler toolchain and SystemVerilog hardware implementation, Zoozve achieves up to 344× reduction in dynamic instruction count in FFT workloads with only a 5.2% area overhead. This advancement opens new directions for flexible and efficient vector computing in wireless and AI domains.
+
+&emsp;&emsp;<b>Check out our paper at </b>: [<font style="color:rgb(9, 105, 218);">https://dl.acm.org/doi/abs/10.1145/3735452.3735526</font>](https://dl.acm.org/doi/abs/10.1145/3735452.3735526)<font style="color:rgba(0, 0, 0, 0.85) !important;"> </font>
+
+<div style="text-align: center;">
+    {% include image.html file="news_2025_6_13.png" caption="The proposed compilation workflow." %}
+</div>
+
+{% include links.html %}

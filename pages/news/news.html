@@ -6,27 +6,56 @@ permalink: news.html
 toc: false
 folder: news
 ---
+<!-- 博客首页容器，用于设置整体样式 -->
 <div class="home">
-
-    <div class="post-list">
-        {% for post in site.posts limit:10 %}
-
-
-    <h2><a class="post-link" href="{{ post.url | remove: "/" }}">{{ post.title }}</a></h2>
-        <span class="post-meta">{{ post.date | date: "%b %-d, %Y" }} /
-            {% for tag in post.tags %}
-
-                <a href="{{ "tag_" | append: tag | append: ".html"}}">{{tag}}</a>{% unless forloop.last %}, {% endunless%}
-
-                {% endfor %}</span>
-        <p>{% if page.summary %} {{ page.summary | strip_html | strip_newlines | truncate: 160 }} {% else %} {{ post.content | truncatewords: 50 | strip_html }} {% endif %}</p>
-
+  <!-- 文章列表容器，包含多篇博客文章 -->
+  <div class="post-list">
+    <!-- 循环遍历最新的10篇文章，按时间倒序排列 -->
+    {% for post in site.posts limit:10 %}
+      <!-- 文章标题，链接指向文章详情页 -->
+      <h2>
+        <a class="post-link" href="{{ post.url | remove: "/" }}">{{ post.title }}</a>
+      </h2>
+      
+      <!-- 文章元信息：日期和标签 -->
+      <span class="post-meta">
+        <!-- 格式化日期为 "Jan 1, 2023" 格式 （例）-->
+        {{ post.date | date: "%b %-d, %Y" }} /
+        
+        <!-- 遍历文章的所有标签并生成标签链接 -->
+        {% for tag in post.tags %}
+          <!-- 标签链接格式：tag_标签名.html -->
+          <a href="{{ "tag_" | append: tag | append: ".html"}}">{{ tag }}</a>
+          <!-- 非最后一个标签时添加逗号分隔 -->
+          {% unless forloop.last %}, {% endunless %}
         {% endfor %}
-
-        <p><a href="feed.xml" class="btn btn-primary navbar-btn cursorNorm" role="button">RSS Subscribe{{tag}}</a></p>
-
-<hr />
-        <p>See more posts from the <a href="news_archive.html">News Archive</a>. </p>
-
-    </div>
+      </span>
+      
+      <!-- 文章摘要：优先使用自定义摘要，否则截取文章内容前50个单词 -->
+      <p>
+        {% if page.summary %}
+          <!-- 使用自定义摘要并处理：移除HTML标签、换行符，截断到160字符 -->
+          {{ page.summary | strip_html | strip_newlines | truncate: 160 }}
+        {% else %}
+          <!-- 自动生成摘要：截取文章内容前50个单词并移除HTML标签 -->
+          {{ post.content | truncatewords: 50 | strip_html }}
+        {% endif %}
+      </p>
+    {% endfor %}
+    
+    <!-- RSS订阅按钮 -->
+    <!-- <p>
+      <a href="feed.xml" class="btn btn-primary navbar-btn cursorNorm" role="button">
+        RSS Subscribe
+      </a>
+    </p> -->
+    
+    <!-- 分隔线 -->
+    <hr />
+    
+    <!-- 新闻存档链接 -->
+    <p>
+      See more posts from the <a href="news_archive.html">News Archive</a>.
+    </p>
+  </div>
 </div>
