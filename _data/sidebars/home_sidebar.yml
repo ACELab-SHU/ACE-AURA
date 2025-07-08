@@ -11,6 +11,12 @@ entries:
     - title: Latest news
       url: /news.html
       output: web, pdf
+    - title: Academic Achievements
+      url: /academic_achievements.html
+      output: web, pdf
+    - title: Application Breakthroughs
+      url: /breakthroughs_in_application.html
+      output: web, pdf
     # - title: Theme instructions
     #   url: /mydoc_introduction.html
     #   output: web
