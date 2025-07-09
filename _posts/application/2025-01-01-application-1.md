@@ -20,7 +20,6 @@ tags: [5G,PBCH,MIB,decode]
 </div>
 
 
-
 &emsp;&emsp;At that time, the UVP system deployed on the VCU118 evaluation board was ready. The system adopts a 32-lane, Reg2048 configuration, tightly coupled with a lightweight RISC-V scalar core, and manages the collaborative work of various components through bus interconnection. The Digital Front-End (DFE) is responsible for real-time signal processing, the memory is used for code execution, and the serial port supports debugging and offline code access.
 
 &emsp;&emsp;After the test started, the UVP system processed the PBCH signal according to the procedure: first, it performed OFDM demodulation, completed 3 FFTs and related pre- and post-processing steps, followed by SSS search, DMRS search and other links. Among them, DMRS search involves a large number of correlation operations and pseudo-random sequence generation, requiring extensive permutation and reduction summation operations. Subsequently, channel estimation, channel equalization demodulation, bit descrambling and channel decoding are performed in sequence. The channel decoding adopts the belief propagation algorithm of polar codes, and its latency is greatly affected by the signal quality; the worse the signal quality, the more iterations are required.
