@@ -116,5 +116,7 @@ description: "Intended as a documentation theme based on Jekyll for technical wr
 
 github: [metadata]
 
+# Google Analytics
+google_analytics: G-6CDNPWJRVK
 
 # Copyright 2021 Google LLC
